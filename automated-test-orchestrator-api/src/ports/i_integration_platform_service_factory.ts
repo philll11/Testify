@@ -10,8 +10,9 @@ export interface IIntegrationPlatformServiceFactory {
   /**
    * Creates an instance of an IIntegrationPlatformService based on a credential profile.
    *
+   * @param platform The name of the platform of the instance to create.
    * @param profileName The name of the credential profile to use for configuration.
    * @returns A promise that resolves with a fully configured IIntegrationPlatformService instance.
    */
-  createService(profileName: string): Promise<IIntegrationPlatformService>;
+  createService(platform: string, profileName: string): Promise<IIntegrationPlatformService>;
 }

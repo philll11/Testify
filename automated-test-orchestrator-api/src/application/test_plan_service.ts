@@ -17,6 +17,7 @@ import { TestPlanEntryPoint } from '../domain/test_plan_entry_point.js';
 import { ITestPlanEntryPointRepository } from '../ports/i_test_plan_entry_point_repository.js';
 import { NotFoundError } from '../utils/app_error.js';
 import { TestPlan, TestPlanStatus, TestPlanType } from '../domain/test_plan.js';
+import { SupportedPlatform } from '../domain/supported_platforms.js';
 
 @injectable()
 export class TestPlanService implements ITestPlanService {
@@ -47,10 +48,10 @@ export class TestPlanService implements ITestPlanService {
     }
 
     public async initiateDiscovery(name: string, planType: TestPlanType, inputs: CreateTestPlanInputs, credentialProfile: string, discoverDependencies: boolean): Promise<TestPlan> {
-        
+
         // --- 1. Backend Input Resolution Phase ---
         // We must resolve names and folders to specific Component IDs before creating the plan.
-        const platformService = await this.platformServiceFactory.createService(credentialProfile);
+        const platformService = await this.platformServiceFactory.createService(SupportedPlatform.Boomi, credentialProfile);
         const resolvedComponents = await this.resolveInputs(inputs, planType, platformService);
 
         if (resolvedComponents.length === 0) {
@@ -78,7 +79,7 @@ export class TestPlanService implements ITestPlanService {
 
         // --- 3. Async Processing ---
         if (planType === TestPlanType.TEST) {
-             this.processTestModeComponents(resolvedComponents, savedTestPlan.id, credentialProfile)
+            this.processTestModeComponents(resolvedComponents, savedTestPlan.id, credentialProfile)
                 .catch(async (error: Error) => {
                     console.error(`[TestPlanService] Processing failed for plan ${savedTestPlan.id}: ${error.message}`);
                     await this.testPlanRepository.update({
@@ -89,7 +90,7 @@ export class TestPlanService implements ITestPlanService {
                     });
                 });
         } else {
-             this.processPlanComponents(resolvedComponents, savedTestPlan.id, credentialProfile, discoverDependencies)
+            this.processPlanComponents(resolvedComponents, savedTestPlan.id, credentialProfile, discoverDependencies)
                 .catch(async (error: Error) => {
                     console.error(`[TestPlanService] Processing failed for plan ${savedTestPlan.id}: ${error.message}`);
                     await this.testPlanRepository.update({
@@ -123,7 +124,7 @@ export class TestPlanService implements ITestPlanService {
         if (inputs.compNames && inputs.compNames.length > 0) {
             const foundNames = new Set(results.map(c => c.name));
             const missingNames = inputs.compNames.filter(n => !foundNames.has(n));
-            
+
             if (missingNames.length > 0) {
                 throw new Error(`Could not resolve the following names (or they are not executable processes): ${missingNames.join(', ')}`);
             }
@@ -132,14 +133,14 @@ export class TestPlanService implements ITestPlanService {
         // Deduplicate resolved components
         const uniqueMap = new Map<string, ComponentInfo>();
         results.forEach(c => uniqueMap.set(c.id, c));
-        
+
         return Array.from(uniqueMap.values());
     }
 
     private async processTestModeComponents(resolvedComponents: ComponentInfo[], planId: string, credentialProfile: string): Promise<void> {
         // We already have the metadata from resolveInputs (Recommendation A).
         // No need to query getComponentInfo again for the resolved inputs.
-        
+
         const planComponents: PlanComponent[] = resolvedComponents.map(info => ({
             id: uuidv4(),
             testPlanId: planId,
@@ -150,7 +151,7 @@ export class TestPlanService implements ITestPlanService {
         }));
 
         await this.planComponentRepository.saveAll(planComponents);
-        
+
         const plan = await this.testPlanRepository.findById(planId);
         if (plan) {
             plan.status = TestPlanStatus.AWAITING_SELECTION;
@@ -160,7 +161,7 @@ export class TestPlanService implements ITestPlanService {
     }
 
     private async processPlanComponents(resolvedComponents: ComponentInfo[], testPlanId: string, credentialProfile: string, discoverDependencies: boolean): Promise<void> {
-        const integrationPlatformService = await this.platformServiceFactory.createService(credentialProfile);
+        const integrationPlatformService = await this.platformServiceFactory.createService(SupportedPlatform.Boomi, credentialProfile);
         const finalComponentsMap = new Map<string, ComponentInfo>();
 
         // Pre-populate with resolved components to avoid re-fetching
@@ -173,7 +174,7 @@ export class TestPlanService implements ITestPlanService {
                 const discoveredMap = await this._findAllDependenciesRecursive(info.id, integrationPlatformService);
                 discoveredMap.forEach((value, key) => finalComponentsMap.set(key, value));
             }
-        } 
+        }
         // Else: We already collected them in finalComponentsMap
 
         const planComponents: PlanComponent[] = Array.from(finalComponentsMap.values()).map(info => ({
@@ -244,8 +245,8 @@ export class TestPlanService implements ITestPlanService {
         if (!testPlan) throw new Error(`TestPlan with id ${planId} not found.`);
 
         const allowedExecutionStates: TestPlanStatus[] = [
-            TestPlanStatus.AWAITING_SELECTION, 
-            TestPlanStatus.COMPLETED, 
+            TestPlanStatus.AWAITING_SELECTION,
+            TestPlanStatus.COMPLETED,
             TestPlanStatus.EXECUTION_FAILED,
             TestPlanStatus.DISCOVERY_FAILED
         ];
@@ -268,9 +269,9 @@ export class TestPlanService implements ITestPlanService {
         try {
             const limit = pLimit(this.config.concurrencyLimit);
 
-            const integrationPlatformService = await this.platformServiceFactory.createService(credentialProfile);
+            const integrationPlatformService = await this.platformServiceFactory.createService(SupportedPlatform.Boomi, credentialProfile);
             const planComponents = await this.planComponentRepository.findByTestPlanId(planId);
-            
+
             const testToPlanComponentMap = new Map<string, PlanComponent>();
             let finalTestsToExecute: string[] = [];
 
@@ -281,9 +282,9 @@ export class TestPlanService implements ITestPlanService {
                 });
 
                 if (testsToRun && testsToRun.length > 0) {
-                     finalTestsToExecute = testsToRun.filter(tId => testToPlanComponentMap.has(tId));
+                    finalTestsToExecute = testsToRun.filter(tId => testToPlanComponentMap.has(tId));
                 } else {
-                     finalTestsToExecute = planComponents.map(pc => pc.componentId);
+                    finalTestsToExecute = planComponents.map(pc => pc.componentId);
                 }
             } else {
                 // In COMPONENT mode (default), discover tests via mappings.
