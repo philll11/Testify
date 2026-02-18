@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { createContext, useMemo, ReactNode, Context } from 'react';
 
 // project imports
@@ -29,6 +28,4 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
 
   return <ConfigContext.Provider value={memoizedValue}>{children}</ConfigContext.Provider>;
 }
-
-ConfigProvider.propTypes = { children: PropTypes.node };
 

@@ -3,6 +3,7 @@ import { useMemo, ReactNode } from 'react';
 // material-ui
 import { createTheme, ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project imports
 import { CSS_VAR_PREFIX, DEFAULT_THEME_MODE } from 'config';
@@ -20,10 +21,13 @@ interface ThemeCustomizationProps {
 
 export default function ThemeCustomization({ children }: ThemeCustomizationProps) {
   const {
-    state: { borderRadius, fontFamily, outlinedFilled, presetColor }
+    state: { borderRadius, fontFamily, outlinedFilled, presetColor, mode }
   } = useConfig();
 
-  const palette = useMemo(() => buildPalette(presetColor || 'default'), [presetColor]);
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  const themeMode = mode === 'system' ? (prefersDarkMode ? 'dark' : 'light') : mode;
+
+  const themePalette = useMemo(() => buildPalette(presetColor || 'default', themeMode), [presetColor, themeMode]);
 
   const themeTypography = useMemo(() => Typography(fontFamily), [fontFamily]);
 
@@ -40,18 +44,13 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
         }
       },
       typography: themeTypography,
-      colorSchemes: {
-        light: {
-          palette: palette.light,
-          customShadows: CustomShadows(palette.light, 'light')
-        }
-      },
+      palette: themePalette.palette,
+      // RE-ADDED: Enable CSS variables to populate theme.vars
       cssVariables: {
         cssVarPrefix: CSS_VAR_PREFIX,
-        colorSchemeSelector: 'data-color-scheme'
       }
     }),
-    [themeTypography, palette]
+    [themeTypography, themePalette, themeMode]
   );
 
   const themes = createTheme(themeOptions as any);
@@ -59,8 +58,8 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider disableTransitionOnChange theme={themes} modeStorageKey="theme-mode" defaultMode={DEFAULT_THEME_MODE}>
-        <CssBaseline enableColorScheme />
+      <ThemeProvider theme={themes}>
+        <CssBaseline />
         {children}
       </ThemeProvider>
     </StyledEngineProvider>

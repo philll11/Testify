@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -19,7 +19,7 @@ import Box from '@mui/material/Box';
 import NavItem from '../NavItem';
 import Transitions from 'ui-component/extended/Transitions';
 
-import { useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 import useConfig from 'hooks/useConfig';
 import useMenuCollapse from 'hooks/useMenuCollapse';
 import { NavItem as NavItemModel } from 'menu-items/types';
@@ -43,8 +43,8 @@ export default function NavCollapse({ menu, level, parentId }: NavCollapseProps)
     state: { borderRadius }
   } = useConfig();
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);

@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { forwardRef, ReactNode, Ref } from 'react';
 
 // material-ui
@@ -82,20 +81,3 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(({
 });
 
 export default MainCard;
-
-MainCard.propTypes = {
-  border: PropTypes.bool,
-  boxShadow: PropTypes.bool,
-  children: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  content: PropTypes.bool,
-  contentClass: PropTypes.string,
-  contentSX: PropTypes.object,
-  headerSX: PropTypes.object,
-  darkTitle: PropTypes.bool,
-  secondary: PropTypes.any,
-  shadow: PropTypes.string,
-  sx: PropTypes.object,
-  title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  ref: PropTypes.object,
-  others: PropTypes.any
-} as any;

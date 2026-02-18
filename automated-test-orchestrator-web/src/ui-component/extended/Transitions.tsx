@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { ReactNode, forwardRef, Ref } from 'react';
 
 // material-ui
@@ -111,12 +110,3 @@ const Transitions = forwardRef<HTMLDivElement, TransitionsProps>(({ children, po
 });
 
 export default Transitions;
-
-Transitions.propTypes = {
-  children: PropTypes.node,
-  position: PropTypes.any,
-  sx: PropTypes.any,
-  type: PropTypes.any,
-  direction: PropTypes.any,
-  others: PropTypes.any
-} as any;

@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { ReactNode } from 'react';
 
 // third party
@@ -78,11 +77,3 @@ export default function AnimateButton({ children, type = 'scale', direction = 'r
       );
   }
 }
-
-AnimateButton.propTypes = {
-  children: PropTypes.node,
-  type: PropTypes.oneOf(['slide', 'scale', 'rotate']),
-  direction: PropTypes.oneOf(['up', 'down', 'left', 'right']),
-  offset: PropTypes.number,
-  scale: PropTypes.object
-} as any;

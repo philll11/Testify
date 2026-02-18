@@ -18,6 +18,7 @@ export interface NavItem {
   children?: NavItem[];
   external?: boolean;
   disabled?: boolean;
+  permission?: string;
   chip?: {
     color: 'primary' | 'secondary' | 'default' | 'error' | 'info' | 'success' | 'warning';
     variant: 'filled' | 'outlined';
@@ -28,5 +29,5 @@ export interface NavItem {
 }
 
 export interface MenuItem {
-    items: NavItem[];
+  items: NavItem[];
 }

@@ -20,20 +20,30 @@ export default function Chip(theme: any) {
                 const colorKey = ownerState.color;
                 const paletteColor = theme.vars.palette[colorKey];
 
+                const isDark = theme.palette.mode === 'dark';
+
                 if (!paletteColor) return {};
 
+                // Base Colors
+                let textColor = paletteColor.main;
+                let bgColor = paletteColor.light;
+
+                // Adjust for Dark Mode
+                if (isDark) {
+                   textColor = paletteColor.light;
+                   bgColor = withAlpha(paletteColor.main, 0.2); // Translucent Main Color for darker BG
+                }
+
                 return {
-                  color: paletteColor.main,
-                  backgroundColor: paletteColor.light,
+                  color: textColor,
+                  backgroundColor: bgColor,
 
                   ...(ownerState.color === 'error' && {
-                    backgroundColor: withAlpha(paletteColor.light, 0.25)
+                    backgroundColor: isDark ? withAlpha(paletteColor.main, 0.25) : withAlpha(paletteColor.light, 0.25)
                   }),
-                  ...(ownerState.color === 'success' && {
-                    backgroundColor: withAlpha(paletteColor.light, 0.5)
-                  }),
-                  ...((ownerState.color === 'warning' || ownerState.color === 'success') && {
-                    color: paletteColor.dark
+                  ...((ownerState.color === 'success' || ownerState.color === 'warning' || ownerState.color === 'info') && {
+                    backgroundColor: isDark ? withAlpha(paletteColor.main, 0.2) : withAlpha(paletteColor.light, 0.5),
+                    color: isDark ? paletteColor.light : paletteColor.dark
                   }),
 
                   '&.MuiChip-clickable': {

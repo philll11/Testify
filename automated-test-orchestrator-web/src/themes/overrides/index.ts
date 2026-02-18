@@ -20,6 +20,7 @@ import InputBase from './InputBase';
 import ListItemButton from './ListItemButton';
 import ListItemIcon from './ListItemIcon';
 import ListItemText from './ListItemText';
+import MenuItem from './MenuItem';
 import Paper from './Paper';
 import Select from './Select';
 import Slider from './Slider';
@@ -49,6 +50,7 @@ export default function ComponentsOverrides(theme: any, borderRadius: any, outli
     ListItemButton(theme),
     ListItemIcon(theme),
     ListItemText(theme),
+    MenuItem(theme),
     Paper(borderRadius),
     Select(),
     Slider(theme),

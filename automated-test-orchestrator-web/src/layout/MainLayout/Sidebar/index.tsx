@@ -2,13 +2,16 @@ import { memo, useMemo } from 'react';
 
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import { Theme } from '@mui/material/styles';
+import { useTheme, Theme } from '@mui/material/styles';
+
+// assets
+import { IconMenu2 } from '@tabler/icons-react';
 
 // project imports
-import MenuCard from './MenuCard';
 import MenuList from '../MenuList';
 import LogoSection from '../LogoSection';
 import MiniDrawerStyled from './MiniDrawerStyled';
@@ -17,15 +20,16 @@ import useConfig from 'hooks/useConfig';
 import { drawerWidth } from 'store/constant';
 import SimpleBar from 'ui-component/third-party/SimpleBar';
 
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 
 // ==============================|| SIDEBAR DRAWER ||============================== //
 
 function Sidebar() {
+  const theme = useTheme();
   const downMD = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened, toggleDashboardDrawer } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
 
   const {
     state: { miniDrawer }
@@ -43,7 +47,6 @@ function Sidebar() {
   const drawer = useMemo(() => {
     const drawerContent = (
       <>
-        <MenuCard />
         <Stack direction="row" sx={{ justifyContent: 'center', mb: 2 }}>
           <Chip label={import.meta.env.VITE_APP_VERSION} size="small" color="default" />
         </Stack>
@@ -61,7 +64,7 @@ function Sidebar() {
             {drawerOpen && drawerContent}
           </Box>
         ) : (
-          <SimpleBar sx={{ height: 'calc(100vh - 90px)', ...drawerSX }}>
+          <SimpleBar sx={{ height: '100%', ...drawerSX }}>
             <MenuList />
             {drawerOpen && drawerContent}
           </SimpleBar>
@@ -77,7 +80,7 @@ function Sidebar() {
           variant={downMD ? 'temporary' : 'persistent'}
           anchor="left"
           open={drawerOpen}
-          onClose={() => handlerDrawerOpen(!drawerOpen)}
+          onClose={toggleDashboardDrawer}
           slotProps={{
             paper: {
               sx: {
@@ -98,8 +101,34 @@ function Sidebar() {
         </Drawer>
       ) : (
         <MiniDrawerStyled variant="permanent" open={drawerOpen}>
-          {logo}
-          {drawer}
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {logo}
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              {drawer}
+            </Box>
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ flexGrow: 1, transition: theme.transitions.create('flex-grow') }} />
+              <Avatar
+                variant="rounded"
+                sx={{
+                  ...theme.typography.commonAvatar,
+                  ...theme.typography.mediumAvatar,
+                  overflow: 'hidden',
+                  transition: 'all .2s ease-in-out',
+                  color: (theme.vars || theme).palette.secondary.dark,
+                  background: (theme.vars || theme).palette.secondary.light,
+                  '&:hover': {
+                    color: (theme.vars || theme).palette.secondary.light,
+                    background: (theme.vars || theme).palette.secondary.dark
+                  }
+                }}
+                onClick={toggleDashboardDrawer}
+              >
+                <IconMenu2 stroke={1.5} size="20px" />
+              </Avatar>
+              <Box sx={{ flexGrow: drawerOpen ? 0 : 1, transition: theme.transitions.create('flex-grow') }} />
+            </Box>
+          </Box>
         </MiniDrawerStyled>
       )}
     </Box>

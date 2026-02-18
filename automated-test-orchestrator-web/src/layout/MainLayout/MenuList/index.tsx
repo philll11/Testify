@@ -1,4 +1,4 @@
-import { Activity, memo, useState } from 'react';
+import { Activity, memo, useState, useMemo } from 'react';
 
 // material-ui
 import Divider from '@mui/material/Divider';
@@ -11,27 +11,50 @@ import NavItem from './NavItem';
 import NavGroup from './NavGroup';
 import menuItems from 'menu-items';
 
-import { useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 import { NavItem as NavItemModel } from 'menu-items/types';
+import { usePermission } from 'contexts/AuthContext';
 
 // ==============================|| SIDEBAR MENU LIST ||============================== //
 
 function MenuList() {
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
+  const { can } = usePermission();
 
   const [selectedID, setSelectedID] = useState<string | undefined>('');
 
+  const filterByPermission = (items: NavItemModel[]): NavItemModel[] => {
+    return items.reduce((acc: NavItemModel[], item: NavItemModel) => {
+      if (item.permission && !can(item.permission)) {
+        return acc;
+      }
+
+      if (item.children) {
+        const children = filterByPermission(item.children);
+
+        if (children.length === 0 && (item.type === 'group' || item.type === 'collapse')) {
+          return acc;
+        }
+        return [...acc, { ...item, children }];
+      }
+
+      return [...acc, item];
+    }, []);
+  };
+
+  const filteredItems = useMemo(() => filterByPermission(menuItems.items), [can]);
+
   const lastItem: number | null = null;
 
-  let lastItemIndex = menuItems.items.length - 1;
+  let lastItemIndex = filteredItems.length - 1;
   let remItems: any[] = [];
   let lastItemId: string | undefined;
 
-  if (lastItem !== null && lastItem < menuItems.items.length) {
-    lastItemId = menuItems.items[lastItem - 1].id;
+  if (lastItem !== null && lastItem < filteredItems.length) {
+    lastItemId = filteredItems[lastItem - 1].id;
     lastItemIndex = lastItem - 1;
-    remItems = menuItems.items.slice(lastItem - 1, menuItems.items.length).map((item) => ({
+    remItems = filteredItems.slice(lastItem - 1, filteredItems.length).map((item) => ({
       title: item.title,
       elements: item.children,
       icon: item.icon,
@@ -41,7 +64,7 @@ function MenuList() {
     }));
   }
 
-  const navItems = menuItems.items.slice(0, lastItemIndex + 1).map((item: NavItemModel, index: number) => {
+  const navItems = filteredItems.slice(0, lastItemIndex + 1).map((item: NavItemModel, index: number) => {
     switch (item.type) {
       case 'group':
         if (item.url && item.id !== lastItemId) {

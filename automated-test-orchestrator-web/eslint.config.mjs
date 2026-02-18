@@ -7,6 +7,7 @@ import js from '@eslint/js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FlatCompat } from '@eslint/eslintrc';
+import tseslint from 'typescript-eslint';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,9 +18,12 @@ const compat = new FlatCompat({
 });
 
 export default [
+  { ignores: ['node_modules', 'dist', 'build'] },
   ...fixupConfigRules(compat.extends('prettier')),
+  ...tseslint.configs.recommended,
 
   {
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
     plugins: {
       prettier,
       react,
@@ -62,7 +66,6 @@ export default [
       'react/jsx-uses-vars': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'no-unused-vars': 'off',
 
       'no-restricted-imports': [
         'error',
@@ -71,19 +74,17 @@ export default [
         }
       ],
 
-      'no-unused-vars': [
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
         'error',
         {
           vars: 'all',
-          args: 'none'
+          args: 'none',
+          ignoreRestSiblings: true
         }
       ],
 
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'warn'
     }
-  },
-  {
-    ignores: ['node_modules/**'],
-    files: ['src/**/*.{js,jsx}']
   }
 ];

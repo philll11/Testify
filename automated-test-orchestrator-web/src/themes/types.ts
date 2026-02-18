@@ -41,19 +41,6 @@ declare module '@mui/material/styles' {
     }
 }
 
-// Check how to augment ColorSchemes or vars if necessary.
-// Based on usage: theme.vars.customShadows
-// MUI's CssVarsTheme might need augmentation.
-
-declare module '@mui/material/styles/createTheme' {
-    interface ThemeOptions {
-        customShadows?: CustomShadows;
-    }
-    interface Theme {
-        customShadows: CustomShadows;
-    }
-}
-
 export interface CustomShadows {
     z1: string;
     z8: string;

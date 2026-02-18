@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { ReactNode } from 'react';
 
 // material-ui
@@ -75,18 +74,3 @@ export default function SubCard({
     </Card>
   );
 }
-
-SubCard.propTypes = {
-  children: PropTypes.oneOfType([PropTypes.string, PropTypes.node, PropTypes.any]),
-  className: PropTypes.string,
-  content: PropTypes.bool,
-  contentClass: PropTypes.string,
-  darkTitle: PropTypes.bool,
-  secondary: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  sx: PropTypes.object,
-  contentSX: PropTypes.object,
-  footerSX: PropTypes.object,
-  title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  actions: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  others: PropTypes.any
-} as any;

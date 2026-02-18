@@ -94,9 +94,17 @@ export default function Breadcrumbs({
   let customLocation = location.pathname;
 
   useEffect(() => {
+    // Reset state on location change to avoid stale breadcrumbs matching previous route
+    setMain(undefined);
+    setItem(undefined);
+
     navigation?.items?.map((menu: NavItemModel) => {
       if (menu.type && menu.type === 'group') {
-        if (menu?.url && menu.url === customLocation) {
+        // MATCHING LOGIC: Allow strict equality OR strict prefix (e.g. /clients/1 starts with /clients)
+        // Ensure we don't partial match /clients-report against /clients via checking for separator
+        const isMatch = menu.url && (menu.url === customLocation || (customLocation.startsWith(menu.url) && customLocation.charAt(menu.url.length) === '/'));
+
+        if (isMatch) {
           setMain(menu);
           setItem(menu);
         } else {
@@ -105,7 +113,7 @@ export default function Breadcrumbs({
       }
       return false;
     });
-  });
+  }, [customLocation]);
 
   // set active item state
   const getCollapse = (menu: NavItemModel) => {
@@ -113,12 +121,14 @@ export default function Breadcrumbs({
       menu.children.filter((collapse: NavItemModel) => {
         if (collapse.type && collapse.type === 'collapse') {
           getCollapse(collapse);
-          if (collapse.url === customLocation) {
+          const isMatch = collapse.url === customLocation || (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
+          if (isMatch) {
             setMain(collapse);
             setItem(collapse);
           }
         } else if (collapse.type && collapse.type === 'item') {
-          if (customLocation === collapse.url) {
+          const isMatch = collapse.url === customLocation || (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
+          if (isMatch) {
             setMain(menu);
             setItem(collapse);
           }
@@ -204,11 +214,12 @@ export default function Breadcrumbs({
     ItemIcon = item?.icon ? item.icon : AccountTreeTwoToneIcon;
     itemContent = (
       <Typography
+        {...(item?.url && { component: Link, to: item.url })}
         variant="h6"
         noWrap
         sx={{
           ...linkSX,
-          color: 'text.secondary',
+          color: item?.url === customLocation ? 'text.primary' : 'text.secondary',
           display: 'inline-block',
           overflow: 'hidden',
           lineHeight: 1.5,
@@ -222,6 +233,17 @@ export default function Breadcrumbs({
       </Typography>
     );
 
+    const sxLinkState = {
+      display: 'flex',
+      textDecoration: 'none',
+      alignContent: 'center',
+      alignItems: 'center',
+      color: 'text.secondary'
+    };
+
+    // Check for parent override in location state
+    const parentOverride = (location.state as any)?.parent;
+
     let tempContent = (
       <MuiBreadcrumbs
         aria-label="breadcrumb"
@@ -234,7 +256,15 @@ export default function Breadcrumbs({
           {icon && !icons && <HomeIcon style={{ ...iconSX, marginRight: 0 }} />}
           {(!icon || icons) && 'Dashboard'}
         </Typography>
-        {mainContent}
+
+        {parentOverride ? (
+          <Typography component={Link} to={parentOverride.to} variant="h6" sx={sxLinkState}>
+            {parentOverride.title}
+          </Typography>
+        ) : (
+          mainContent
+        )}
+
         {itemContent}
       </MuiBreadcrumbs>
     );
@@ -274,10 +304,10 @@ export default function Breadcrumbs({
             card === false
               ? { mb: 3, bgcolor: 'transparent', ...sx }
               : {
-                  mb: 3,
-                  bgcolor: 'background.default',
-                  ...sx
-                }
+                mb: 3,
+                bgcolor: 'background.default',
+                ...sx
+              }
           }
           {...others}
         >

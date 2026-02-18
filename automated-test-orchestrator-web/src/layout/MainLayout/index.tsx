@@ -13,12 +13,11 @@ import Footer from './Footer';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import MainContentStyled from './MainContentStyled';
-import Customization from '../Customization';
 import Loader from 'ui-component/Loader';
 import Breadcrumbs from 'ui-component/extended/Breadcrumbs';
 
 import useConfig from 'hooks/useConfig';
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
@@ -29,20 +28,26 @@ export default function MainLayout() {
   const {
     state: { borderRadius, miniDrawer }
   } = useConfig();
-  const { menuMaster, menuMasterLoading } = useGetMenuMaster();
-  const drawerOpen = menuMaster?.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened, openDashboardDrawer, closeDashboardDrawer } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
 
   useEffect(() => {
-    handlerDrawerOpen(!miniDrawer);
+    // Only handle opening based on miniDrawer change if necessary, 
+    // logic might need adjustment based on behavior preference.
+    if (!miniDrawer) {
+        openDashboardDrawer();
+    }
   }, [miniDrawer]);
 
   useEffect(() => {
-    downMD && handlerDrawerOpen(false);
+    if (downMD) {
+        closeDashboardDrawer();
+    }
   }, [downMD]);
 
   // horizontal menu-list bar : drawer
 
-  if (menuMasterLoading) return <Loader />;
+  // if (menuMasterLoading) return <Loader />;
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -65,7 +70,6 @@ export default function MainLayout() {
           <Footer />
         </Box>
       </MainContentStyled>
-      <Customization />
     </Box>
   );
 }

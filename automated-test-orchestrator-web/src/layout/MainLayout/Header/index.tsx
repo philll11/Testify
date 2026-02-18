@@ -9,8 +9,9 @@ import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
+import ThemeModeSection from './ThemeModeSection';
 
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 
 // assets
 import { IconMenu2 } from '@tabler/icons-react';
@@ -21,8 +22,8 @@ export default function Header() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened, toggleDashboardDrawer } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
 
   return (
     <>
@@ -40,12 +41,13 @@ export default function Header() {
             transition: 'all .2s ease-in-out',
             color: (theme.vars || theme).palette.secondary.dark,
             background: (theme.vars || theme).palette.secondary.light,
+            display: { xs: 'flex', md: 'none' },
             '&:hover': {
               color: (theme.vars || theme).palette.secondary.light,
               background: (theme.vars || theme).palette.secondary.dark
             }
           }}
-          onClick={() => handlerDrawerOpen(!drawerOpen)}
+          onClick={toggleDashboardDrawer}
         >
           <IconMenu2 stroke={1.5} size="20px" />
         </Avatar>
@@ -55,6 +57,9 @@ export default function Header() {
       <SearchSection />
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ flexGrow: 1 }} />
+
+      {/* theme mode */}
+      <ThemeModeSection />
 
       {/* notification */}
       <NotificationSection />

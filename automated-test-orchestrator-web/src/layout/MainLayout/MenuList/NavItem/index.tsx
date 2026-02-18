@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
 // project imports
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 import useConfig from 'hooks/useConfig';
 import { NavItem as NavItemModel } from 'menu-items/types';
 
@@ -39,8 +39,8 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
     state: { borderRadius }
   } = useConfig();
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened, closeDashboardDrawer } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
   const isSelected = !!matchPath({ path: item?.link ? item.link : (item.url || ''), end: false }, pathname);
 
   const [hoverStatus, setHover] = useState(false);
@@ -69,12 +69,18 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   }
 
   const itemHandler = () => {
-    if (downMD) handlerDrawerOpen(false);
+    if (downMD) closeDashboardDrawer();
 
     if (isParents && setSelectedID) {
       setSelectedID();
     }
   };
+
+  // Calculate colors based on theme mode
+  // Reverting to consistent purple styling as per user request
+  const selectedIconColor = 'secondary.main'; 
+  const selectedBgColor = 'secondary.light';
+  const hoverBgColor = 'secondary.light';
 
   return (
     <>
@@ -106,7 +112,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
           <ListItemIcon
             sx={{
               minWidth: level === 1 ? 36 : 18,
-              color: isSelected ? 'secondary.main' : 'text.primary',
+              color: isSelected ? selectedIconColor : 'text.primary',
               ...(!drawerOpen &&
                 level === 1 && {
                   borderRadius: `${borderRadius}px`,
@@ -114,10 +120,10 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                   height: 46,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  '&:hover': { bgcolor: 'secondary.light' },
+                  '&:hover': { bgcolor: hoverBgColor },
                   ...(isSelected && {
-                    bgcolor: 'secondary.light',
-                    '&:hover': { bgcolor: 'secondary.light' }
+                    bgcolor: selectedBgColor,
+                    '&:hover': { bgcolor: hoverBgColor }
                   })
                 })
             }}

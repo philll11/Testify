@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import NavCollapse from '../NavCollapse';
 import NavItem from '../NavItem';
 
-import { useGetMenuMaster } from 'api/menu';
+import { useMenu } from 'contexts/MenuContext';
 import { NavItem as NavItemModel } from 'menu-items/types';
 
 // ==============================|| SIDEBAR MENU LIST GROUP ||============================== //
@@ -26,8 +26,8 @@ export interface NavGroupProps {
 export default function NavGroup({ item, lastItem, remItems = [], lastItemId, setSelectedID }: NavGroupProps) {
   const { pathname } = useLocation();
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { isDashboardDrawerOpened } = useMenu();
+  const drawerOpen = isDashboardDrawerOpened;
 
   const [anchorEl, setAnchorEl] = useState<null | Element>(null);
   const [currentItem, setCurrentItem] = useState(item);

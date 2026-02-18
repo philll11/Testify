@@ -13,10 +13,10 @@ const dashboard: NavItem = {
   type: 'group',
   children: [
     {
-      id: 'default',
+      id: 'dashboard',
       title: 'Dashboard',
       type: 'item',
-      url: '/dashboard/default',
+      url: '/dashboard',
       icon: icons.IconDashboard,
       breadcrumbs: false
     }
