@@ -17,6 +17,8 @@ export interface TestExecutionResult {
   testComponentName?: string; // From a joined Mapping
   status: 'SUCCESS' | 'FAILURE';
   message?: string;
-  testCases?: TestCaseResult[]; 
+  testCases?: TestCaseResult[];
   executedAt: Date;
 }
+
+export type CreateTestExecutionResultDTO = Omit<TestExecutionResult, 'id' | 'executedAt' | 'componentName' | 'testComponentName'>;

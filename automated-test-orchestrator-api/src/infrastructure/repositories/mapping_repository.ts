@@ -2,8 +2,8 @@
 
 import type { Pool } from 'pg';
 import { injectable, inject } from 'inversify';
-import { IMappingRepository, UpdateMappingData, AvailableTestInfo } from "../../ports/i_mapping_repository.js";
-import { Mapping } from "../../domain/mapping.js";
+import { IMappingRepository, AvailableTestInfo } from "../../ports/i_mapping_repository.js";
+import { CreateMappingDTO, Mapping, UpdateMappingDTO } from "../../domain/mapping.js";
 import { rowToMapping } from "../mappers.js";
 import { TYPES } from '../../inversify.types.js';
 
@@ -11,13 +11,12 @@ import { TYPES } from '../../inversify.types.js';
 export class MappingRepository implements IMappingRepository {
     constructor(@inject(TYPES.PostgresPool) private pool: Pool) { }
 
-    async create(mapping: Omit<Mapping, 'createdAt' | 'updatedAt'>): Promise<Mapping> {
-        const { id, mainComponentId, mainComponentName, testComponentId, testComponentName, isDeployed, isPackaged } = mapping;
-        const now = new Date();
+    async create(mapping: CreateMappingDTO): Promise<Mapping> {
+        const { mainComponentId, mainComponentName, testComponentId, testComponentName, isDeployed, isPackaged } = mapping;
         const query = `
-            INSERT INTO mappings (id, main_component_id, main_component_name, test_component_id, test_component_name, is_deployed, is_packaged, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;`;
-        const values = [id, mainComponentId, mainComponentName, testComponentId, testComponentName, isDeployed, isPackaged, now, now];
+            INSERT INTO mappings (main_component_id, main_component_name, test_component_id, test_component_name, is_deployed, is_packaged)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
+        const values = [mainComponentId, mainComponentName, testComponentId, testComponentName, isDeployed, isPackaged];
         const result = await this.pool.query(query, values);
         return rowToMapping(result.rows[0]);
     }
@@ -63,7 +62,7 @@ export class MappingRepository implements IMappingRepository {
         return map;
     }
 
-    async update(id: string, updates: UpdateMappingData): Promise<Mapping | null> {
+    async update(id: string, updates: UpdateMappingDTO): Promise<Mapping | null> {
         const existingMapping = await this.findById(id);
         if (!existingMapping) return null;
 
@@ -71,11 +70,11 @@ export class MappingRepository implements IMappingRepository {
 
         const query = `
             UPDATE mappings
-            SET main_component_name = $1, test_component_id = $2, test_component_name = $3, is_deployed = $4, is_packaged = $5, updated_at = $6
-            WHERE id = $7
+            SET main_component_name = $1, test_component_id = $2, test_component_name = $3, is_deployed = $4, is_packaged = $5, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $6
             RETURNING *;
         `;
-        const values = [newValues.mainComponentName, newValues.testComponentId, newValues.testComponentName, newValues.isDeployed, newValues.isPackaged, newValues.updatedAt, id];
+        const values = [newValues.mainComponentName, newValues.testComponentId, newValues.testComponentName, newValues.isDeployed, newValues.isPackaged, id];
 
         const result = await this.pool.query(query, values);
         return rowToMapping(result.rows[0]);

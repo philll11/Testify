@@ -8,12 +8,12 @@ import { IPlatformConfig } from '../infrastructure/config.js';
 import { ITestPlanService, TestPlanWithDetails, CreateTestPlanInputs } from "../ports/i_test_plan_service.js";
 import { ITestPlanRepository } from "../ports/i_test_plan_repository.js";
 import { ComponentInfo, IIntegrationPlatformService } from "../ports/i_integration_platform_service.js";
-import { PlanComponent } from "../domain/plan_component.js";
+import { CreatePlanComponentDTO, PlanComponent } from "../domain/plan_component.js";
 import { IPlanComponentRepository } from "../ports/i_plan_component_repository.js";
 import { IMappingRepository } from "../ports/i_mapping_repository.js";
 import { ITestExecutionResultRepository, NewTestExecutionResult } from '../ports/i_test_execution_result_repository.js';
 import { IIntegrationPlatformServiceFactory } from '../ports/i_integration_platform_service_factory.js';
-import { TestPlanEntryPoint } from '../domain/test_plan_entry_point.js';
+import { CreateTestPlanEntryPointDTO } from '../domain/test_plan_entry_point.js';
 import { ITestPlanEntryPointRepository } from '../ports/i_test_plan_entry_point_repository.js';
 import { NotFoundError } from '../utils/app_error.js';
 import { TestPlan, TestPlanStatus, TestPlanType } from '../domain/test_plan.js';
@@ -59,19 +59,13 @@ export class TestPlanService implements ITestPlanService {
         }
 
         // --- 2. Plan Creation ---
-        const testPlan: TestPlan = {
-            id: uuidv4(),
+        const savedTestPlan = await this.testPlanRepository.save({
             name: name,
             planType: planType,
-            status: TestPlanStatus.DISCOVERING,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+            status: TestPlanStatus.DISCOVERING
+        });
 
-        const savedTestPlan = await this.testPlanRepository.save(testPlan);
-
-        const entryPoints: TestPlanEntryPoint[] = resolvedComponents.map(comp => ({
-            id: uuidv4(),
+        const entryPoints: CreateTestPlanEntryPointDTO[] = resolvedComponents.map(comp => ({
             testPlanId: savedTestPlan.id,
             componentId: comp.id,
         }));
@@ -86,7 +80,6 @@ export class TestPlanService implements ITestPlanService {
                         ...savedTestPlan,
                         status: TestPlanStatus.DISCOVERY_FAILED,
                         failureReason: error.message,
-                        updatedAt: new Date(),
                     });
                 });
         } else {
@@ -97,7 +90,6 @@ export class TestPlanService implements ITestPlanService {
                         ...savedTestPlan,
                         status: TestPlanStatus.DISCOVERY_FAILED,
                         failureReason: error.message,
-                        updatedAt: new Date(),
                     });
                 });
         }
@@ -161,6 +153,7 @@ export class TestPlanService implements ITestPlanService {
     }
 
     private async processPlanComponents(resolvedComponents: ComponentInfo[], testPlanId: string, credentialProfile: string, discoverDependencies: boolean): Promise<void> {
+
         const integrationPlatformService = await this.platformServiceFactory.createService(SupportedPlatform.Boomi, credentialProfile);
         const finalComponentsMap = new Map<string, ComponentInfo>();
 
@@ -177,8 +170,7 @@ export class TestPlanService implements ITestPlanService {
         }
         // Else: We already collected them in finalComponentsMap
 
-        const planComponents: PlanComponent[] = Array.from(finalComponentsMap.values()).map(info => ({
-            id: uuidv4(),
+        const planComponents: CreatePlanComponentDTO[] = Array.from(finalComponentsMap.values()).map(info => ({
             testPlanId,
             sourceType: 'DISCOVERED',
             componentId: info.id,
@@ -191,9 +183,8 @@ export class TestPlanService implements ITestPlanService {
         const testPlan = await this.testPlanRepository.findById(testPlanId);
         if (testPlan) {
             await this.testPlanRepository.update({
-                ...testPlan,
+                id: testPlan.id,
                 status: TestPlanStatus.AWAITING_SELECTION,
-                updatedAt: new Date(),
             });
         }
     }
@@ -335,14 +326,13 @@ export class TestPlanService implements ITestPlanService {
 
             const results = await Promise.allSettled(executionPromises);
             // console.log(`[DEBUG] All settled results:`, JSON.stringify(results));
-            await this.testPlanRepository.update({ ...testPlan, status: TestPlanStatus.COMPLETED, updatedAt: new Date() });
+            await this.testPlanRepository.update({ id: testPlan.id, status: TestPlanStatus.COMPLETED });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
             await this.testPlanRepository.update({
-                ...testPlan,
+                id: testPlan.id,
                 status: TestPlanStatus.EXECUTION_FAILED,
                 failureReason: errorMessage,
-                updatedAt: new Date(),
             });
         }
     }

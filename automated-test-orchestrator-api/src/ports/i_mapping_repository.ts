@@ -1,9 +1,8 @@
 // src/ports/i_mapping_repository.ts
 
-import { Mapping } from "../domain/mapping.js";
+import { CreateMappingDTO, Mapping, UpdateMappingDTO } from "../domain/mapping.js";
 
-export type NewMapping = Omit<Mapping, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateMappingData = Partial<Omit<Mapping, 'id' | 'mainComponentId' | 'createdAt' | 'updatedAt'>>;
+export { CreateMappingDTO, UpdateMappingDTO } from "../domain/mapping.js";
 
 export interface AvailableTestInfo {
   id: string;
@@ -13,9 +12,9 @@ export interface AvailableTestInfo {
 export interface IMappingRepository {
   /**
    * Creates a new component-test mapping record.
-   * @param newMapping The data for the new mapping, including a pre-generated UUID.
+   * @param newMapping The data for the new mapping.
    */
-  create(newMapping: Omit<Mapping, 'createdAt' | 'updatedAt'>): Promise<Mapping>;
+  create(newMapping: CreateMappingDTO): Promise<Mapping>;
 
   /**
    * Finds a single, unique mapping record by its UUID primary key.
@@ -55,7 +54,7 @@ export interface IMappingRepository {
    * @param id The unique ID of the mapping record to update.
    * @param updates The data to update.
    */
-  update(id: string, updates: UpdateMappingData): Promise<Mapping | null>;
+  update(id: string, updates: UpdateMappingDTO): Promise<Mapping | null>;
 
   /**
    * Deletes a component-test mapping record by its unique ID.

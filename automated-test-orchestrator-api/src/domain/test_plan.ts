@@ -15,11 +15,14 @@ export enum TestPlanStatus {
 }
 
 export interface TestPlan {
-  id: string;
-  name: string;
-  planType: TestPlanType;
-  status: TestPlanStatus;
-  failureReason?: string;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    name: string;
+    planType: TestPlanType;
+    status: TestPlanStatus;
+    failureReason?: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
+
+export type CreateTestPlanDTO = Omit<TestPlan, 'id' | 'createdAt' | 'updatedAt' | 'failureReason'>;
+export type UpdateTestPlanDTO = Partial<Omit<TestPlan, 'id' | 'createdAt' | 'updatedAt'>> & { id: string };

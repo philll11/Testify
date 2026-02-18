@@ -5,3 +5,5 @@ export interface TestPlanEntryPoint {
   testPlanId: string;
   componentId: string;
 }
+
+export type CreateTestPlanEntryPointDTO = Omit<TestPlanEntryPoint, 'id'>;

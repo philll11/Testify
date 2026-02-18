@@ -1,9 +1,9 @@
 // src/ports/i_test_execution_result_repository.ts
 
-import { TestExecutionResult } from "../domain/test_execution_result.js";
+import { CreateTestExecutionResultDTO, TestExecutionResult } from "../domain/test_execution_result.js";
 
 // This type is for creating a new record. The enriched fields are for reading.
-export type NewTestExecutionResult = Omit<TestExecutionResult, 'id' | 'executedAt' | 'componentName' | 'testComponentName'>;
+export type NewTestExecutionResult = CreateTestExecutionResultDTO;
 
 export interface TestExecutionResultFilters {
   testPlanId?: string;
@@ -35,5 +35,5 @@ export interface ITestExecutionResultRepository {
    * Deletes all test execution results associated with a specific test plan ID.
    * @param testPlanId The unique ID of the test plan.
    */
-  deleteByTestPlanId(testPlanId: string): Promise<void>; 
+  deleteByTestPlanId(testPlanId: string): Promise<void>;
 }

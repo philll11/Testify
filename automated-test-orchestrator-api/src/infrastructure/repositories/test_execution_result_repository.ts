@@ -2,7 +2,6 @@
 
 import type { Pool } from 'pg';
 import { injectable, inject } from 'inversify';
-import { v4 as uuidv4 } from 'uuid';
 import { ITestExecutionResultRepository, NewTestExecutionResult, TestExecutionResultFilters } from '../../ports/i_test_execution_result_repository.js';
 import { TestExecutionResult } from '../../domain/test_execution_result.js';
 import { rowToTestExecutionResult } from '../mappers.js';
@@ -15,23 +14,12 @@ export class TestExecutionResultRepository implements ITestExecutionResultReposi
     async save(newResult: NewTestExecutionResult): Promise<TestExecutionResult> {
         const { testPlanId, planComponentId, testComponentId, status, message, testCases } = newResult;
 
-        const result = {
-            id: uuidv4(),
-            testPlanId,
-            planComponentId,
-            testComponentId,
-            status,
-            message,
-            testCases: testCases || null,
-            executedAt: new Date(),
-        };
-
         const query = `
-            INSERT INTO test_execution_results (id, test_plan_id, plan_component_id, test_component_id, status, message, test_cases, executed_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO test_execution_results (test_plan_id, plan_component_id, test_component_id, status, message, test_cases)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *;
         `;
-        const values = [result.id, result.testPlanId, result.planComponentId, result.testComponentId, result.status, result.message, JSON.stringify(result.testCases), result.executedAt];
+        const values = [testPlanId, planComponentId, testComponentId, status, message, JSON.stringify(testCases || null)];
         const dbResult = await this.pool.query(query, values);
 
         return rowToTestExecutionResult(dbResult.rows[0]);

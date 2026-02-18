@@ -11,3 +11,6 @@ export interface Mapping {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type CreateMappingDTO = Omit<Mapping, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateMappingDTO = Partial<Omit<Mapping, 'id' | 'mainComponentId' | 'createdAt' | 'updatedAt'>>;

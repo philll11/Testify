@@ -3,7 +3,7 @@
 import type { Pool } from 'pg';
 import { injectable, inject } from 'inversify';
 import { ITestPlanRepository } from "../../ports/i_test_plan_repository.js";
-import { TestPlan } from "../../domain/test_plan.js";
+import { CreateTestPlanDTO, TestPlan, UpdateTestPlanDTO } from "../../domain/test_plan.js";
 import { rowToTestPlan } from "../mappers.js";
 import { TYPES } from '../../inversify.types.js';
 
@@ -12,14 +12,14 @@ export class TestPlanRepository implements ITestPlanRepository {
 
     constructor(@inject(TYPES.PostgresPool) private pool: Pool) { }
 
-    async save(testPlan: TestPlan): Promise<TestPlan> {
-        const { id, name, planType, status, createdAt, updatedAt } = testPlan;
+    async save(testPlan: CreateTestPlanDTO): Promise<TestPlan> {
+        const { name, planType, status } = testPlan;
         const query = `
-            INSERT INTO test_plans (id, name, plan_type, status, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO test_plans (name, plan_type, status)
+            VALUES ($1, $2, $3)
             RETURNING *;
         `;
-        const values = [id, name, planType, status, createdAt, updatedAt];
+        const values = [name, planType, status];
         const result = await this.pool.query(query, values);
         return rowToTestPlan(result.rows[0]);
     }
@@ -31,15 +31,15 @@ export class TestPlanRepository implements ITestPlanRepository {
         return rowToTestPlan(result.rows[0]);
     }
 
-    async update(testPlan: TestPlan): Promise<TestPlan> {
-        const { id, status, updatedAt, failureReason } = testPlan;
+    async update(testPlan: UpdateTestPlanDTO): Promise<TestPlan> {
+        const { id, status, failureReason } = testPlan;
         const query = `
             UPDATE test_plans
-            SET status = $1, updated_at = $2, failure_reason = $3
-            WHERE id = $4
+            SET status = $1, updated_at = CURRENT_TIMESTAMP, failure_reason = $2
+            WHERE id = $3
             RETURNING *;
         `;
-        const values = [status, updatedAt, failureReason || null, id];
+        const values = [status, failureReason || null, id];
         const result = await this.pool.query(query, values);
 
         return rowToTestPlan(result.rows[0]);
