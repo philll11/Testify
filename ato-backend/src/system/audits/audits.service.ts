@@ -58,7 +58,10 @@ export class AuditsService {
 
       // 2. Compute Diffs
       let changes: any[] = [];
-      if (action === AuditAction.UPDATE) {
+      // Compute diffs for both CREATE and UPDATE
+      if (action === AuditAction.CREATE) {
+        changes = this.diffService.computeDiff(null, newData, '', ignoredPaths, itemIdentityMap, fieldDisplayNameMap);
+      } else if (action === AuditAction.UPDATE) {
         changes = this.diffService.computeDiff(oldData, newData, '', ignoredPaths, itemIdentityMap, fieldDisplayNameMap);
         if (changes.length === 0) {
           return null; // No actual changes detected

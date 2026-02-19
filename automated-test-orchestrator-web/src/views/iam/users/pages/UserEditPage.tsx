@@ -20,7 +20,7 @@ const UserEditPage = () => {
     const handleSubmit = async (values: UserFormData) => {
         if (!user) return;
         try {
-            await updateUser({ id: user._id, data: { ...values, __v: user.__v } });
+            await updateUser({ id: user.id, data: { ...values } });
             setIsDirty(false);
             setTimeout(() => goBack(), 0);
         } catch (error) {

@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Box, Typography, Chip, Stack, ChipProps } from '@mui/material';
+import { Box, Typography, Chip, Stack, ChipProps, Link as MuiLink } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { useLocation, Link as RouterLink } from 'react-router-dom';
 
 // project imports
+import { useContextualNavigation } from 'hooks/useContextualNavigation';
 import { useGetAuditHistory } from 'hooks/system/useAudit';
 import { AuditAction, AuditChange } from 'api/system/audit.types';
 import DataGridWrapper from 'ui-component/extended/DataGridWrapper';
@@ -13,6 +15,7 @@ import UserAvatar from 'ui-component/extended/Avatar';
 export interface ResourceAuditTableProps {
     resource: string;
     resourceId: string;
+    ignoredFields?: string[];
 }
 
 interface FlatAuditEntry extends Omit<AuditChange, 'field' | 'oldValue' | 'newValue'> {
@@ -49,16 +52,21 @@ const formatValue = (value: any) => {
     return String(value);
 };
 
-export const ResourceAuditTable = ({ resource, resourceId }: ResourceAuditTableProps) => {
+export const ResourceAuditTable = ({ resource, resourceId, ignoredFields = [] }: ResourceAuditTableProps) => {
     const theme = useTheme();
+    // Use default parent path based on resource, though for outgoing 'stack' links it uses current location
+    const { getLinkTo } = useContextualNavigation(`/${resource}s`);
+    // Used for contextual navigation state (breadcrumbs)
+    const location = useLocation();
     const { data: auditEntries, isLoading } = useGetAuditHistory(resource, resourceId);
 
     // 1. Flatten Data Structure
     const flatEntries: FlatAuditEntry[] = useMemo(() => {
         if (!auditEntries) return [];
+
         return auditEntries.flatMap((entry, index) => {
             const base = {
-                originalEntryId: entry._id,
+                originalEntryId: entry.id,
                 date: entry.date,
                 action: entry.action,
                 reason: entry.reason,
@@ -67,9 +75,18 @@ export const ResourceAuditTable = ({ resource, resourceId }: ResourceAuditTableP
 
             // If there are changes, map them to rows
             if (entry.changes && entry.changes.length > 0) {
-                return entry.changes.map((change, changeIndex) => ({
+                // Filter out ignored fields if provided
+                const visibleChanges = ignoredFields && ignoredFields.length > 0
+                    ? entry.changes.filter(change => !ignoredFields.includes(change.field))
+                    : entry.changes;
+
+                if (visibleChanges.length === 0) {
+                    return [];
+                }
+
+                return visibleChanges.map((change, changeIndex) => ({
                     ...base,
-                    id: `${entry._id || index}_${changeIndex}`,
+                    id: `${entry.id || index}_${changeIndex}`,
                     field: change.field,
                     oldValue: change.oldValue,
                     newValue: change.newValue,
@@ -79,13 +96,13 @@ export const ResourceAuditTable = ({ resource, resourceId }: ResourceAuditTableP
             // Fallback for actions with no specific field changes (e.g., initial create or delete snapshot)
             return [{
                 ...base,
-                id: `${entry._id || index}_0`,
+                id: `${entry.id || index}_0`,
                 field: '-',
                 oldValue: null,
                 newValue: null,
             }];
         });
-    }, [auditEntries]);
+    }, [auditEntries, ignoredFields]);
 
     // 2. Define Columns
     const columns: GridColDef[] = [
@@ -169,31 +186,66 @@ export const ResourceAuditTable = ({ resource, resourceId }: ResourceAuditTableP
             field: 'oldValue',
             headerName: 'Old Value',
             width: 200,
-            renderCell: (params: GridRenderCellParams) => (
-                <Box sx={{
-                    color: theme.palette.text.secondary,
-                    textDecoration: 'line-through',
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem'
-                }}>
-                    {formatValue(params.value)}
-                </Box>
-            )
+            renderCell: (params: GridRenderCellParams) => {
+                if (params.row.field === 'role' && params.value && typeof params.value === 'object' && params.value.id) {
+                    return (
+                        <MuiLink
+                            component={RouterLink}
+                            to={getLinkTo(`/roles/${params.value.id}`, { strategy: 'stack' })}
+                            state={{ parent: { title: resource, to: location.pathname + location.search } }}
+                            underline="hover"
+                            color="secondary"
+                            sx={{
+                                textDecoration: 'line-through',
+                                fontSize: '0.875rem'
+                            }}
+                        >
+                            {params.value.recordId ? `${params.value.recordId} - ${params.value.name}` : (params.value.name || 'Role')}
+                        </MuiLink>
+                    );
+                }
+                return (
+                    <Box sx={{
+                        color: theme.palette.text.secondary,
+                        textDecoration: 'line-through',
+                        fontFamily: 'monospace',
+                        fontSize: '0.875rem'
+                    }}>
+                        {formatValue(params.value)}
+                    </Box>
+                );
+            }
         },
         {
             field: 'newValue',
             headerName: 'New Value',
             width: 200,
-            renderCell: (params: GridRenderCellParams) => (
-                <Box sx={{
-                    color: theme.palette.text.primary,
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem',
-                    fontWeight: 500
-                }}>
-                    {formatValue(params.value)}
-                </Box>
-            )
+            renderCell: (params: GridRenderCellParams) => {
+                if (params.row.field === 'role' && params.value && typeof params.value === 'object' && params.value.id) {
+                    return (
+                        <MuiLink
+                            component={RouterLink}
+                            to={getLinkTo(`/roles/${params.value.id}`, { strategy: 'stack' })}
+                            state={{ parent: { title: resource, to: location.pathname + location.search } }}
+                            underline="hover"
+                            color="primary"
+                            fontWeight={500}
+                        >
+                            {params.value.recordId ? `${params.value.recordId} - ${params.value.name}` : (params.value.name || 'Role')}
+                        </MuiLink>
+                    );
+                }
+                return (
+                    <Box sx={{
+                        color: theme.palette.text.primary,
+                        fontFamily: 'monospace',
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                    }}>
+                        {formatValue(params.value)}
+                    </Box>
+                );
+            }
         }
     ];
 

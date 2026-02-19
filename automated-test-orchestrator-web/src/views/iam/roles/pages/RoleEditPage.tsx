@@ -7,7 +7,7 @@ import { useContextualNavigation } from 'hooks/useContextualNavigation';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { RoleFormData } from 'types/iam/role.schema';
-    
+
 const RoleEditPage = () => {
     const { id } = useParams();
     const { goBack } = useContextualNavigation(`/roles/${id}`);
@@ -21,7 +21,7 @@ const RoleEditPage = () => {
         if (!role) return;
         try {
             // Append version for concurrency control
-            await updateRole({ id: role._id, data: { ...values, __v: role.__v } });
+            await updateRole({ id: role.id, data: { ...values } });
             setIsDirty(false);
             setTimeout(() => goBack(), 0);
         } catch (error) {

@@ -23,8 +23,7 @@ import {
 import { IconEye, IconEyeOff, IconHistory, IconLock } from '@tabler/icons-react';
 
 // Project Imports
-import { Client } from 'types/iam/client.types';
-import { User, UserType } from 'types/iam/user.types';
+import { User } from 'types/iam/user.types';
 import { userSchema, UserFormData } from 'types/iam/user.schema';
 
 import { PERMISSIONS } from 'constants/permissions';
@@ -34,7 +33,6 @@ import ResourceRelatedTabs from 'ui-component/extended/ResourceRelatedTabs';
 import ResourceAuditTable from 'ui-component/extended/ResourceAuditTable';
 
 import { useGetRoles } from 'hooks/iam/useRoles';
-import { useGetClients } from 'hooks/iam/useClients';
 
 
 export type UserFormMode = 'create' | 'edit' | 'view';
@@ -71,14 +69,13 @@ const UserForm = ({
 
     // Data Fetching
     const { data: roles = [] } = useGetRoles();
-    const { data: clients = [] } = useGetClients();
 
     const {
         control,
         handleSubmit,
         reset,
-        setValue,
         watch,
+        setValue,
         formState: { isDirty, errors },
     } = useForm<UserFormData>({
         resolver: zodResolver(userSchema),
@@ -86,12 +83,9 @@ const UserForm = ({
             firstName: '',
             lastName: '',
             email: '',
-            userType: UserType.Employee,
             roleId: '',
-            clientIds: [],
             password: '',
             isActive: true,
-            __v: 0,
             ...initialValues,
         }
     });
@@ -138,34 +132,25 @@ const UserForm = ({
 
         if (user && (isEditing || isViewing)) {
             // Normalize populated fields to IDs for the form
-            // The API returns full objects for roleId and clientIds, but the form expects ID strings.
-            const normalizedRoleId = typeof user.roleId === 'object' && user.roleId !== null
-                ? (user.roleId as any)._id
-                : user.roleId;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const normalizedRoleId = (user as any).role?.id || (typeof user.roleId === 'object' && user.roleId !== null
+                ? (user.roleId as any).id
+                : user.roleId);
 
-            const normalizedClientIds = Array.isArray(user.clientIds)
-                ? user.clientIds.map((c: any) => (typeof c === 'object' ? c._id : c))
-                : [];
             reset({
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
-                userType: user.userType,
                 roleId: normalizedRoleId,
-                clientIds: normalizedClientIds,
                 isActive: user.isActive,
-                __v: user.__v,
             });
         } else if (isCreating) {
             reset({
                 firstName: initialValues?.firstName || '',
                 lastName: initialValues?.lastName || '',
                 email: initialValues?.email || '',
-                userType: initialValues?.userType || UserType.Employee,
                 roleId: initialValues?.roleId || '',
-                clientIds: initialValues?.clientIds || [],
                 isActive: true,
-                __v: 0,
                 ...initialValues
             });
         }
@@ -174,12 +159,11 @@ const UserForm = ({
     const handleFormSubmit = (values: UserFormData) => {
         if (mode === 'create') {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { isActive, __v, ...createData } = values;
+            const { isActive, ...createData } = values;
             onSubmit(createData);
         } else if (mode === 'edit') {
             onSubmit({
                 ...values,
-                __v: user?.__v
             });
         }
     };
@@ -189,27 +173,10 @@ const UserForm = ({
             firstName: '',
             lastName: '',
             email: '',
-            userType: UserType.Employee,
             roleId: undefined,
             password: '',
-            clientIds: []
         });
     };
-
-    const watchedUserType = watch('userType');
-
-    // Reactively handle User Type changes
-    useEffect(() => {
-        // If user type changes to Contact, ensure only 1 client is selected (or clear if multiple)
-        // Ideally we strictly enforce this, for now we just let validation handle 0 or 2+, 
-        // but we switch autocomplete mode which usually clears selection if not compatible.
-        // Actually Autocomplete 'multiple' prop switch might require clearing value.
-        const currentClients = watch('clientIds') || [];
-        if (watchedUserType === UserType.Contact && currentClients.length > 1) {
-            // reset to empty or first
-            setValue('clientIds', [currentClients[0]]);
-        }
-    }, [watchedUserType, setValue, watch]);
 
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
@@ -231,8 +198,12 @@ const UserForm = ({
             disabled: isCreating,
             component: (
                 <Box sx={{ mt: 2 }}>
-                    {user?._id ? (
-                        <ResourceAuditTable resource="User" resourceId={user._id} />
+                    {user?.id ? (
+                        <ResourceAuditTable
+                            resource="User"
+                            resourceId={user.id}
+                            ignoredFields={['name', 'passwordResetToken', 'passwordResetExpires', 'roleId', 'preferences', 'tokenVersion']}
+                        />
                     ) : (
                         <Typography color="textSecondary">Audit trail is only available for existing records.</Typography>
                     )}
@@ -296,26 +267,6 @@ const UserForm = ({
 
                 <Grid size={12}>
                     <Controller
-                        name="userType"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                select
-                                label="User Type"
-                                fullWidth
-                                {...field}
-                                error={!!errors.userType}
-                                helperText={errors.userType?.message}
-                                disabled={isViewing}
-                            >
-                                <MenuItem value={UserType.Employee}>Employee</MenuItem>
-                                <MenuItem value={UserType.Contact}>Contact</MenuItem>
-                            </TextField>
-                        )}
-                    />
-                </Grid>
-                <Grid size={12}>
-                    <Controller
                         name="roleId"
                         control={control}
                         render={({ field: { value, onChange, ...field } }) => (
@@ -323,9 +274,9 @@ const UserForm = ({
                                 {...field}
                                 options={roles}
                                 getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
-                                value={roles.find((r) => r._id === value) || null}
+                                value={roles.find((r) => r.id === value) || null}
                                 onChange={(_, newValue) => {
-                                    onChange(newValue ? newValue._id : '');
+                                    onChange(newValue ? newValue.id : '');
                                 }}
                                 disabled={isViewing}
                                 renderInput={(params) => (
@@ -336,63 +287,9 @@ const UserForm = ({
                                         helperText={errors.roleId?.message}
                                     />
                                 )}
-                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
                             />
                         )}
-                    />
-                </Grid>
-
-                <Grid size={12}>
-                    <Controller
-                        name="clientIds"
-                        control={control}
-                        render={({ field: { value, onChange, ...field } }) => {
-                            const isMultiple = watchedUserType === UserType.Employee;
-                            return (
-                                <Autocomplete
-                                    multiple={isMultiple}
-                                    limitTags={3}
-                                    id="client-selector"
-                                    options={clients}
-                                    disableCloseOnSelect={isMultiple}
-                                    getOptionLabel={(option) => option.name}
-                                    isOptionEqualToValue={(option, value) => option._id === value._id}
-                                    // Convert stored IDs to Client objects
-                                    value={
-                                        isMultiple
-                                            ? clients.filter(c => (value as string[])?.includes(c._id))
-                                            : (clients.find(c => (value as string[])?.[0] === c._id) || null)
-                                    }
-                                    onChange={(_, newValue) => {
-                                        if (isMultiple) {
-                                            onChange((newValue as Client[]).map(c => c._id));
-                                        } else {
-                                            onChange(newValue ? [(newValue as Client)._id] : []);
-                                        }
-                                    }}
-                                    disabled={isViewing || isLoading}
-                                    renderOption={(props, option, { selected }) => {
-                                        const { key, ...rest } = props;
-                                        return (
-                                            <li key={key} {...rest}>
-                                                {isMultiple && (
-                                                    <Checkbox style={{ marginRight: 8 }} checked={selected} />
-                                                )}
-                                                {option.name}
-                                            </li>
-                                        );
-                                    }}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Assigned Clients"
-                                            error={!!errors.clientIds}
-                                            helperText={errors.clientIds?.message || (watchedUserType === UserType.Contact ? 'Contacts must belong to exactly one client.' : undefined)}
-                                        />
-                                    )}
-                                />
-                            );
-                        }}
                     />
                 </Grid>
 

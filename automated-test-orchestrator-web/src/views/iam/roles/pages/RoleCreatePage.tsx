@@ -20,7 +20,7 @@ const RoleCreatePage = () => {
         try {
             const newRole = await createRole(values as CreateRoleDto);
             setIsDirty(false);
-            setTimeout(() => transitionTo(`/roles/${newRole._id}`), 0);
+            setTimeout(() => transitionTo(`/roles/${newRole.id}`), 0);
         } catch (error) {
             console.error(error);
         }

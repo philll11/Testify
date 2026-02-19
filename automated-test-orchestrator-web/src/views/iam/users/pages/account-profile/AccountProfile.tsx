@@ -1,14 +1,14 @@
 import { useState, SyntheticEvent, useEffect } from 'react';
-import { 
-    Box, 
-    Tabs, 
-    Tab, 
-    Grid, 
-    TextField, 
-    Button, 
-    Typography, 
-    Stack, 
-    useTheme, 
+import {
+    Box,
+    Tabs,
+    Tab,
+    Grid,
+    TextField,
+    Button,
+    Typography,
+    Stack,
+    useTheme,
     useMediaQuery,
     Divider,
     Alert
@@ -64,7 +64,7 @@ function a11yProps(index: number) {
 const ProfileTab = () => {
     const { user } = useAuth();
     const { mutate: updateUser, isPending } = useUpdateUser();
-    
+
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
             firstName: '',
@@ -84,15 +84,14 @@ const ProfileTab = () => {
     }, [user, reset]);
 
     const onSubmit = (data: any) => {
-        if (!user?._id) return;
-        updateUser({ 
-            id: user._id, 
+        if (!user?.id) return;
+        updateUser({
+            id: user.id,
             data: {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
-                __v: user.__v
-            } 
+            }
         });
     };
 
@@ -176,13 +175,12 @@ const SecurityTab = () => {
     });
 
     const onSubmit = (data: any) => {
-        if (!user?._id) return;
-        updateUser({ 
-            id: user._id, 
+        if (!user?.id) return;
+        updateUser({
+            id: user.id,
             data: {
                 password: data.password,
-                __v: user.__v
-            } 
+            }
         }, {
             onSuccess: () => reset()
         });
@@ -194,16 +192,16 @@ const SecurityTab = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <SubCard title="Change Password">
                 <Grid container spacing={gridSpacing}>
-                     <Grid size={{ xs: 12 }}>
+                    <Grid size={{ xs: 12 }}>
                         <Alert severity="info" sx={{ mb: 2 }}>
                             Password must be at least 6 characters long.
                         </Alert>
-                     </Grid>
+                    </Grid>
                     <Grid size={{ xs: 12 }}>
                         <Controller
                             name="password"
                             control={control}
-                            rules={{ 
+                            rules={{
                                 required: 'New Password is required',
                                 minLength: { value: 6, message: 'Password must be at least 6 characters' }
                             }}
@@ -223,7 +221,7 @@ const SecurityTab = () => {
                         <Controller
                             name="confirmPassword"
                             control={control}
-                            rules={{ 
+                            rules={{
                                 required: 'Confirm Password is required',
                                 validate: (val) => val === password || 'Passwords do not match'
                             }}
@@ -273,34 +271,34 @@ const AccountProfile = () => {
                     value={value}
                     onChange={handleChange}
                     aria-label="Account Settings Tabs"
-                    sx={{ 
-                        borderRight: 1, 
+                    sx={{
+                        borderRight: 1,
                         borderColor: 'divider',
                         minWidth: 200,
                         '& .MuiTab-root': { minHeight: 60, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }
                     }}
                 >
-                    <Tab 
-                        icon={<IconUser size={18} />} 
-                        iconPosition="start" 
-                        label="Profile" 
-                        {...a11yProps(0)} 
+                    <Tab
+                        icon={<IconUser size={18} />}
+                        iconPosition="start"
+                        label="Profile"
+                        {...a11yProps(0)}
                     />
-                    <Tab 
-                        icon={<IconLock size={18} />} 
-                        iconPosition="start" 
-                        label="Security" 
-                        {...a11yProps(1)} 
+                    <Tab
+                        icon={<IconLock size={18} />}
+                        iconPosition="start"
+                        label="Security"
+                        {...a11yProps(1)}
                     />
-                    <Tab 
-                        icon={<IconSettings size={18} />} 
-                        iconPosition="start" 
-                        label="Preferences" 
-                        {...a11yProps(2)} 
+                    <Tab
+                        icon={<IconSettings size={18} />}
+                        iconPosition="start"
+                        label="Preferences"
+                        {...a11yProps(2)}
                         disabled
                     />
                 </Tabs>
-                
+
                 <Box sx={{ flexGrow: 1, width: '100%' }}>
                     <TabPanel value={value} index={0}>
                         <ProfileTab />
@@ -308,7 +306,7 @@ const AccountProfile = () => {
                     <TabPanel value={value} index={1}>
                         <SecurityTab />
                     </TabPanel>
-                     <TabPanel value={value} index={2}>
+                    <TabPanel value={value} index={2}>
                         <Typography variant="h4">Preferences Coming Soon</Typography>
                     </TabPanel>
                 </Box>

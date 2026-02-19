@@ -64,14 +64,15 @@ export class AuditDiffService {
       // 4. Handle Reference Objects (Populated Fields)
       // Detect if this is a standard populated reference (contains recordId and name)
       // If so, treat it as a primitive string change rather than recursing into it.
-      const oldRef = this.formatReference(oldVal);
-      const newRef = this.formatReference(newVal);
+      const oldRef = this.isReference(oldVal) ? this.formatReference(oldVal) : null;
+      const newRef = this.isReference(newVal) ? this.formatReference(newVal) : null;
+
       if (oldRef !== null || newRef !== null) {
+        // Compare by ID or unique key
+        const oldId = oldRef ? oldRef.id : null;
+        const newId = newRef ? newRef.id : null;
 
-        const oldDisplay = oldRef !== null ? oldRef : (oldVal ? JSON.stringify(oldVal) : null);
-        const newDisplay = newRef !== null ? newRef : (newVal ? JSON.stringify(newVal) : null);
-
-        if (oldDisplay !== newDisplay) {
+        if (oldId !== newId) {
           changes.push({ field: getFieldName(currentPath), oldValue: oldRef || null, newValue: newRef || null });
         }
         continue;
@@ -208,12 +209,13 @@ export class AuditDiffService {
   }
 
   private isReference(obj: any): boolean {
-    return obj && typeof obj === 'object' && 'recordId' in obj && 'name' in obj;
+    return obj && typeof obj === 'object' && ('recordId' in obj || 'name' in obj || 'id' in obj);
   }
 
-  private formatReference(obj: any): string | null {
+  private formatReference(obj: any): any | null {
     if (this.isReference(obj)) {
-      return `${obj.recordId} ${obj.name}`;
+      // Return object with necessary fields for linking
+      return { id: obj.id, recordId: obj.recordId, name: obj.name };
     }
     return null;
   }

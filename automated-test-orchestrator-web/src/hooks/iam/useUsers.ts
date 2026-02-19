@@ -5,6 +5,9 @@ import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';
 import { User } from 'types/iam/user.types';
 
+// project imports (add AUTH_KEYS import)
+import { AUTH_KEYS } from 'hooks/iam/useAuth';
+
 export const USERS_KEYS = {
   all: ['users'] as const,
   lists: () => [...USERS_KEYS.all, 'list'] as const,
@@ -45,7 +48,7 @@ export const useGetUser = (id: string) => {
       // Depending on strictness, we might fallback to iterating known list keys
       // But simple optimization is often enough.
       if (Array.isArray(allUsers)) {
-        return allUsers.find((u) => u._id === id);
+        return allUsers.find((u) => u.id === id);
       }
       return undefined;
     }
@@ -80,6 +83,8 @@ export const useUpdateUser = () => {
       showMessage('User updated successfully', 'success');
       queryClient.invalidateQueries({ queryKey: USERS_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: USERS_KEYS.detail(variables.id) });
+      // Invalidate auth profile in case user updated their own profile
+      queryClient.invalidateQueries({ queryKey: AUTH_KEYS.profile() });
     },
     onError: (error: any) => {
       showMessage(error.message || 'Failed to update user', 'error');

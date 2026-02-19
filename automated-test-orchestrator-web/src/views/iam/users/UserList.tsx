@@ -19,7 +19,7 @@ import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconPencil } 
 
 // Project Imports
 import { useGetUsers, useDeleteUser, useCreateUser, useUpdateUser } from 'hooks/iam/useUsers';
-import { User, UserType } from 'types/iam/user.types';
+import { User } from 'types/iam/user.types';
 import { UserFormData } from 'types/iam/user.schema';
 import UserForm, { UserFormMode } from './UserForm';
 import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
@@ -145,7 +145,7 @@ const UserList = () => {
             if (mode === 'create') {
                 await createUser(values);
             } else if (mode === 'edit' && selectedUser) {
-                await updateUser({ id: selectedUser._id, data: values });
+                await updateUser({ id: selectedUser.id, data: values });
             }
             setDrawerOpen(false);
             setCreateDraft({});
@@ -179,7 +179,7 @@ const UserList = () => {
 
     const handleConfirmDelete = async () => {
         if (userToDelete) {
-            await deleteUser(userToDelete._id);
+            await deleteUser(userToDelete.id);
             setDeleteDialogOpen(false);
             setUserToDelete(null);
         }
@@ -211,20 +211,6 @@ const UserList = () => {
             }
         },
         {
-            field: 'userType',
-            headerName: 'Type',
-            flex: 0.8,
-            minWidth: 100,
-            renderCell: (params) => (
-                <Chip
-                    label={params.value === UserType.Employee ? 'Employee' : 'Contact'}
-                    color="secondary"
-                    variant="outlined"
-                    size="small"
-                />
-            )
-        },
-        {
             field: 'isActive',
             headerName: 'Status',
             flex: 0.5,
@@ -249,7 +235,7 @@ const UserList = () => {
                                 <IconButton
                                     color="primary"
                                     size="small"
-                                    onClick={(e) => handleViewPage(user._id, e)}
+                                    onClick={(e) => handleViewPage(user.id, e)}
                                 >
                                     <IconEye size={18} />
                                 </IconButton>
@@ -261,7 +247,7 @@ const UserList = () => {
                                     <IconButton
                                         color="secondary"
                                         size="small"
-                                        onClick={(e) => handleEditPage(user._id, e)}
+                                        onClick={(e) => handleEditPage(user.id, e)}
                                     >
                                         <IconEdit size={18} />
                                     </IconButton>
@@ -322,7 +308,7 @@ const UserList = () => {
                 columns={columns}
                 loading={isLoading}
                 onRowClick={(params) => handleOpenDrawer('view', params.row as User)}
-                getRowId={(row) => row._id}
+                getRowId={(row) => row.id}
             />
             {/* Quick View / Create / Edit Drawer */}
             <Drawer

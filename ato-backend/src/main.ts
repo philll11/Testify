@@ -47,10 +47,10 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('RootStock API')
-    .setDescription('The official API documentation for the RootStock platform.')
+    .setTitle('Automated Test Orchestrator API')
+    .setDescription('The official API documentation for the Automated Test Orchestrator platform.')
     .setVersion('1.0')
-    .addTag('rootstock') // A tag for grouping endpoints
+    .addTag('ato') // A tag for grouping endpoints
     .addBearerAuth() // If you use Bearer tokens for auth, this is crucial
     .build();
 

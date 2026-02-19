@@ -8,7 +8,7 @@ import {
 } from 'api/iam/roles';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';
-import { CreateRoleDto, UpdateRoleDto, Role } from 'types/iam/role.types';
+import { Role } from 'types/iam/role.types';
 
 export const ROLES_KEYS = {
   all: ['roles'] as const,
@@ -43,7 +43,7 @@ export function useGetRole(id: string | undefined) {
     initialData: () => {
       if (!id) return undefined;
       const allRoles = queryClient.getQueryData<Role[]>(ROLES_KEYS.lists());
-      return allRoles?.find((r) => r._id === id);
+      return allRoles?.find((r) => r.id === id);
     },
   });
 }
@@ -66,7 +66,7 @@ export function useUpdateRole() {
     mutationFn: updateRole,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ROLES_KEYS.lists() });
-      queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(data._id) });
+      queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(data.id) });
     },
   });
 }

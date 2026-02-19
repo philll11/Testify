@@ -8,11 +8,11 @@ describe('UpdateCounterDto Business Logic', () => {
     dto = new UpdateCounterDto();
   });
 
-  describe('RootStock Business Prefix Formats', () => {
-    it('should accept standard RootStock entity prefixes', async () => {
-      // Arrange: Test real business prefixes used in RootStock platform
+  describe('ATO Business Prefix Formats', () => {
+    it('should accept standard ATO entity prefixes', async () => {
+      // Arrange: Test real business prefixes used in ATO platform
       const standardPrefixes = ['SUB', 'CLI', 'USR', 'ROL', 'ORC'];
-      
+
       // Act & Assert: Each standard prefix should be valid
       for (const prefix of standardPrefixes) {
         dto.prefix = prefix;
@@ -35,7 +35,7 @@ describe('UpdateCounterDto Business Logic', () => {
     it('should accept prefixes with business context indicators', async () => {
       // Arrange: Business case - geographical or divisional prefixes
       const contextualPrefixes = ['ORG_WEST', 'SUB_123', 'CLI_DEMO'];
-      
+
       // Act & Assert: Contextual prefixes should be valid for business flexibility
       for (const prefix of contextualPrefixes) {
         dto.prefix = prefix;

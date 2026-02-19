@@ -20,7 +20,7 @@ const UserCreatePage = () => {
         try {
             const newUser = await createUser(values as CreateUserDto);
             setIsDirty(false);
-            setTimeout(() => transitionTo(`/users/${newUser._id}`), 0);
+            setTimeout(() => transitionTo(`/users/${newUser.id}`), 0);
         } catch (error) {
             console.error(error);
         }

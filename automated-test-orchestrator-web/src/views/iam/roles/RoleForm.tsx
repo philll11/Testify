@@ -33,7 +33,7 @@ import { IconChevronDown, IconSearch, IconInfoCircle } from '@tabler/icons-react
 import { Role } from 'types/iam/role.types';
 import { roleSchema, RoleFormData } from 'types/iam/role.schema';
 
-import { VisibilityScope, DOMAIN_MAPPING, PERMISSIONS } from 'constants/permissions';
+import { DOMAIN_MAPPING, PERMISSIONS } from 'constants/permissions';
 import { usePermission } from 'contexts/AuthContext';
 
 import ResourceRelatedTabs from 'ui-component/extended/ResourceRelatedTabs';
@@ -206,10 +206,8 @@ const RoleForm = ({
         defaultValues: {
             name: '',
             description: '',
-            visibilityScope: VisibilityScope.CLIENT,
             permissions: [],
             isActive: true,
-            __v: 0,
             ...initialValues,
         },
     });
@@ -257,19 +255,15 @@ const RoleForm = ({
             reset({
                 name: role.name,
                 description: role.description || '',
-                visibilityScope: role.visibilityScope,
                 permissions: role.permissions,
                 isActive: role.isActive,
-                __v: role.__v,
             });
         } else if (isCreating) {
             reset({
                 name: initialValues?.name || '',
                 description: initialValues?.description || '',
-                visibilityScope: initialValues?.visibilityScope || VisibilityScope.CLIENT,
-                permissions: initialValues?.permissions || [],
+
                 isActive: true,
-                __v: 0,
                 ...initialValues
             });
         }
@@ -278,12 +272,11 @@ const RoleForm = ({
     const handleFormSubmit = (values: RoleFormData) => {
         if (mode === 'create') {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { isActive, __v, ...createData } = values;
+            const { isActive, ...createData } = values;
             onSubmit(createData);
         } else if (mode === 'edit') {
             onSubmit({
                 ...values,
-                __v: role?.__v
             });
         }
     };
@@ -292,10 +285,8 @@ const RoleForm = ({
         reset({
             name: '',
             description: '',
-            visibilityScope: VisibilityScope.CLIENT,
             permissions: [],
             isActive: true,
-            __v: 0,
         });
     };
 
@@ -427,8 +418,8 @@ const RoleForm = ({
             disabled: isCreating,
             component: (
                 <Box sx={{ mt: 2 }}>
-                    {role?._id ? (
-                        <ResourceAuditTable resource="Role" resourceId={role._id} />
+                    {role?.id ? (
+                        <ResourceAuditTable resource="Role" resourceId={role.id} />
                     ) : (
                         <Typography color="textSecondary">Audit trail is only available for existing records.</Typography>
                     )}
@@ -453,80 +444,6 @@ const RoleForm = ({
                                 helperText={errors.name?.message}
                                 disabled={isViewing}
                             />
-                        )}
-                    />
-                </Grid>
-                <Grid size={12}>
-                    <Controller
-                        name="visibilityScope"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                select
-                                label="Visibility Scope"
-                                fullWidth
-                                error={!!errors.visibilityScope}
-                                helperText={errors.visibilityScope?.message}
-                                disabled={isViewing}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <Tooltip
-                                                title={
-                                                    <Box sx={{ p: 1 }}>
-                                                        <Typography
-                                                            variant="subtitle2"
-                                                            sx={{
-                                                                mb: 1,
-                                                                fontWeight: 600,
-                                                                color: theme.palette.mode === 'dark' ? 'common.black' : 'common.white'
-                                                            }}
-                                                        >
-                                                            Scope Definitions
-                                                        </Typography>
-                                                        <Stack spacing={0.5}>
-                                                            <Typography
-                                                                variant="caption"
-                                                                display="block"
-                                                                sx={{ color: theme.palette.mode === 'dark' ? 'common.black' : 'common.white' }}
-                                                            >
-                                                                • <strong>Global:</strong> Visible across all subsidiaries.
-                                                            </Typography>
-                                                            <Typography
-                                                                variant="caption"
-                                                                display="block"
-                                                                sx={{ color: theme.palette.mode === 'dark' ? 'common.black' : 'common.white' }}
-                                                            >
-                                                                • <strong>Subsidiary:</strong> Restricted to current subsidiary.
-                                                            </Typography>
-                                                            <Typography
-                                                                variant="caption"
-                                                                display="block"
-                                                                sx={{ color: theme.palette.mode === 'dark' ? 'common.black' : 'common.white' }}
-                                                            >
-                                                                • <strong>Client:</strong> Limited to specific client context.
-                                                            </Typography>
-                                                        </Stack>
-                                                    </Box>
-                                                }
-                                                arrow
-                                                placement="right"
-                                            >
-                                                <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                                    <IconInfoCircle size="1.2rem" />
-                                                </Box>
-                                            </Tooltip>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            >
-                                {Object.values(VisibilityScope).map((scope) => (
-                                    <MenuItem key={scope} value={scope}>
-                                        {scope}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
                         )}
                     />
                 </Grid>

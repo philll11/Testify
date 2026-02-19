@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { Role } from '../roles/entities/role.entity';
 
 import { PERMISSIONS, Resource } from '../../common/constants/permissions.constants';
 import { CountersService } from '../../system/counters/counters.service';
@@ -19,6 +20,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
     @Inject(forwardRef(() => AuditsService)) private readonly auditsService: AuditsService,
     private readonly countersService: CountersService,
   ) { }
@@ -48,14 +51,21 @@ export class UsersService {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
+    // Lookup Role if provided, so audit log has full details (name/recordId)
+    let role;
+    if (roleId) {
+      role = await this.roleRepository.findOne({ where: { id: roleId } });
+      if (!role) throw new NotFoundException('Role not found');
+    }
+
     const userToCreate = this.userRepository.create({
       ...restOfDto,
       recordId,
       name: `${createUserDto.firstName} ${createUserDto.lastName}`,
       password: hashedPassword,
-      role: roleId ? { id: roleId } : undefined, // Relation 
+      role: role,
       preferences: preferences ? { theme: preferences.theme || 'auto' } : undefined,
-    } as unknown as User); // Force cast to User
+    } as User);
 
     const savedUser = await this.userRepository.save(userToCreate);
 
@@ -67,7 +77,8 @@ export class UsersService {
       null, // oldData
       savedUser, // newData
       requestingUser.id, // userId
-      'User Created' // reason
+      'User Created', // reason
+      ['name', 'passwordResetToken', 'passwordResetExpires', 'roleId', 'preferences', 'tokenVersion'] // ignoredPaths
     );
 
     return savedUser;
@@ -106,28 +117,6 @@ export class UsersService {
 
     // 3. Common Filters
     if (query.name) {
-      // User entity has firstName/lastName, not name.
-      // BaseQueryBuilder did: andWhere("name ILIKE :name")
-      // User likely doesn't have a 'name' column but a getter. 
-      // If we query via FindOptions, we can't search on a getter easily.
-      // The BaseQueryBuilder might have been failing if User doesn't have a name column, 
-      // or maybe it was assuming a view or the getter was not sql-searchable.
-      // However, BaseQueryBuilder used `alias.name`.
-      // Let's check User Entity.
-
-      // Checking User Entity...
-      // Previous read showed `name: '${createUserDto.firstName} ${createUserDto.lastName}'` in create.
-      // So User likely has a name column or virtual column?
-      // Wait, standard TypeORM doesn't persist getters.
-      // If `name` is not a column, `where: { name: ... }` will fail.
-      // Let's assume for now we search first/last name or combined if checking User Entity confirms it.
-
-      // For now, I'll use standard OR search on first/last name if `name` is passed,
-      // OR if User entity actually has a name column.
-
-      // Actually, looking at `create`:
-      // `name: '${createUserDto.firstName} ${createUserDto.lastName}'`
-      // This implies there IS a name column being saved. 
       where.name = ILike(`%${query.name}%`);
     }
 
@@ -196,6 +185,8 @@ export class UsersService {
     }
 
     const user = await this.findOne(id, requestingUser, { includeInactive: true });
+    // Capture original state for audit
+    const originalUser = { ...user };
 
     const { roleId, isActive, password, preferences, firstName, lastName, ...restOfDto } = updateUserDto;
 
@@ -206,7 +197,11 @@ export class UsersService {
     if (firstName || lastName) user.name = `${user.firstName} ${user.lastName}`;
 
     if (roleId) {
-      user.role = { id: roleId } as any; // update relation
+      // Find the full role entity so it's populated for the audit log
+      const role = await this.roleRepository.findOne({ where: { id: roleId } });
+      if (!role) throw new NotFoundException('Role not found');
+
+      user.role = role;
       user.tokenVersion = (user.tokenVersion || 0) + 1;
     }
 
@@ -232,10 +227,11 @@ export class UsersService {
       Resource.USER, // resource
       updatedUser.id, // resourceId
       AuditAction.UPDATE, // action
-      null, // oldData (snapshot not fully implemented)
+      originalUser, // oldData
       updatedUser, // newData
       requestingUser.id, // userId
-      'User Updated' // reason
+      'User Updated', // reason
+      ['name', 'passwordResetToken', 'passwordResetExpires', 'roleId', 'preferences', 'tokenVersion'] // ignoredPaths
     );
 
     return updatedUser;

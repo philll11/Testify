@@ -32,8 +32,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { mutateAsync: logout } = useLogout();
 
     const can = useCallback((permission: string) => {
-        if (!user || !user.roleId || !user.roleId.permissions) return false;
-        return user.roleId.permissions.includes(permission);
+        // Handle different backend response structures (role object vs roleId object vs roleId string)
+        const userRole = (user as any)?.role || user?.roleId;
+
+        if (!userRole || typeof userRole !== 'object' || !userRole.permissions) return false;
+        return userRole.permissions.includes(permission);
     }, [user]);
 
     if (isLoading) {

@@ -1,19 +1,16 @@
-import { Fragment } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { 
-    Box, Stack, Typography, Chip, Paper, Divider, 
+import {
+    Box, Stack, Typography, Chip,
     Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { 
-    IconHistory, IconPencil, IconPlus, IconTrash, IconRotate, IconChevronDown 
+import {
+    IconHistory, IconPencil, IconPlus, IconTrash, IconRotate, IconChevronDown
 } from '@tabler/icons-react';
 
 // project imports
 import { useGetAuditHistory } from 'hooks/system/useAudit';
 import { AuditAction, AuditChange, AuditEntry } from 'api/system/audit.types';
 import UserAvatar from 'ui-component/extended/Avatar';
-import SubCard from 'ui-component/cards/SubCard';
-import MainCard from 'ui-component/cards/MainCard';
 
 // types
 export interface ResourceAuditTimelineProps {
@@ -70,29 +67,29 @@ const formatValue = (val: any) => {
 // --- Sub-Components ---
 const ChangeDiff = ({ change }: { change: AuditChange }) => {
     const theme = useTheme();
-    
+
     return (
         <Box sx={{ p: 1, border: '1px solid', borderColor: theme.palette.divider, borderRadius: 1, mb: 1, bgcolor: theme.palette.background.default }}>
-             <Typography variant="subtitle2" sx={{ mb: 0.5, textTransform: 'capitalize' }}>
+            <Typography variant="subtitle2" sx={{ mb: 0.5, textTransform: 'capitalize' }}>
                 {change.field.replace(/([A-Z])/g, ' $1').trim()}
             </Typography>
             <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-                <Typography 
-                    variant="body2" 
-                    sx={{ 
-                        textDecoration: 'line-through', 
+                <Typography
+                    variant="body2"
+                    sx={{
+                        textDecoration: 'line-through',
                         color: theme.palette.error.main,
                         bgcolor: theme.palette.error.light,
-                        px: 0.5, borderRadius: 0.5 
+                        px: 0.5, borderRadius: 0.5
                     }}
                 >
                     {formatValue(change.oldValue)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">→</Typography>
-                <Typography 
-                    variant="body2" 
-                    sx={{ 
-                        fontWeight: 'bold', 
+                <Typography
+                    variant="body2"
+                    sx={{
+                        fontWeight: 'bold',
                         color: theme.palette.success.dark,
                         bgcolor: theme.palette.success.light,
                         px: 0.5, borderRadius: 0.5
@@ -108,7 +105,7 @@ const ChangeDiff = ({ change }: { change: AuditChange }) => {
 const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) => {
     const theme = useTheme();
     const actionColor = getActionColor(entry.action, theme);
-    
+
     // Resolve User Name
     // Safe check if userId is populated object or just string
     const userName = typeof entry.userId === 'object' && entry.userId !== null
@@ -119,31 +116,31 @@ const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) =>
         <Stack direction="row" spacing={3} sx={{ position: 'relative', pb: isLast ? 0 : 3 }}>
             {/* Timeline Line */}
             {!isLast && (
-                <Box 
-                    sx={{ 
-                        position: 'absolute', 
-                        left: 20, 
-                        top: 40, 
-                        bottom: -10, 
-                        width: 2, 
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: 20,
+                        top: 40,
+                        bottom: -10,
+                        width: 2,
                         bgcolor: theme.palette.divider,
                         zIndex: 0
-                    }} 
+                    }}
                 />
             )}
 
             {/* Icon/Avatar Node */}
             <Box sx={{ position: 'relative', zIndex: 1 }}>
-                 <UserAvatar 
-                    sx={{ 
-                        bgcolor: theme.palette.background.paper, 
+                <UserAvatar
+                    sx={{
+                        bgcolor: theme.palette.background.paper,
                         border: `2px solid ${actionColor}`,
                         color: actionColor,
                         width: 40, height: 40
                     }}
-                 >
+                >
                     {getActionIcon(entry.action)}
-                 </UserAvatar>
+                </UserAvatar>
             </Box>
 
             {/* Content Body */}
@@ -154,16 +151,16 @@ const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) =>
                             <Typography variant="subtitle1">
                                 {userName}
                             </Typography>
-                            <Chip 
-                                label={entry.action} 
-                                size="small" 
-                                sx={{ 
-                                    height: 20, 
+                            <Chip
+                                label={entry.action}
+                                size="small"
+                                sx={{
+                                    height: 20,
                                     fontSize: '0.7rem',
                                     bgcolor: actionColor + '20', // 20% opacity
                                     color: actionColor,
                                     fontWeight: 'bold'
-                                }} 
+                                }}
                             />
                         </Stack>
                         <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
@@ -171,7 +168,7 @@ const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) =>
                         </Typography>
                     </Box>
                 </Stack>
-                
+
                 {/* Reason / Metadata */}
                 {entry.reason && (
                     <Typography variant="body2" sx={{ mb: 1, fontStyle: 'italic', color: 'text.secondary' }}>
@@ -181,10 +178,10 @@ const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) =>
 
                 {/* Changes Accordion if changes exist */}
                 {entry.changes && entry.changes.length > 0 && (
-                     <Accordion 
-                        disableGutters 
+                    <Accordion
+                        disableGutters
                         elevation={0}
-                        sx={{ 
+                        sx={{
                             border: `1px solid ${theme.palette.divider}`,
                             '&:before': { display: 'none' },
                             mt: 1
@@ -204,11 +201,11 @@ const AuditItem = ({ entry, isLast }: { entry: AuditEntry, isLast: boolean }) =>
                 )}
 
                 {/* Snapshot for Delete/Create if no explicit changes listed but we want to show something */}
-                 {entry.action === AuditAction.CREATE && entry.changes.length === 0 && (
+                {entry.action === AuditAction.CREATE && entry.changes.length === 0 && (
                     <Typography variant="body2" color="text.secondary">
                         Record created.
                     </Typography>
-                 )}
+                )}
             </Box>
         </Stack>
     );
@@ -224,10 +221,10 @@ const ResourceAuditTimeline = ({ resource, resourceId }: ResourceAuditTimelinePr
     return (
         <Box sx={{ maxWidth: '100%', overflowX: 'hidden' }}>
             {history.map((entry, index) => (
-                <AuditItem 
-                    key={entry._id || index} 
-                    entry={entry} 
-                    isLast={index === history.length - 1} 
+                <AuditItem
+                    key={entry.id || index}
+                    entry={entry}
+                    isLast={index === history.length - 1}
                 />
             ))}
         </Box>

@@ -10,7 +10,7 @@ export function useContextualNavigation(defaultParentPath: string) {
   const getLinkTo = useCallback(
     (path: string, options: { strategy?: 'passthrough' | 'stack' } = {}) => {
       const { strategy = 'passthrough' } = options;
-      
+
       let nextReturnTo = '';
 
       if (strategy === 'stack') {
@@ -48,7 +48,6 @@ export function useContextualNavigation(defaultParentPath: string) {
         if (targetPath === returnPath) {
           // Loop detected!
           // Check if there is a nested returnTo inside the decoded URL
-          // e.g. /blocks/1?returnTo=/orchards/1
           const innerMatch = decodedReturnTo.match(/[?&]returnTo=([^&]+)/);
           if (innerMatch) {
             // Found nested returnTo, use it
@@ -62,7 +61,7 @@ export function useContextualNavigation(defaultParentPath: string) {
           return;
         }
       }
-      
+
       // If not popping, just navigate to target
       // We wrap it in getLinkTo to ensure the current context (returnTo) is passed forward
       // e.g. Create (returnTo=List) -> View (returnTo=List)

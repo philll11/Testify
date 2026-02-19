@@ -25,7 +25,7 @@ import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { useContextualNavigation } from 'hooks/useContextualNavigation';
 import DataGridWrapper from 'ui-component/extended/DataGridWrapper';
 import SplitActionButton from 'ui-component/extended/SplitActionButton';
-import { PERMISSIONS, VisibilityScope } from 'constants/permissions';
+import { PERMISSIONS } from 'constants/permissions';
 import { usePermission } from 'contexts/AuthContext';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import MainCard from 'ui-component/cards/MainCard';
@@ -37,23 +37,6 @@ const getStatusChip = (isActive?: boolean) => {
     ) : (
         <Chip label="Inactive" color="error" size="small" variant="outlined" />
     );
-};
-
-// Helper for Scope Chip
-const getScopeChip = (scope: VisibilityScope) => {
-    let color: 'success' | 'warning' | 'info' | 'default' = 'default';
-    switch (scope) {
-        case VisibilityScope.GLOBAL:
-            color = 'success';
-            break;
-        case VisibilityScope.SUBSIDIARY:
-            color = 'info';
-            break;
-        case VisibilityScope.CLIENT:
-            color = 'warning';
-            break;
-    }
-    return <Chip label={scope} color={color} size="small" />;
 };
 
 const RoleList = () => {
@@ -158,7 +141,7 @@ const RoleList = () => {
                 await createRole(values);
                 setCreateDraft({}); // Clear draft on success
             } else if (mode === 'edit' && selectedRole) {
-                await updateRole({ id: selectedRole._id, data: values });
+                await updateRole({ id: selectedRole.id, data: values });
             }
             // Success closes drawer
             setDrawerOpen(false);
@@ -192,7 +175,7 @@ const RoleList = () => {
 
     const handleConfirmDelete = async () => {
         if (roleToDelete) {
-            await deleteRole(roleToDelete._id);
+            await deleteRole(roleToDelete.id);
             setDeleteDialogOpen(false);
             setRoleToDelete(null);
         }
@@ -213,13 +196,7 @@ const RoleList = () => {
             minWidth: 200
         },
         {
-            field: 'visibilityScope',
-            headerName: 'Scope',
-            flex: 0.8,
-            minWidth: 150,
-            renderCell: (params: GridRenderCellParams) => getScopeChip(params.value as VisibilityScope)
-        },
-        {
+
             field: 'isActive',
             headerName: 'Status',
             flex: 0.5,
@@ -244,7 +221,7 @@ const RoleList = () => {
                                 <IconButton
                                     color="primary"
                                     size="small"
-                                    onClick={(e) => handleViewPage(role._id, e)}
+                                    onClick={(e) => handleViewPage(role.id, e)}
                                 >
                                     <IconEye size={18} />
                                 </IconButton>
@@ -256,7 +233,7 @@ const RoleList = () => {
                                     <IconButton
                                         color="secondary"
                                         size="small"
-                                        onClick={(e) => handleEditPage(role._id, e)}
+                                        onClick={(e) => handleEditPage(role.id, e)}
                                     >
                                         <IconEdit size={18} />
                                     </IconButton>
@@ -317,7 +294,7 @@ const RoleList = () => {
                 columns={columns}
                 loading={isLoading}
                 onRowClick={(params) => handleOpenDrawer('view', params.row as Role)}
-                getRowId={(row) => row._id}
+                getRowId={(row) => row.id}
             />
             {/* Quick View / Create / Edit Drawer */}
             <Drawer

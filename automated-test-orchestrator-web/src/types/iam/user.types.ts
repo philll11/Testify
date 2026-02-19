@@ -1,10 +1,5 @@
 import { BaseEntity } from 'types/models';
 
-export enum UserType {
-  Employee = 'employee',
-  Contact = 'contact',
-}
-
 export interface UserPreferences {
   theme?: 'light' | 'dark' | 'auto';
 }
@@ -14,9 +9,8 @@ export interface User extends BaseEntity {
   lastName: string;
   name: string;
   email: string;
-  userType: UserType;
-  roleId?: { _id: string; name: string; recordId: string; permissions: string[]; visibilityScope: string };
-  clientIds?: { _id: string; name: string; recordId: string }[];
+  roleId?: string;
+  role?: { id: string; name: string; recordId: string; permissions: string[] }; // Add role property for populated data
   preferences?: UserPreferences;
 }
 
@@ -25,9 +19,7 @@ export interface CreateUserDto {
   lastName: string;
   email: string;
   password?: string;
-  userType: UserType;
-  roleId?: string ;
-  clientIds?: string[];
+  roleId?: string;
   preferences?: UserPreferences;
 }
 
@@ -36,10 +28,7 @@ export interface UpdateUserDto {
   lastName?: string;
   email?: string;
   password?: string;
-  userType?: UserType;
-  __v?: number;
   roleId?: string;
-  clientIds?: string[];
   isActive?: boolean;
   preferences?: UserPreferences;
 }
