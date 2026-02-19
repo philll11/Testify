@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    container_name: ato-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-testuser}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-testpassword}
+      POSTGRES_DB: ${DATABASE_NAME:-testdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ato-network
+
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: ato-app
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+    networks:
+      - ato-network
+
+networks:
+  ato-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
