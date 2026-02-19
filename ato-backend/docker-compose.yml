@@ -9,8 +9,9 @@ services:
       POSTGRES_USER: ${DATABASE_USER:-testuser}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-testpassword}
       POSTGRES_DB: ${DATABASE_NAME:-testdb}
+      POSTGRES_PORT: 5432
     ports:
-      - "5432:5432"
+      - "3430:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -25,7 +26,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "3330:3330"
+      - "3431:3431"
     env_file:
       - .env
     environment:

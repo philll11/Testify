@@ -15,6 +15,7 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+  app.setGlobalPrefix('api/v1');
 
   const configService = app.get(ConfigService); // Get ConfigService early
 
