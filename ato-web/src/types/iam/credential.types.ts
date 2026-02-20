@@ -1,6 +1,10 @@
+export enum IntegrationPlatform {
+    BOOMI = 'Boomi',
+}
+
 export interface Credential {
     id: string;
-    platform: string;
+    platform: IntegrationPlatform;
     profileName: string;
     accountId: string;
     username: string;
@@ -8,7 +12,7 @@ export interface Credential {
 }
 
 export interface CreateCredentialPayload {
-    platform?: string;
+    platform?: IntegrationPlatform;
     profileName: string;
     accountId: string;
     username: string;

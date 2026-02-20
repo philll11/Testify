@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserIntegrationCredential } from './entities/user-integration-credential.entity';
+import { UserIntegrationCredential, IntegrationPlatform } from './entities/user-integration-credential.entity';
 import { EncryptionService } from '../../common/encryption/encryption.service';
 import { CreateCredentialDto } from './dto/create-credential.dto';
 import { CredentialResponseDto } from './dto/credential-response.dto';
@@ -26,7 +26,7 @@ export class UserCredentialsService {
 
         const credential = this.credentialsRepository.create({
             userId,
-            platformName: dto.platform || 'Boomi',
+            platformName: dto.platform || IntegrationPlatform.BOOMI,
             profileName: dto.profileName,
             encryptedData: encrypted.content,
             iv: encrypted.iv,

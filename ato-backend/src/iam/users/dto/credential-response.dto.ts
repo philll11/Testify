@@ -1,4 +1,5 @@
 import { Exclude, Expose } from 'class-transformer';
+import { IntegrationPlatform } from '../entities/user-integration-credential.entity';
 
 @Exclude()
 export class CredentialResponseDto {
@@ -6,7 +7,7 @@ export class CredentialResponseDto {
   id: string;
 
   @Expose()
-  platform: string;
+  platform: IntegrationPlatform;
 
   @Expose()
   profileName: string;

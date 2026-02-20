@@ -1,10 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IntegrationPlatform } from '../entities/user-integration-credential.entity';
 
 export class CreateCredentialDto {
-    @IsString()
+    @IsEnum(IntegrationPlatform)
     @IsOptional()
-    @MaxLength(100)
-    platform: string;
+    platform: IntegrationPlatform;
 
     @IsString()
     @IsNotEmpty()

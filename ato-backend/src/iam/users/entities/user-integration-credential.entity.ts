@@ -9,13 +9,21 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+export enum IntegrationPlatform {
+    BOOMI = 'Boomi',
+}
+
 @Entity('user_integration_credentials')
 export class UserIntegrationCredential {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ length: 100 })
-    platformName: string; // e.g., 'Boomi', 'Salesforce'
+    @Column({
+        type: 'enum',
+        enum: IntegrationPlatform,
+        default: IntegrationPlatform.BOOMI
+    })
+    platformName: IntegrationPlatform;
 
     @Column({ length: 100 })
     profileName: string; // User-defined alias, e.g., 'Production Boomi'

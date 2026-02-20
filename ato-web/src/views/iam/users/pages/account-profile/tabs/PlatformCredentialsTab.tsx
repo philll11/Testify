@@ -21,7 +21,8 @@ import {
     Stack,
     Typography,
     LinearProgress,
-    Alert
+    Alert,
+    MenuItem
 } from '@mui/material';
 import { IconTrash, IconPlus, IconBrandCodesandbox } from '@tabler/icons-react';
 
@@ -33,6 +34,12 @@ import { gridSpacing } from 'store/constant';
 
 import { useGetCredentials, useCreateCredential, useDeleteCredential } from 'hooks/iam/useCredentials';
 import { createCredentialSchema, CreateCredentialSchema } from 'types/iam/credential.schema';
+import { IntegrationPlatform } from 'types/iam/credential.types';
+
+const PLATFORMS = Object.values(IntegrationPlatform).map((platform) => ({
+    value: platform,
+    label: platform,
+}));
 
 const PlatformCredentialsTab = () => {
     // Queries & Mutations
@@ -48,7 +55,7 @@ const PlatformCredentialsTab = () => {
         resolver: zodResolver(createCredentialSchema),
         defaultValues: {
             profileName: '',
-            platform: 'Boomi',
+            platform: IntegrationPlatform.BOOMI,
             accountId: '',
             username: '',
             passwordOrToken: '',
@@ -113,6 +120,7 @@ const PlatformCredentialsTab = () => {
                                     <TableCell>Platform</TableCell>
                                     <TableCell>Username</TableCell>
                                     <TableCell>Account ID</TableCell>
+                                    <TableCell>Runtime</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -128,6 +136,7 @@ const PlatformCredentialsTab = () => {
                                         <TableCell>{cred.platform}</TableCell>
                                         <TableCell>{cred.username}</TableCell>
                                         <TableCell>{cred.accountId}</TableCell>
+                                        <TableCell>{cred.executionInstanceId || '-'}</TableCell>
                                         <TableCell align="right">
                                             <Tooltip title="Delete">
                                                 <IconButton
@@ -176,12 +185,18 @@ const PlatformCredentialsTab = () => {
                                     render={({ field }) => (
                                         <TextField
                                             {...field}
+                                            select
                                             fullWidth
                                             label="Platform"
-                                            disabled // Fixed to Boomi for now as per schema default, or editable if needed
                                             error={!!errors.platform}
                                             helperText={errors.platform?.message}
-                                        />
+                                        >
+                                            {PLATFORMS.map((option) => (
+                                                <MenuItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
                                     )}
                                 />
                             </Grid>
