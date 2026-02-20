@@ -6,4 +6,5 @@ export default registerAs('app', () => ({
   version: process.env.npm_package_version || '0.0.0',
   environment: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3432',
+  encryptionKey: process.env.ENCRYPTION_KEY,
 }));

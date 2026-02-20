@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
+import { UserIntegrationCredential } from './user-integration-credential.entity';
 
 @Entity('users')
 export class User {
@@ -54,4 +55,7 @@ export class User {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @OneToMany(() => UserIntegrationCredential, (credential) => credential.user)
+    credentials: UserIntegrationCredential[];
 }

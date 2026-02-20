@@ -34,7 +34,8 @@
     "test:e2e:system-config:crud": "jest --config ./test/jest-e2e.json test/system-config/system-config.crud.e2e-spec.ts --verbose",
     "test:e2e:system-config:auth": "jest --config ./test/jest-e2e.json test/system-config/system-config.auth.e2e-spec.ts --verbose",
     "test:e2e:audit": "jest --config ./test/jest-e2e.json test/audit/audit.e2e-spec.ts --verbose",
-    "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit",
+    "test:e2e:user-creds": "jest --config ./test/jest-e2e.json test/user/user-credentials.e2e-spec.ts --verbose",
+    "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit && npm run test:e2e:user-creds",
     "seed": "ts-node src/seed.ts",
     "seed:prod": "node dist/seed.js"
   },

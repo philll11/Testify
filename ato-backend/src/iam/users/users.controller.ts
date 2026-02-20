@@ -3,6 +3,7 @@ import { Controller, Get, Query, Post, Body, Patch, Param, Delete, ParseUUIDPipe
 import { UsersService } from './users.service';
 import { QueryUserDto } from './dto/query-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateCredentialDto } from './dto/create-credential.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 import { RequirePermission } from '../../common/decorators/permissions.decorator';
@@ -20,6 +21,11 @@ export class UsersController {
   @RequirePermission(PERMISSIONS.USER_CREATE)
   create(@Body() createUserDto: CreateUserDto, @CurrentUser() requestingUser: User) {
     return this.usersService.create(createUserDto, requestingUser);
+  }
+
+  @Post('credentials')
+  createCredential(@Body() createCredentialDto: CreateCredentialDto, @CurrentUser() requestingUser: User) {
+    return this.usersService.createCredential(createCredentialDto, requestingUser);
   }
 
   @Get()

@@ -15,10 +15,12 @@ import { JwtAuthGuard } from './iam/auth/jwt-auth.guard';
 import { CountersModule } from './system/counters/counters.module';
 import { SystemConfigModule } from './system/config/system-config.module';
 import { AuditsModule } from './system/audits/audits.module';
+import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
 
 @Module({
   imports: [
+    CommonModule,
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile: process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',

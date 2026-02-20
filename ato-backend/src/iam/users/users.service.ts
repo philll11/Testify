@@ -9,6 +9,9 @@ import { QueryUserDto } from './dto/query-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
+import { UserIntegrationCredential } from './entities/user-integration-credential.entity';
+import { CreateCredentialDto } from './dto/create-credential.dto';
+import { EncryptionService } from '../../common/encryption/encryption.service';
 
 import { PERMISSIONS, Resource } from '../../common/constants/permissions.constants';
 import { CountersService } from '../../system/counters/counters.service';
@@ -22,9 +25,46 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+    @InjectRepository(UserIntegrationCredential)
+    private readonly userIntegrationCredentialRepository: Repository<UserIntegrationCredential>,
+    private readonly encryptionService: EncryptionService,
     @Inject(forwardRef(() => AuditsService)) private readonly auditsService: AuditsService,
     private readonly countersService: CountersService,
   ) { }
+
+  async createCredential(createCredentialDto: CreateCredentialDto, user: User): Promise<UserIntegrationCredential> {
+    const { profileName, platform, accountId, username, passwordOrToken, executionInstanceId } = createCredentialDto;
+
+    // Check if duplicate profile name for user
+    const existing = await this.userIntegrationCredentialRepository.findOne({
+      where: { userId: user.id, profileName },
+    });
+
+    if (existing) {
+      throw new ConflictException(`Credential profile '${profileName}' already exists.`);
+    }
+
+    const payload = JSON.stringify({
+      accountId,
+      username,
+      passwordOrToken,
+      executionInstanceId,
+      platform,
+    });
+
+    const encryptedData = this.encryptionService.encrypt(payload);
+
+    const credential = this.userIntegrationCredentialRepository.create({
+      userId: user.id,
+      platformName: platform,
+      profileName,
+      encryptedData: encryptedData.content,
+      iv: encryptedData.iv,
+      authTag: encryptedData.tag,
+    });
+
+    return this.userIntegrationCredentialRepository.save(credential);
+  }
 
   /**
    * Creates a new user based on the provided DTO.
