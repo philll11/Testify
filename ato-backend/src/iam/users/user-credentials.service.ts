@@ -104,6 +104,10 @@ export class UserCredentialsService {
             tag: credential.authTag,
         });
 
-        return JSON.parse(decryptedJson);
+        // Parse and return the credentials along with the platform type from the entity
+        return {
+            ...JSON.parse(decryptedJson),
+            platformName: credential.platformName
+        };
     }
 }

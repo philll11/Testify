@@ -17,10 +17,12 @@ import { SystemConfigModule } from './system/config/system-config.module';
 import { AuditsModule } from './system/audits/audits.module';
 import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
+import { IntegrationModule } from './integration/integration.module';
 
 @Module({
   imports: [
     CommonModule,
+    IntegrationModule,
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile: process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',

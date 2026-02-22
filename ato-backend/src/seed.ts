@@ -10,6 +10,7 @@ import { Counter } from './system/counters/entities/counter.entity';
 import { User } from './iam/users/entities/user.entity';
 import { SystemConfig } from './system/config/entities/system-config.entity';
 import { PERMISSIONS } from './common/constants/permissions.constants';
+import { SystemConfigKeys } from './common/constants/system-config.constants';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -31,10 +32,20 @@ async function bootstrap() {
     // --- System Configs ---
     const seedConfigs = [
       {
-        key: 'audit',
+        key: SystemConfigKeys.AUDIT.CONFIG,
         value: { enabled: true, retentionDays: 90 },
         description: 'Global Audit Logging Settings',
       },
+      {
+        key: SystemConfigKeys.BOOMI.POLL_INTERVAL,
+        value: 2000, // 2 seconds
+        description: 'Boomi integration polling interval (ms)',
+      },
+      {
+        key: SystemConfigKeys.BOOMI.MAX_POLLS,
+        value: 120, // ~4 minutes
+        description: 'Boomi integration max polling attempts',
+      }
     ];
 
     for (const config of seedConfigs) {
