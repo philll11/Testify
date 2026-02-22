@@ -16,6 +16,17 @@ export interface AuditConfig {
   enabled: boolean;
 }
 
+export interface BoomiConfig {
+  pollInterval: number; // in milliseconds
+  maxPolls: number;
+}
+
+export const SystemConfigKeys = {
+  AUDIT: 'audit',
+  BOOMI_POLL_INTERVAL: 'boomi.pollInterval',
+  BOOMI_MAX_POLLS: 'boomi.maxPolls',
+};
+
 // API Functions
 export const getSystemConfig = async <T>(key: string): Promise<SystemConfig<T>> => {
   const response = await axios.get<SystemConfig<T>>(`/system/config/${key}`);
