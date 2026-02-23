@@ -21,7 +21,10 @@ import { RefreshToken } from './entities/refresh-token.entity';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: parseInt(configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'), 10)
+          expiresIn: parseInt(
+            configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'),
+            10,
+          ),
         },
       }),
     }),
@@ -30,4 +33,4 @@ import { RefreshToken } from './entities/refresh-token.entity';
   providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
   exports: [PassportModule, JwtAuthGuard, AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

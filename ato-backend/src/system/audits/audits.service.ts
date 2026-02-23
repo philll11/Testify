@@ -1,5 +1,10 @@
-
-import { Injectable, Logger, Inject, forwardRef, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Inject,
+  forwardRef,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditEntry, AuditAction } from './entities/audit.entity';
@@ -20,9 +25,11 @@ export class AuditsService {
     private readonly auditRepository: Repository<AuditEntry>,
     private diffService: AuditDiffService,
     private configService: SystemConfigService,
-    @Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
-    @Inject(forwardRef(() => RolesService)) private readonly rolesService: RolesService,
-  ) { }
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => RolesService))
+    private readonly rolesService: RolesService,
+  ) {}
 
   /**
    * Checks if auditing is enabled for the given resource.
@@ -60,9 +67,23 @@ export class AuditsService {
       let changes: any[] = [];
       // Compute diffs for both CREATE and UPDATE
       if (action === AuditAction.CREATE) {
-        changes = this.diffService.computeDiff(null, newData, '', ignoredPaths, itemIdentityMap, fieldDisplayNameMap);
+        changes = this.diffService.computeDiff(
+          null,
+          newData,
+          '',
+          ignoredPaths,
+          itemIdentityMap,
+          fieldDisplayNameMap,
+        );
       } else if (action === AuditAction.UPDATE) {
-        changes = this.diffService.computeDiff(oldData, newData, '', ignoredPaths, itemIdentityMap, fieldDisplayNameMap);
+        changes = this.diffService.computeDiff(
+          oldData,
+          newData,
+          '',
+          ignoredPaths,
+          itemIdentityMap,
+          fieldDisplayNameMap,
+        );
         if (changes.length === 0) {
           return null; // No actual changes detected
         }
@@ -78,19 +99,26 @@ export class AuditsService {
         reason,
         date: new Date(),
         metadata: {
-          snapshot: action === AuditAction.DELETE ? oldData : undefined // Keep snapshot on delete
-        }
+          snapshot: action === AuditAction.DELETE ? oldData : undefined, // Keep snapshot on delete
+        },
       });
 
       return await this.auditRepository.save(entry);
     } catch (error) {
-      this.logger.error(`Failed to create audit log for ${resource}:${resourceId}`, error.stack);
+      this.logger.error(
+        `Failed to create audit log for ${resource}:${resourceId}`,
+        error.stack,
+      );
       // We don't want to block the main operation if audit fails, so we catch and return null
       return null;
     }
   }
 
-  async getHistory(resource: string, resourceId: string, requestingUser: User): Promise<AuditEntry[]> {
+  async getHistory(
+    resource: string,
+    resourceId: string,
+    requestingUser: User,
+  ): Promise<AuditEntry[]> {
     await this.validateResourceAccess(resource, resourceId, requestingUser);
 
     // Original: populate('userId', 'firstName lastName email')
@@ -99,15 +127,15 @@ export class AuditsService {
 
     const audits = await this.auditRepository.find({
       where: { resource, resourceId },
-      order: { date: 'DESC' }
+      order: { date: 'DESC' },
     });
 
     // Manually populate user info if needed
-    // Assuming we want to return user info. 
+    // Assuming we want to return user info.
     // This is N+1 problem but efficient enough for single resource history.
     // Optimization: Collect userIds and fetch all users in one query.
 
-    const userIds = [...new Set(audits.map(a => a.userId))];
+    const userIds = [...new Set(audits.map((a) => a.userId))];
     if (userIds.length > 0) {
       // Find users with only necessary fields
       // Since we are inside AuditsService, we can inject UserRepository (via UsersService?) or just use UsersService.
@@ -126,12 +154,16 @@ export class AuditsService {
       for (const uid of userIds) {
         const u = await this.usersService.findOneById(uid);
         if (u) {
-          userMap.set(uid, { firstName: u.firstName, lastName: u.lastName, email: u.email });
+          userMap.set(uid, {
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+          });
         }
       }
 
       // Attach to audit entries. This requires AuditEntry to have a field for it or return a DTO/modified object.
-      // Since function returns `AuditEntry[]`, and AuditEntry entity doesn't have `user` object field (unless I add logic), 
+      // Since function returns `AuditEntry[]`, and AuditEntry entity doesn't have `user` object field (unless I add logic),
       // I can't strictly attach it to the Entity instance without satisfying the class.
       // BUT, JS allows attaching props.
       // Mongoose `populate` replaces the ID (string) with the Object.
@@ -141,7 +173,7 @@ export class AuditsService {
 
       // For now, I will just return the audits. Frontend might need update or fetch users separately.
       // OR: I can cast to `any` and attach.
-      return audits.map(a => {
+      return audits.map((a) => {
         const u = userMap.get(a.userId);
         if (u) {
           (a as any).userId = u; // Emulate Mongoose populate behavior somewhat (replacing ID or attaching obj)
@@ -157,7 +189,11 @@ export class AuditsService {
     return audits;
   }
 
-  private async validateResourceAccess(resource: string, resourceId: string, user: User): Promise<void> {
+  private async validateResourceAccess(
+    resource: string,
+    resourceId: string,
+    user: User,
+  ): Promise<void> {
     try {
       switch (resource) {
         case Resource.USER:
@@ -167,7 +203,9 @@ export class AuditsService {
           await this.rolesService.findOne(resourceId, user);
           break;
         default:
-          this.logger.warn(`No visibility check implemented for resource: ${resource}`);
+          this.logger.warn(
+            `No visibility check implemented for resource: ${resource}`,
+          );
           break;
       }
     } catch (error) {

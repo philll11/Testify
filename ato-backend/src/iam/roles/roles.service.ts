@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, ILike, FindOptionsWhere } from 'typeorm';
 
@@ -20,12 +27,17 @@ export class RolesService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource,
-    @Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
     private readonly countersService: CountersService,
-  ) { }
+  ) {}
 
-  async create(createRoleDto: CreateRoleDto, requestingUser: User): Promise<Role> {
-    const { prefix, sequence_value } = await this.countersService.getNextSequenceValue('role', 'ROL');
+  async create(
+    createRoleDto: CreateRoleDto,
+    requestingUser: User,
+  ): Promise<Role> {
+    const { prefix, sequence_value } =
+      await this.countersService.getNextSequenceValue('role', 'ROL');
     const paddedSequence = sequence_value.toString().padStart(4, '0');
     const recordId = `${prefix}${paddedSequence}`;
 
@@ -33,7 +45,7 @@ export class RolesService {
       name: createRoleDto.name,
       description: createRoleDto.description,
       permissions: createRoleDto.permissions || [],
-      recordId
+      recordId,
     });
 
     return this.roleRepository.save(newRole);
@@ -48,7 +60,9 @@ export class RolesService {
     if (query.isDeleted === true) {
       const userPermissions = requestingUser.role?.permissions || [];
       if (!userPermissions.includes(PERMISSIONS.VIEW_DELETED)) {
-        throw new ForbiddenException('You do not have permission to view deleted records.');
+        throw new ForbiddenException(
+          'You do not have permission to view deleted records.',
+        );
       }
       where.isDeleted = true;
     } else {
@@ -66,7 +80,9 @@ export class RolesService {
       // User wants all records (Active + Inactive).
       // Check if they have permission to see inactives.
       const userPermissions = requestingUser.role?.permissions || [];
-      const canManageInactives = userPermissions.includes(PERMISSIONS.ROLE_MANAGE_INACTIVE);
+      const canManageInactives = userPermissions.includes(
+        PERMISSIONS.ROLE_MANAGE_INACTIVE,
+      );
 
       if (!canManageInactives) {
         // If they don't have permission, ignore the flag and enforce Active Only
@@ -86,11 +102,15 @@ export class RolesService {
 
     return this.roleRepository.find({
       where,
-      order: { name: 'ASC' } // Default sort
+      order: { name: 'ASC' }, // Default sort
     });
   }
 
-  async findOne(roleId: string, requestingUser: User, options: { includeInactive?: boolean } = {}): Promise<Role> {
+  async findOne(
+    roleId: string,
+    requestingUser: User,
+    options: { includeInactive?: boolean } = {},
+  ): Promise<Role> {
     const where: FindOptionsWhere<Role> = { id: roleId };
 
     // Default behavior for deleted records
@@ -109,8 +129,14 @@ export class RolesService {
     return role;
   }
 
-  async update(roleId: string, updateRoleDto: UpdateRoleDto, requestingUser: User): Promise<Role> {
-    const existingRole = await this.findOne(roleId, requestingUser, { includeInactive: true });
+  async update(
+    roleId: string,
+    updateRoleDto: UpdateRoleDto,
+    requestingUser: User,
+  ): Promise<Role> {
+    const existingRole = await this.findOne(roleId, requestingUser, {
+      includeInactive: true,
+    });
 
     const { isActive, ...restOfDto } = updateRoleDto;
 
@@ -120,13 +146,18 @@ export class RolesService {
     if (isActive !== undefined && isActive !== existingRole.isActive) {
       const userPermissions = requestingUser.role?.permissions || [];
       if (!userPermissions.includes(PERMISSIONS.ROLE_MANAGE_INACTIVE)) {
-        throw new ForbiddenException('You do not have permission to change the isActive status of a role.');
+        throw new ForbiddenException(
+          'You do not have permission to change the isActive status of a role.',
+        );
       }
 
       if (isActive === false) {
-        const activeUserCount = await this.usersService.countActiveByRoleId(roleId);
+        const activeUserCount =
+          await this.usersService.countActiveByRoleId(roleId);
         if (activeUserCount > 0) {
-          throw new ConflictException(`This role cannot be deactivated because it has ${activeUserCount} active user(s) assigned to it. Please reassign the users first.`);
+          throw new ConflictException(
+            `This role cannot be deactivated because it has ${activeUserCount} active user(s) assigned to it. Please reassign the users first.`,
+          );
         }
       }
       existingRole.isActive = isActive;
@@ -140,17 +171,17 @@ export class RolesService {
 
     const activeUsers = await this.userRepository.find({
       where: { role: { id: roleId }, isDeleted: false },
-      select: ['id', 'recordId', 'firstName', 'lastName'] as any
+      select: ['id', 'recordId', 'firstName', 'lastName'] as any,
     });
 
     if (activeUsers.length > 0) {
       throw new ConflictException({
         message: `Cannot delete Role. Assigned to one or more Users.`,
-        blockingResources: activeUsers.map(u => ({
+        blockingResources: activeUsers.map((u) => ({
           _id: u.id,
           recordId: u.recordId,
-          name: `${u.firstName} ${u.lastName}`
-        }))
+          name: `${u.firstName} ${u.lastName}`,
+        })),
       });
     }
 
@@ -162,8 +193,9 @@ export class RolesService {
   }
 
   async isRoleExistingAndActive(roleId: string): Promise<boolean> {
-    const count = await this.roleRepository.count({ where: { id: roleId, isDeleted: false, isActive: true } });
+    const count = await this.roleRepository.count({
+      where: { id: roleId, isDeleted: false, isActive: true },
+    });
     return count > 0;
   }
-
 }

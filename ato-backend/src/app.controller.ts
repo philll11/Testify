@@ -1,6 +1,11 @@
 // backend/src/app.controller.ts
 
-import { Controller, Get, InternalServerErrorException, ServiceUnavailableException, } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './iam/auth/decorators/public.decorator';
 
@@ -30,7 +35,9 @@ export class AppController {
       if (error instanceof InternalServerErrorException) {
         throw new ServiceUnavailableException(error.getResponse());
       }
-      throw new ServiceUnavailableException('An unexpected error occurred during the health check.');
+      throw new ServiceUnavailableException(
+        'An unexpected error occurred during the health check.',
+      );
     }
   }
 }

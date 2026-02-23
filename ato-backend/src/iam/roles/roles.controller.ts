@@ -1,5 +1,15 @@
 // backend/src/roles/roles.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -18,11 +28,14 @@ export class RolesController {
   constructor(
     private readonly rolesService: RolesService,
     private readonly usersService: UsersService,
-  ) { }
+  ) {}
 
   @Post()
   @RequirePermission(PERMISSIONS.ROLE_CREATE)
-  create(@Body() createRoleDto: CreateRoleDto, @CurrentUser() requestingUser: User) {
+  create(
+    @Body() createRoleDto: CreateRoleDto,
+    @CurrentUser() requestingUser: User,
+  ) {
     return this.rolesService.create(createRoleDto, requestingUser);
   }
 
@@ -37,9 +50,11 @@ export class RolesController {
   findOne(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Query() query: QueryRoleDto,
-    @CurrentUser() requestingUser: User
+    @CurrentUser() requestingUser: User,
   ) {
-    return this.rolesService.findOne(roleId, requestingUser, { includeInactive: query.includeInactives });
+    return this.rolesService.findOne(roleId, requestingUser, {
+      includeInactive: query.includeInactives,
+    });
   }
 
   @Get(':roleId/users')
@@ -56,13 +71,20 @@ export class RolesController {
 
   @Patch(':roleId')
   @RequirePermission(PERMISSIONS.ROLE_EDIT)
-  update(@Param('roleId', ParseUUIDPipe) roleId: string, @Body() updateRoleDto: UpdateRoleDto, @CurrentUser() requestingUser: User) {
+  update(
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+    @CurrentUser() requestingUser: User,
+  ) {
     return this.rolesService.update(roleId, updateRoleDto, requestingUser);
   }
 
   @Delete(':roleId')
   @RequirePermission(PERMISSIONS.ROLE_DELETE)
-  remove(@Param('roleId', ParseUUIDPipe) roleId: string, @CurrentUser() requestingUser: User) {
+  remove(
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+    @CurrentUser() requestingUser: User,
+  ) {
     return this.rolesService.remove(roleId, requestingUser);
   }
 }

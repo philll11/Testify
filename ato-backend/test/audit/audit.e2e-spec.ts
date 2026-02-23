@@ -5,10 +5,16 @@ import { DataSource, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 
 import { setupTestApp, teardownTestApp } from '../test-utils';
-import { PERMISSIONS, Resource } from '../../src/common/constants/permissions.constants';
+import {
+  PERMISSIONS,
+  Resource,
+} from '../../src/common/constants/permissions.constants';
 import { User } from '../../src/iam/users/entities/user.entity';
 import { Role } from '../../src/iam/roles/entities/role.entity';
-import { AuditEntry, AuditAction } from '../../src/system/audits/entities/audit.entity';
+import {
+  AuditEntry,
+  AuditAction,
+} from '../../src/system/audits/entities/audit.entity';
 import { SystemConfig } from '../../src/system/config/entities/system-config.entity';
 import { AuditsService } from '../../src/system/audits/audits.service';
 
@@ -52,67 +58,86 @@ describe('Audits Resource (e2e)', () => {
     systemConfigRepository = dataSource.getRepository(SystemConfig);
 
     // 1. Enable Auditing
-    const existingConfig = await systemConfigRepository.findOne({ where: { key: 'audit' } });
+    const existingConfig = await systemConfigRepository.findOne({
+      where: { key: 'audit' },
+    });
     if (existingConfig) {
       existingConfig.value = { enabled: true };
       await systemConfigRepository.save(existingConfig);
     } else {
-      await systemConfigRepository.save(systemConfigRepository.create({
-        key: 'audit',
-        value: { enabled: true },
-        description: 'Enable Auditing for E2E Tests',
-      }));
+      await systemConfigRepository.save(
+        systemConfigRepository.create({
+          key: 'audit',
+          value: { enabled: true },
+          description: 'Enable Auditing for E2E Tests',
+        }),
+      );
     }
 
     // 2. Setup Roles
-    adminRole = await roleRepository.save(roleRepository.create({
-      recordId: 'ADM_AUDIT_VIEW',
-      name: 'Audit Viewer',
-      permissions: [PERMISSIONS.AUDIT_VIEW],
-    }));
+    adminRole = await roleRepository.save(
+      roleRepository.create({
+        recordId: 'ADM_AUDIT_VIEW',
+        name: 'Audit Viewer',
+        permissions: [PERMISSIONS.AUDIT_VIEW],
+      }),
+    );
 
-    noPermRole = await roleRepository.save(roleRepository.create({
-      recordId: 'NO_PERM_AUDIT',
-      name: 'No Audit View',
-      permissions: [],
-    }));
+    noPermRole = await roleRepository.save(
+      roleRepository.create({
+        recordId: 'NO_PERM_AUDIT',
+        name: 'No Audit View',
+        permissions: [],
+      }),
+    );
 
-    targetRole = await roleRepository.save(roleRepository.create({
-      recordId: 'TARGET_ROLE',
-      name: 'Target Role',
-      permissions: [],
-    }));
+    targetRole = await roleRepository.save(
+      roleRepository.create({
+        recordId: 'TARGET_ROLE',
+        name: 'Target Role',
+        permissions: [],
+      }),
+    );
 
     // 3. Setup Users
-    adminUser = await userRepository.save(userRepository.create({
-      recordId: 'ADM_USR_VIEW',
-      name: 'Audit Admin',
-      firstName: 'Audit',
-      lastName: 'Admin',
-      email: 'audit.viewer@test.com',
-      role: adminRole,
-    }));
+    adminUser = await userRepository.save(
+      userRepository.create({
+        recordId: 'ADM_USR_VIEW',
+        name: 'Audit Admin',
+        firstName: 'Audit',
+        lastName: 'Admin',
+        email: 'audit.viewer@test.com',
+        role: adminRole,
+      }),
+    );
     adminToken = jwtService.sign({ sub: adminUser.recordId, tokenVersion: 0 });
 
-    noPermUser = await userRepository.save(userRepository.create({
-      recordId: 'NO_PERM_USR',
-      name: 'No Perm User',
-      firstName: 'No',
-      lastName: 'Perm',
-      email: 'no.perm@test.com',
-      role: noPermRole,
-    }));
-    noPermToken = jwtService.sign({ sub: noPermUser.recordId, tokenVersion: 0 });
+    noPermUser = await userRepository.save(
+      userRepository.create({
+        recordId: 'NO_PERM_USR',
+        name: 'No Perm User',
+        firstName: 'No',
+        lastName: 'Perm',
+        email: 'no.perm@test.com',
+        role: noPermRole,
+      }),
+    );
+    noPermToken = jwtService.sign({
+      sub: noPermUser.recordId,
+      tokenVersion: 0,
+    });
 
     // 4. Setup Target Resource
-    targetUser = await userRepository.save(userRepository.create({
-      recordId: 'TARGET_USR',
-      name: 'Target User',
-      firstName: 'Target',
-      lastName: 'User',
-      email: 'target.user@test.com',
-      role: targetRole,
-    }));
+    targetUser = await userRepository.save(
+      userRepository.create({
+        recordId: 'TARGET_USR',
+        name: 'Target User',
+        firstName: 'Target',
+        lastName: 'User',
+        email: 'target.user@test.com',
+        role: targetRole,
+      }),
+    );
   });
 
   afterAll(async () => {
@@ -131,7 +156,7 @@ describe('Audits Resource (e2e)', () => {
       { name: 'Old Name' },
       { name: 'New Name' },
       adminUser.id,
-      'Test Manual Log'
+      'Test Manual Log',
     );
   });
 

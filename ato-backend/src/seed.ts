@@ -36,20 +36,12 @@ async function bootstrap() {
         value: { enabled: true, retentionDays: 90 },
         description: 'Global Audit Logging Settings',
       },
-      {
-        key: SystemConfigKeys.BOOMI.POLL_INTERVAL,
-        value: 2000, // 2 seconds
-        description: 'Boomi integration polling interval (ms)',
-      },
-      {
-        key: SystemConfigKeys.BOOMI.MAX_POLLS,
-        value: 120, // ~4 minutes
-        description: 'Boomi integration max polling attempts',
-      }
     ];
 
     for (const config of seedConfigs) {
-      const existingConfig = await systemConfigRepo.findOne({ where: { key: config.key } });
+      const existingConfig = await systemConfigRepo.findOne({
+        where: { key: config.key },
+      });
       if (!existingConfig) {
         await systemConfigRepo.save(systemConfigRepo.create(config));
       }
@@ -63,7 +55,9 @@ async function bootstrap() {
     ];
 
     for (const counterData of seedCounters) {
-      const existingCounter = await counterRepo.findOne({ where: { _id: counterData._id } });
+      const existingCounter = await counterRepo.findOne({
+        where: { _id: counterData._id },
+      });
       if (!existingCounter) {
         await counterRepo.save(counterRepo.create(counterData));
       }
@@ -81,18 +75,13 @@ async function bootstrap() {
       {
         recordId: 'ROLE_DEVELOPER',
         name: 'Developer',
-        permissions: [
-          PERMISSIONS.USER_VIEW,
-          PERMISSIONS.AUDIT_VIEW,
-        ],
+        permissions: [PERMISSIONS.USER_VIEW, PERMISSIONS.AUDIT_VIEW],
         isActive: true,
       },
       {
         recordId: 'ROLE_VIEWER',
         name: 'Viewer',
-        permissions: [
-          PERMISSIONS.USER_VIEW,
-        ],
+        permissions: [PERMISSIONS.USER_VIEW],
         isActive: true,
       },
     ];
@@ -101,43 +90,52 @@ async function bootstrap() {
       const { recordId, permissions, ...rest } = roleData;
       const existingRole = await roleRepo.findOne({ where: { recordId } });
       if (!existingRole) {
-        await roleRepo.save(roleRepo.create({
-          ...rest,
-          recordId,
-          permissions
-        }));
+        await roleRepo.save(
+          roleRepo.create({
+            ...rest,
+            recordId,
+            permissions,
+          }),
+        );
       } else {
         // Update permissions ensuring new ones are added
         // For seed, maybe just overwrite permissions or merge distinctive sets
-        const uniquePermissions = [...new Set([...existingRole.permissions, ...permissions])];
+        const uniquePermissions = [
+          ...new Set([...existingRole.permissions, ...permissions]),
+        ];
         existingRole.permissions = uniquePermissions;
         await roleRepo.save(existingRole);
       }
     }
     console.log('Verified System Roles.');
 
-
     // --- Admin User ---
-    const adminRole = await roleRepo.findOne({ where: { recordId: 'ROLE_ADMINISTRATOR' } });
+    const adminRole = await roleRepo.findOne({
+      where: { recordId: 'ROLE_ADMINISTRATOR' },
+    });
     const adminEmail = configService.get<string>('ADMIN_EMAIL');
 
     if (adminEmail && adminRole) {
       const hash = await bcrypt.hash('pw', 10);
-      const existingAdmin = await userRepo.findOne({ where: { email: adminEmail } });
+      const existingAdmin = await userRepo.findOne({
+        where: { email: adminEmail },
+      });
 
       if (!existingAdmin) {
-        await userRepo.save(userRepo.create({
-          recordId: 'USR0001',
-          firstName: configService.get('ADMIN_FIRST_NAME') || 'System',
-          lastName: configService.get('ADMIN_LAST_NAME') || 'Administrator',
-          name: 'System Administrator',
-          email: adminEmail,
-          password: hash,
-          role: adminRole,
-          roleId: adminRole.id, // Explicit FK
-          isActive: true,
-          preferences: { theme: 'auto' } // Default jsonb
-        }));
+        await userRepo.save(
+          userRepo.create({
+            recordId: 'USR0001',
+            firstName: configService.get('ADMIN_FIRST_NAME') || 'System',
+            lastName: configService.get('ADMIN_LAST_NAME') || 'Administrator',
+            name: 'System Administrator',
+            email: adminEmail,
+            password: hash,
+            role: adminRole,
+            roleId: adminRole.id, // Explicit FK
+            isActive: true,
+            preferences: { theme: 'auto' }, // Default jsonb
+          }),
+        );
         console.log('Verified System Admin.');
       }
     }

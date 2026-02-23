@@ -16,4 +16,4 @@ import { RolesModule } from '../../iam/roles/roles.module';
   providers: [AuditsService, AuditDiffService],
   exports: [AuditsService],
 })
-export class AuditsModule { }
+export class AuditsModule {}

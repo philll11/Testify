@@ -1,4 +1,17 @@
-import { Controller, Post, Get, UseGuards, Request, Res, Headers, HttpCode, HttpStatus, Logger, Body, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  UseGuards,
+  Request,
+  Res,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Body,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LocalAuthGuard } from './local-auth.guard';
@@ -15,7 +28,7 @@ export class AuthController {
     private authService: AuthService,
     private usersService: UsersService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   @Get('profile')
   async getProfile(@Request() req) {
@@ -33,15 +46,26 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Headers('x-client-platform') platform: string = 'web',
   ) {
-    const { accessToken, refreshToken } = await this.authService.login(req.user);
+    const { accessToken, refreshToken } = await this.authService.login(
+      req.user,
+    );
 
     if (platform === 'mobile') {
       // Mobile: Return tokens in body
       return { accessToken, refreshToken, user: req.user };
     } else {
       // Web: Set HttpOnly Cookies
-      const accessExpiresIn = parseInt(this.configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'), 10);
-      const refreshExpiresIn = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN_SECONDS', '604800'), 10);
+      const accessExpiresIn = parseInt(
+        this.configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'),
+        10,
+      );
+      const refreshExpiresIn = parseInt(
+        this.configService.get<string>(
+          'JWT_REFRESH_EXPIRES_IN_SECONDS',
+          '604800',
+        ),
+        10,
+      );
 
       response.cookie('Authentication', accessToken, {
         httpOnly: true,
@@ -73,7 +97,8 @@ export class AuthController {
     @Headers('x-client-platform') platform: string = 'web',
   ) {
     // Get token from Cookie (Web) or Body (Mobile)
-    const refreshToken = platform === 'mobile' ? bodyRefreshToken : req.cookies['Refresh'];
+    const refreshToken =
+      platform === 'mobile' ? bodyRefreshToken : req.cookies['Refresh'];
 
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token provided');
@@ -84,8 +109,17 @@ export class AuthController {
     if (platform === 'mobile') {
       return tokens;
     } else {
-      const accessExpiresIn = parseInt(this.configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'), 10);
-      const refreshExpiresIn = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN_SECONDS', '604800'), 10);
+      const accessExpiresIn = parseInt(
+        this.configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'),
+        10,
+      );
+      const refreshExpiresIn = parseInt(
+        this.configService.get<string>(
+          'JWT_REFRESH_EXPIRES_IN_SECONDS',
+          '604800',
+        ),
+        10,
+      );
 
       response.cookie('Authentication', tokens.accessToken, {
         httpOnly: true,
@@ -121,8 +155,15 @@ export class AuthController {
     await this.authService.logout(requestingUser.id, refreshToken);
 
     // 2. Clear cookies
-    response.cookie('Authentication', '', { httpOnly: true, expires: new Date(0) });
-    response.cookie('Refresh', '', { httpOnly: true, expires: new Date(0), path: '/auth/refresh' });
+    response.cookie('Authentication', '', {
+      httpOnly: true,
+      expires: new Date(0),
+    });
+    response.cookie('Refresh', '', {
+      httpOnly: true,
+      expires: new Date(0),
+      path: '/auth/refresh',
+    });
 
     return { message: 'Logged out' };
   }
@@ -132,7 +173,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body('email') email: string) {
     await this.authService.forgotPassword(email);
-    return { message: 'If an account with that email exists, we have sent a password reset link.' };
+    return {
+      message:
+        'If an account with that email exists, we have sent a password reset link.',
+    };
   }
 
   @Public()

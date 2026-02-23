@@ -1,4 +1,3 @@
-
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -26,7 +25,10 @@ export class SystemConfigService implements OnModuleInit {
       return cached.value as SystemConfig;
     }
 
-    const config = await this.systemConfigRepository.findOneBy({ key, isDeleted: false });
+    const config = await this.systemConfigRepository.findOneBy({
+      key,
+      isDeleted: false,
+    });
     if (config) {
       this.cache.set(key, { value: config, expiry: now + this.TTL });
       return config;
@@ -43,7 +45,7 @@ export class SystemConfigService implements OnModuleInit {
         key,
         value,
         description,
-        isDeleted: false
+        isDeleted: false,
       });
     } else {
       config.value = value;
@@ -57,11 +59,14 @@ export class SystemConfigService implements OnModuleInit {
 
     // Invalidate cache or update it
     if (updatedConfig) {
-      this.cache.set(key, { value: updatedConfig, expiry: Date.now() + this.TTL });
+      this.cache.set(key, {
+        value: updatedConfig,
+        expiry: Date.now() + this.TTL,
+      });
     }
   }
 
   async getAll(): Promise<SystemConfig[]> {
-      return this.systemConfigRepository.find({ where: { isDeleted: false } });
+    return this.systemConfigRepository.find({ where: { isDeleted: false } });
   }
 }

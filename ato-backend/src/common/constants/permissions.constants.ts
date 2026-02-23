@@ -42,6 +42,17 @@ export const PERMISSIONS = {
   SYSTEM_CONFIG_VIEW: 'SystemConfig:View',
   SYSTEM_CONFIG_EDIT: 'SystemConfig:Edit',
 
+  // --- Integration Tools ---
+  PLATFORM_PROFILE_VIEW: 'PlatformProfile:View',
+  PLATFORM_PROFILE_EDIT: 'PlatformProfile:Edit',
+  PLATFORM_PROFILE_CREATE: 'PlatformProfile:Create',
+  PLATFORM_PROFILE_DELETE: 'PlatformProfile:Delete',
+
+  PLATFORM_ENVIRONMENT_CREATE: 'PlatformEnvironment:Create',
+  PLATFORM_ENVIRONMENT_VIEW: 'PlatformEnvironment:View',
+  PLATFORM_ENVIRONMENT_EDIT: 'PlatformEnvironment:Edit',
+  PLATFORM_ENVIRONMENT_DELETE: 'PlatformEnvironment:Delete',
+
   // --- Audit Management ---
   AUDIT_VIEW: 'Audit:View',
 
@@ -65,4 +76,6 @@ export enum Resource {
   ROLE = 'Role',
   COUNTERS = 'Counters',
   SYSTEM_CONFIG = 'SystemConfig',
+  INTEGRATION_CREDENTIALS = 'IntegrationCredentials',
+  INTEGRATION_CONFIG = 'IntegrationConfig',
 }

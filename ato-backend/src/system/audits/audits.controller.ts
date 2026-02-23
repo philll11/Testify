@@ -7,7 +7,7 @@ import { User } from '../../iam/users/entities/user.entity';
 
 @Controller('system/audit')
 export class AuditsController {
-  constructor(private readonly auditsService: AuditsService) { }
+  constructor(private readonly auditsService: AuditsService) {}
 
   @Get(':resource/:id')
   @RequirePermission(PERMISSIONS.AUDIT_VIEW)

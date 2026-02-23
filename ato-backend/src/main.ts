@@ -22,7 +22,9 @@ async function bootstrap() {
   // --- ENABLE CORS ---
   const corsOrigin = configService.get<string>('CORS_ORIGIN');
   if (corsOrigin) {
-    const origins = corsOrigin.includes(',') ? corsOrigin.split(',').map(o => o.trim()) : corsOrigin;
+    const origins = corsOrigin.includes(',')
+      ? corsOrigin.split(',').map((o) => o.trim())
+      : corsOrigin;
     app.enableCors({
       origin: origins,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -49,7 +51,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Automated Test Orchestrator API')
-    .setDescription('The official API documentation for the Automated Test Orchestrator platform.')
+    .setDescription(
+      'The official API documentation for the Automated Test Orchestrator platform.',
+    )
     .setVersion('1.0')
     .addTag('ato') // A tag for grouping endpoints
     .addBearerAuth() // If you use Bearer tokens for auth, this is crucial
@@ -57,7 +61,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
 
   const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);

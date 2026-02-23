@@ -44,7 +44,9 @@ describe('IsExistingRoleConstraint', () => {
       mockRolesService.isRoleExistingAndActive.mockResolvedValue(true);
       const result = await validator.validate(validId, mockArgs);
       expect(result).toBe(true);
-      expect(mockRolesService.isRoleExistingAndActive).toHaveBeenCalledWith(validId);
+      expect(mockRolesService.isRoleExistingAndActive).toHaveBeenCalledWith(
+        validId,
+      );
     });
 
     it('should FAIL when roleId is invalid and service returns false', async () => {
@@ -52,7 +54,9 @@ describe('IsExistingRoleConstraint', () => {
       mockRolesService.isRoleExistingAndActive.mockResolvedValue(false);
       const result = await validator.validate(invalidId, mockArgs);
       expect(result).toBe(false);
-      expect(mockRolesService.isRoleExistingAndActive).toHaveBeenCalledWith(invalidId);
+      expect(mockRolesService.isRoleExistingAndActive).toHaveBeenCalledWith(
+        invalidId,
+      );
     });
 
     it('should PASS when roleId is null', async () => {
@@ -66,7 +70,9 @@ describe('IsExistingRoleConstraint', () => {
     it('should return the correct error message', () => {
       mockArgs.value = 'invalid-role-id';
       const message = validator.defaultMessage(mockArgs);
-      expect(message).toBe('Role with ID "invalid-role-id" does not exist or is not active.');
+      expect(message).toBe(
+        'Role with ID "invalid-role-id" does not exist or is not active.',
+      );
     });
   });
 });

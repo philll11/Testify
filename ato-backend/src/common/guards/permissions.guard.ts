@@ -1,12 +1,17 @@
 // backend/src/common/guards/permissions.guard.ts
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { User } from '../../iam/users/entities/user.entity';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     // Get the permissions required for the route, set by the @RequirePermission decorator.
@@ -28,11 +33,15 @@ export class PermissionsGuard implements CanActivate {
     if (!userPermissions) return false;
 
     // The core logic: check if the user's permissions array includes EVERY required permission.
-    const hasAllPermissions = requiredPermissions.every((permission) => userPermissions.includes(permission));
+    const hasAllPermissions = requiredPermissions.every((permission) =>
+      userPermissions.includes(permission),
+    );
 
     if (hasAllPermissions) return true;
 
     // If the user is missing one or more permissions, throw a 403 Forbidden error.
-    throw new ForbiddenException('You do not have the required permissions to perform this action.');
+    throw new ForbiddenException(
+      'You do not have the required permissions to perform this action.',
+    );
   }
 }

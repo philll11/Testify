@@ -4,8 +4,8 @@ import { EncryptionService } from './encryption/encryption.service';
 
 @Global()
 @Module({
-    imports: [ConfigModule],
-    providers: [EncryptionService],
-    exports: [EncryptionService],
+  imports: [ConfigModule],
+  providers: [EncryptionService],
+  exports: [EncryptionService],
 })
-export class CommonModule { }
+export class CommonModule {}

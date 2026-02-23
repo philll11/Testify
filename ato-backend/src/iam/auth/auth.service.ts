@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, UnauthorizedException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +22,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
-  ) { }
+  ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.validateUser(email, pass);
@@ -29,9 +35,13 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(
+    user: any,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     if (!user.isActive || user.isDeleted || !user.role) {
-      throw new UnauthorizedException('User account is not active or has no role.');
+      throw new UnauthorizedException(
+        'User account is not active or has no role.',
+      );
     }
 
     const payload = {
@@ -49,10 +59,17 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  async refreshTokens(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
-    const tokenDoc = await this.refreshTokenRepository.findOne({ where: { tokenHash } });
+    const tokenDoc = await this.refreshTokenRepository.findOne({
+      where: { tokenHash },
+    });
 
     if (!tokenDoc) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -95,10 +112,19 @@ export class AuthService {
 
   private async generateRefreshToken(userId: string): Promise<string> {
     const refreshToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     // Default 7 days if not configured
-    const ttlSeconds = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN_SECONDS', '604800'), 10);
+    const ttlSeconds = parseInt(
+      this.configService.get<string>(
+        'JWT_REFRESH_EXPIRES_IN_SECONDS',
+        '604800',
+      ),
+      10,
+    );
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
     const tokenEntity = this.refreshTokenRepository.create({
@@ -118,8 +144,14 @@ export class AuthService {
 
     // Also revoke the specific refresh token if provided
     if (refreshToken) {
-      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-      await this.refreshTokenRepository.update({ tokenHash }, { isRevoked: true });
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(refreshToken)
+        .digest('hex');
+      await this.refreshTokenRepository.update(
+        { tokenHash },
+        { isRevoked: true },
+      );
     }
   }
 
@@ -133,13 +165,20 @@ export class AuthService {
 
     // 2. Generate and Hash Token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const passwordResetToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
 
     // 3. Set Expiration (e.g., 10 minutes)
     const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     // 4. Save to User
-    await this.usersService.setPasswordResetToken(user.id, passwordResetToken, passwordResetExpires);
+    await this.usersService.setPasswordResetToken(
+      user.id,
+      passwordResetToken,
+      passwordResetExpires,
+    );
 
     // 5. Mock Email Sending
     const frontendUrl = this.configService.get<string>('app.frontendUrl');
@@ -171,6 +210,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // 4. Update password and clear token
-    await this.usersService.updatePasswordAndClearToken(user.id, hashedPassword);
+    await this.usersService.updatePasswordAndClearToken(
+      user.id,
+      hashedPassword,
+    );
   }
 }

@@ -8,4 +8,4 @@ import { CountersController } from './counters.controller';
   providers: [CountersService],
   exports: [CountersService],
 })
-export class CountersModule { }
+export class CountersModule {}

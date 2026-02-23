@@ -1,6 +1,10 @@
 // backend/src/app.service.ts
 
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -10,9 +14,10 @@ import appConfig from './config/app.config';
 export class AppService {
   constructor(
     // Inject the app-specific config using its registration key
-    @Inject(appConfig.KEY) private readonly config: ConfigType<typeof appConfig>,
+    @Inject(appConfig.KEY)
+    private readonly config: ConfigType<typeof appConfig>,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   /**
    * Provides the simple liveness status.
@@ -31,7 +36,9 @@ export class AppService {
 
     try {
       if (!this.dataSource.isInitialized) {
-        throw new InternalServerErrorException('Database connection is not properly initialized.');
+        throw new InternalServerErrorException(
+          'Database connection is not properly initialized.',
+        );
       }
       // Simple keep-alive check for Postgres
       await this.dataSource.query('SELECT 1');

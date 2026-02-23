@@ -10,15 +10,9 @@ import { AuditEntry } from '../system/audits/entities/audit.entity';
 
 @Global()
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            Role,
-            User,
-            Counter,
-            SystemConfig,
-            AuditEntry,
-        ]),
-    ],
-    exports: [TypeOrmModule],
+  imports: [
+    TypeOrmModule.forFeature([Role, User, Counter, SystemConfig, AuditEntry]),
+  ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule { }

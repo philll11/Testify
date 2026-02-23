@@ -1,14 +1,25 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { IntegrationService } from './integration.service';
-import { UsersModule } from '../iam/users/users.module'; // Access to UserCredentialsService
-import { SystemConfigModule } from '../system/config/system-config.module'; // Access to SystemConfigService
+import { PlatformEnvironment } from './platform-environment/entities/platform-environment.entity';
+import { PlatformProfile } from './platform-profile/entities/platform-profile.entity';
+import { PlatformEnvironmentService } from './platform-environment/platform-environment.service';
+import { PlatformProfileService } from './platform-profile/platform-profile.service';
+import { PlatformEnvironmentController } from './platform-environment/platform-environment.controller';
+import { PlatformProfileController } from './platform-profile/platform-profile.controller';
+import { CommonModule } from '../common/common.module';
 
 @Module({
-    imports: [
-        UsersModule,
-        SystemConfigModule
-    ],
-    providers: [IntegrationService],
-    exports: [IntegrationService]
+  imports: [
+    TypeOrmModule.forFeature([PlatformEnvironment, PlatformProfile]),
+    CommonModule,
+  ],
+  providers: [
+    IntegrationService,
+    PlatformEnvironmentService,
+    PlatformProfileService,
+  ],
+  controllers: [PlatformEnvironmentController, PlatformProfileController],
+  exports: [IntegrationService],
 })
-export class IntegrationModule { }
+export class IntegrationModule {}

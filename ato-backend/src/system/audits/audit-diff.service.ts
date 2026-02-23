@@ -5,7 +5,7 @@ import { AuditChange } from './entities/audit.entity';
 export class AuditDiffService {
   /**
    * Computes the difference between two objects and returns a list of changes.
-   * 
+   *
    * @param oldObj The original object state.
    * @param newObj The new object state.
    * @param prefix Recursion prefix (internal use).
@@ -14,7 +14,7 @@ export class AuditDiffService {
    *                    Maps a field path (e.g. 'plantings') to a property on the item (e.g. 'varietyId.name')
    *                    to be used as a discriminator suffix (e.g. "Plantings - Envy").
    * @param fieldDisplayNameMap "The What" - Configuration for renaming fields.
-   *                    Maps a technical field path (e.g. 'userIds') to a human-readable display name 
+   *                    Maps a technical field path (e.g. 'userIds') to a human-readable display name
    *                    (e.g. 'Assigned Users') used as the prefix.
    */
   computeDiff(
@@ -23,13 +23,23 @@ export class AuditDiffService {
     prefix = '',
     ignoredPaths: string[] = [],
     itemIdentityMap: Record<string, string> = {},
-    fieldDisplayNameMap: Record<string, string> = {}
+    fieldDisplayNameMap: Record<string, string> = {},
   ): AuditChange[] {
     const changes: AuditChange[] = [];
-    const allKeys = new Set([...Object.keys(oldObj || {}), ...Object.keys(newObj || {})]);
+    const allKeys = new Set([
+      ...Object.keys(oldObj || {}),
+      ...Object.keys(newObj || {}),
+    ]);
 
     // Fields to ignore
-    const systemIgnoredFields = ['id', '_id', 'createdAt', 'updatedAt', 'password', 'hash'];
+    const systemIgnoredFields = [
+      'id',
+      '_id',
+      'createdAt',
+      'updatedAt',
+      'password',
+      'hash',
+    ];
 
     // Helper to map field name
     const getFieldName = (path: string) => fieldDisplayNameMap[path] || path;
@@ -45,7 +55,14 @@ export class AuditDiffService {
 
       // 1. Handle Arrays
       if (Array.isArray(oldVal) || Array.isArray(newVal)) {
-        const arrayChanges = this.diffArray(oldVal || [], newVal || [], currentPath, ignoredPaths, itemIdentityMap, fieldDisplayNameMap);
+        const arrayChanges = this.diffArray(
+          oldVal || [],
+          newVal || [],
+          currentPath,
+          ignoredPaths,
+          itemIdentityMap,
+          fieldDisplayNameMap,
+        );
         changes.push(...arrayChanges);
         continue;
       }
@@ -55,17 +72,24 @@ export class AuditDiffService {
         const t1 = oldVal instanceof Date ? oldVal.getTime() : oldVal;
         const t2 = newVal instanceof Date ? newVal.getTime() : newVal;
         if (t1 !== t2) {
-          changes.push({ field: getFieldName(currentPath), oldValue: oldVal, newValue: newVal });
+          changes.push({
+            field: getFieldName(currentPath),
+            oldValue: oldVal,
+            newValue: newVal,
+          });
         }
         continue;
       }
 
-
       // 4. Handle Reference Objects (Populated Fields)
       // Detect if this is a standard populated reference (contains recordId and name)
       // If so, treat it as a primitive string change rather than recursing into it.
-      const oldRef = this.isReference(oldVal) ? this.formatReference(oldVal) : null;
-      const newRef = this.isReference(newVal) ? this.formatReference(newVal) : null;
+      const oldRef = this.isReference(oldVal)
+        ? this.formatReference(oldVal)
+        : null;
+      const newRef = this.isReference(newVal)
+        ? this.formatReference(newVal)
+        : null;
 
       if (oldRef !== null || newRef !== null) {
         // Compare by ID or unique key
@@ -73,20 +97,37 @@ export class AuditDiffService {
         const newId = newRef ? newRef.id : null;
 
         if (oldId !== newId) {
-          changes.push({ field: getFieldName(currentPath), oldValue: oldRef || null, newValue: newRef || null });
+          changes.push({
+            field: getFieldName(currentPath),
+            oldValue: oldRef || null,
+            newValue: newRef || null,
+          });
         }
         continue;
       }
 
       // 5. Handle Objects (Recursive)
       if (this.isObject(oldVal) && this.isObject(newVal)) {
-        changes.push(...this.computeDiff(oldVal, newVal, currentPath, ignoredPaths, itemIdentityMap, fieldDisplayNameMap));
+        changes.push(
+          ...this.computeDiff(
+            oldVal,
+            newVal,
+            currentPath,
+            ignoredPaths,
+            itemIdentityMap,
+            fieldDisplayNameMap,
+          ),
+        );
         continue;
       }
 
       // 6. Primitives
       if (oldVal !== newVal) {
-        changes.push({ field: getFieldName(currentPath), oldValue: oldVal, newValue: newVal });
+        changes.push({
+          field: getFieldName(currentPath),
+          oldValue: oldVal,
+          newValue: newVal,
+        });
       }
     }
 
@@ -99,19 +140,22 @@ export class AuditDiffService {
     path: string,
     ignoredPaths: string[],
     itemIdentityMap: Record<string, string>,
-    fieldDisplayNameMap: Record<string, string>
+    fieldDisplayNameMap: Record<string, string>,
   ): AuditChange[] {
-
     const changes: AuditChange[] = [];
 
     // Check if array contains objects with id (Stable ID strategy)
     // Both arrays (if not empty) must have ids to use this strategy
-    const oldHasIds = oldArr.length === 0 || (oldArr[0] && (oldArr[0].id || oldArr[0]._id));
-    const newHasIds = newArr.length === 0 || (newArr[0] && (newArr[0].id || newArr[0]._id));
+    const oldHasIds =
+      oldArr.length === 0 || (oldArr[0] && (oldArr[0].id || oldArr[0]._id));
+    const newHasIds =
+      newArr.length === 0 || (newArr[0] && (newArr[0].id || newArr[0]._id));
     const isStableArray = oldHasIds && newHasIds;
 
     // Check if it is a "Reference Array" (Array of populated objects)
-    const isReferenceArray = (oldArr.length > 0 && this.isReference(oldArr[0])) || (newArr.length > 0 && this.isReference(newArr[0]));
+    const isReferenceArray =
+      (oldArr.length > 0 && this.isReference(oldArr[0])) ||
+      (newArr.length > 0 && this.isReference(newArr[0]));
 
     if (isStableArray) {
       let labelKey = itemIdentityMap[path];
@@ -134,7 +178,9 @@ export class AuditDiffService {
         // We just want "userIds". The value will clarify what changed.
         if (isReferenceArray) return fieldDisplayNameMap[path] || path;
 
-        const labelValue = labelKey ? this.resolvePath(item, labelKey) : undefined;
+        const labelValue = labelKey
+          ? this.resolvePath(item, labelKey)
+          : undefined;
         const basePath = fieldDisplayNameMap[path] || path;
 
         if (labelValue !== undefined) {
@@ -166,7 +212,6 @@ export class AuditDiffService {
         return clone;
       };
 
-
       // Check for modifications and removals
       for (const [id, oldItem] of oldMap) {
         const newItem = newMap.get(id);
@@ -181,7 +226,16 @@ export class AuditDiffService {
           });
         } else {
           // Modified? Recurse
-          changes.push(...this.computeDiff(oldItem, newItem, fieldName, ignoredPaths, itemIdentityMap, fieldDisplayNameMap));
+          changes.push(
+            ...this.computeDiff(
+              oldItem,
+              newItem,
+              fieldName,
+              ignoredPaths,
+              itemIdentityMap,
+              fieldDisplayNameMap,
+            ),
+          );
         }
       }
 
@@ -201,7 +255,11 @@ export class AuditDiffService {
       // For simplicity, if arrays differ, we log the whole array change
       // Or we could try to match by value, but that's expensive.
       if (JSON.stringify(oldArr) !== JSON.stringify(newArr)) {
-        changes.push({ field: fieldDisplayNameMap[path] || path, oldValue: oldArr, newValue: newArr });
+        changes.push({
+          field: fieldDisplayNameMap[path] || path,
+          oldValue: oldArr,
+          newValue: newArr,
+        });
       }
     }
 
@@ -209,7 +267,11 @@ export class AuditDiffService {
   }
 
   private isReference(obj: any): boolean {
-    return obj && typeof obj === 'object' && ('recordId' in obj || 'name' in obj || 'id' in obj);
+    return (
+      obj &&
+      typeof obj === 'object' &&
+      ('recordId' in obj || 'name' in obj || 'id' in obj)
+    );
   }
 
   private formatReference(obj: any): any | null {
@@ -226,6 +288,11 @@ export class AuditDiffService {
   }
 
   private isObject(val: any): boolean {
-    return val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date);
+    return (
+      val !== null &&
+      typeof val === 'object' &&
+      !Array.isArray(val) &&
+      !(val instanceof Date)
+    );
   }
 }

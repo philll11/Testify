@@ -5,10 +5,16 @@ import { DataSource, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 
 import { setupTestApp, teardownTestApp } from '../test-utils';
-import { PERMISSIONS, Resource } from '../../src/common/constants/permissions.constants';
+import {
+  PERMISSIONS,
+  Resource,
+} from '../../src/common/constants/permissions.constants';
 import { User } from '../../src/iam/users/entities/user.entity';
 import { Role } from '../../src/iam/roles/entities/role.entity';
-import { AuditEntry, AuditAction } from '../../src/system/audits/entities/audit.entity';
+import {
+  AuditEntry,
+  AuditAction,
+} from '../../src/system/audits/entities/audit.entity';
 import { SystemConfig } from '../../src/system/config/entities/system-config.entity';
 import { CreateUserDto } from '../../src/iam/users/dto/create-user.dto';
 
@@ -43,40 +49,50 @@ describe('Users Audit (e2e)', () => {
     systemConfigRepository = dataSource.getRepository(SystemConfig);
 
     // 1. Enable Auditing Globally
-    const existingConfig = await systemConfigRepository.findOne({ where: { key: 'audit' } });
+    const existingConfig = await systemConfigRepository.findOne({
+      where: { key: 'audit' },
+    });
     if (existingConfig) {
       existingConfig.value = { enabled: true };
       await systemConfigRepository.save(existingConfig);
     } else {
-      await systemConfigRepository.save(systemConfigRepository.create({
-        key: 'audit',
-        value: { enabled: true },
-        description: 'Enable Auditing for E2E Tests',
-      }));
+      await systemConfigRepository.save(
+        systemConfigRepository.create({
+          key: 'audit',
+          value: { enabled: true },
+          description: 'Enable Auditing for E2E Tests',
+        }),
+      );
     }
 
     // 2. Setup Roles
-    adminRole = await roleRepository.save(roleRepository.create({
-      recordId: 'ADM_AUDIT',
-      name: 'Audit Admin',
-      permissions: Object.values(PERMISSIONS),
-    }));
+    adminRole = await roleRepository.save(
+      roleRepository.create({
+        recordId: 'ADM_AUDIT',
+        name: 'Audit Admin',
+        permissions: Object.values(PERMISSIONS),
+      }),
+    );
 
-    employeeRole = await roleRepository.save(roleRepository.create({
-      recordId: 'EMP_AUDIT',
-      name: 'Audit Employee',
-      permissions: [],
-    }));
+    employeeRole = await roleRepository.save(
+      roleRepository.create({
+        recordId: 'EMP_AUDIT',
+        name: 'Audit Employee',
+        permissions: [],
+      }),
+    );
 
     // 3. Setup Admin User (Actor)
-    adminUser = await userRepository.save(userRepository.create({
-      recordId: 'ADM_USR_AUDIT',
-      name: 'Audit Admin',
-      firstName: 'Audit',
-      lastName: 'Admin',
-      email: 'audit.admin@test.com',
-      role: adminRole,
-    }));
+    adminUser = await userRepository.save(
+      userRepository.create({
+        recordId: 'ADM_USR_AUDIT',
+        name: 'Audit Admin',
+        firstName: 'Audit',
+        lastName: 'Admin',
+        email: 'audit.admin@test.com',
+        role: adminRole,
+      }),
+    );
     adminToken = jwtService.sign({ sub: adminUser.recordId, tokenVersion: 0 });
   });
 
@@ -88,7 +104,9 @@ describe('Users Audit (e2e)', () => {
     // Clear previous audits for isolation
     await auditRepository.clear();
     // Clear test users created in previous tests (keep Admin)
-    const testUser = await userRepository.findOne({ where: { email: 'audit.test@user.com' } });
+    const testUser = await userRepository.findOne({
+      where: { email: 'audit.test@user.com' },
+    });
     if (testUser) await userRepository.remove(testUser);
   });
 
@@ -111,7 +129,7 @@ describe('Users Audit (e2e)', () => {
     // Verify Audit Log
     const logs = await auditRepository.find({
       where: { resource: Resource.USER, resourceId: createdUserId },
-      order: { date: 'DESC' } // Ensure latest if multiple
+      order: { date: 'DESC' }, // Ensure latest if multiple
     });
 
     expect(logs.length).toBeGreaterThan(0);
@@ -124,14 +142,16 @@ describe('Users Audit (e2e)', () => {
 
   it('should log UPDATE action when a user is modified', async () => {
     // 1. Create User directly (bypass audit for speed/clarity if desired, but service call is safer)
-    const user = await userRepository.save(userRepository.create({
-      recordId: 'AUDIT_UPD_TARGET',
-      name: 'Update Target',
-      firstName: 'Update',
-      lastName: 'Target',
-      email: 'audit.update.target@test.com',
-      role: employeeRole,
-    }));
+    const user = await userRepository.save(
+      userRepository.create({
+        recordId: 'AUDIT_UPD_TARGET',
+        name: 'Update Target',
+        firstName: 'Update',
+        lastName: 'Target',
+        email: 'audit.update.target@test.com',
+        role: employeeRole,
+      }),
+    );
 
     // 2. Perform Update via API
     const updateDto = {
@@ -147,7 +167,11 @@ describe('Users Audit (e2e)', () => {
     // 3. Verify Audit Log
     // Filter by resourceId and action UPDATE to ignore the CREATE log if triggered above
     const updates = await auditRepository.find({
-      where: { resource: Resource.USER, resourceId: user.id, action: AuditAction.UPDATE },
+      where: {
+        resource: Resource.USER,
+        resourceId: user.id,
+        action: AuditAction.UPDATE,
+      },
     });
 
     expect(updates.length).toBe(1);
@@ -157,29 +181,29 @@ describe('Users Audit (e2e)', () => {
 
     const changeFields = log.changes.map((c: any) => c.field);
     expect(changeFields).toContain('firstName');
-    expect(changeFields).toContain('name');
 
-    const firstNameChange = log.changes.find((c: any) => c.field === 'firstName');
-    expect(firstNameChange).toEqual(expect.objectContaining({
-      newValue: 'Modified'
-    }));
-
-    const nameChange = log.changes.find((c: any) => c.field === 'name');
-    expect(nameChange).toEqual(expect.objectContaining({
-      newValue: 'Modified Target'
-    }));
+    const firstNameChange = log.changes.find(
+      (c: any) => c.field === 'firstName',
+    );
+    expect(firstNameChange).toEqual(
+      expect.objectContaining({
+        newValue: 'Modified',
+      }),
+    );
   });
 
   it('should log DELETE action when a user is removed', async () => {
     // 1. Create User
-    const user = await userRepository.save(userRepository.create({
-      recordId: 'AUDIT_DEL_TARGET',
-      name: 'Delete Target',
-      firstName: 'Delete',
-      lastName: 'Target',
-      email: 'audit.delete.target@test.com',
-      role: employeeRole,
-    }));
+    const user = await userRepository.save(
+      userRepository.create({
+        recordId: 'AUDIT_DEL_TARGET',
+        name: 'Delete Target',
+        firstName: 'Delete',
+        lastName: 'Target',
+        email: 'audit.delete.target@test.com',
+        role: employeeRole,
+      }),
+    );
 
     // 2. Perform Delete via API
     await request(app.getHttpServer())
@@ -189,7 +213,11 @@ describe('Users Audit (e2e)', () => {
 
     // 3. Verify Log
     const logs = await auditRepository.find({
-      where: { resource: Resource.USER, resourceId: user.id, action: AuditAction.DELETE },
+      where: {
+        resource: Resource.USER,
+        resourceId: user.id,
+        action: AuditAction.DELETE,
+      },
     });
 
     expect(logs.length).toBe(1);

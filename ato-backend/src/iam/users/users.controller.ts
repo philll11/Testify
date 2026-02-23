@@ -1,9 +1,18 @@
 // backend/src/users/users.controller.ts
-import { Controller, Get, Query, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { QueryUserDto } from './dto/query-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { CreateCredentialDto } from './dto/create-credential.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 import { RequirePermission } from '../../common/decorators/permissions.decorator';
@@ -12,20 +21,17 @@ import { PERMISSIONS } from '../../common/constants/permissions.constants';
 
 import { User } from './entities/user.entity';
 
-
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @RequirePermission(PERMISSIONS.USER_CREATE)
-  create(@Body() createUserDto: CreateUserDto, @CurrentUser() requestingUser: User) {
+  create(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() requestingUser: User,
+  ) {
     return this.usersService.create(createUserDto, requestingUser);
-  }
-
-  @Post('credentials')
-  createCredential(@Body() createCredentialDto: CreateCredentialDto, @CurrentUser() requestingUser: User) {
-    return this.usersService.createCredential(createCredentialDto, requestingUser);
   }
 
   @Get()
@@ -39,9 +45,11 @@ export class UsersController {
   findOne(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query() query: QueryUserDto,
-    @CurrentUser() requestingUser: User
+    @CurrentUser() requestingUser: User,
   ) {
-    return this.usersService.findOne(userId, requestingUser, { includeInactive: query.includeInactives });
+    return this.usersService.findOne(userId, requestingUser, {
+      includeInactive: query.includeInactives,
+    });
   }
 
   @Patch(':userId')
@@ -56,7 +64,10 @@ export class UsersController {
 
   @Delete(':userId')
   @RequirePermission(PERMISSIONS.USER_DELETE)
-  remove(@Param('userId', ParseUUIDPipe) userId: string, @CurrentUser() requestingUser: User) {
+  remove(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @CurrentUser() requestingUser: User,
+  ) {
     return this.usersService.remove(userId, requestingUser);
   }
 }

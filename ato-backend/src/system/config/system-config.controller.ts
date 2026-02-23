@@ -25,7 +25,10 @@ export class SystemConfigController {
 
   @Patch(':key')
   @RequirePermission(PERMISSIONS.SYSTEM_CONFIG_EDIT)
-  async update(@Param('key') key: string, @Body() updateSystemConfigDto: UpdateSystemConfigDto) {
+  async update(
+    @Param('key') key: string,
+    @Body() updateSystemConfigDto: UpdateSystemConfigDto,
+  ) {
     await this.systemConfigService.set(key, updateSystemConfigDto.value);
     return { success: true };
   }

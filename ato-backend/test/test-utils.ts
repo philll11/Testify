@@ -44,7 +44,10 @@ export const setupTestApp = async (): Promise<{
 /**
  * Teardown the test application and clean up the database.
  */
-export const teardownTestApp = async (testApp: { app: INestApplication; dataSource: DataSource }) => {
+export const teardownTestApp = async (testApp: {
+  app: INestApplication;
+  dataSource: DataSource;
+}) => {
   const { app, dataSource } = testApp;
 
   // Clean up database tables

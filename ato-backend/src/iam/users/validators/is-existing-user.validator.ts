@@ -1,20 +1,20 @@
 // backend/src/users/validators/is-existing-user.validator.ts
 import { Injectable } from '@nestjs/common';
 import {
-    ValidatorConstraint,
-    ValidatorConstraintInterface,
-    ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 import { UsersService } from '../users.service';
 @ValidatorConstraint({ name: 'isExistingUser', async: true })
 @Injectable()
 export class IsExistingUserConstraint implements ValidatorConstraintInterface {
-    constructor(private readonly usersService: UsersService) { }
-    async validate(userId: string, args: ValidationArguments): Promise<boolean> {
-        if (!userId) return true;
-        return this.usersService.validateUserIds([userId]);
-    }
-    defaultMessage(args: ValidationArguments) {
-        return `User with ID "${args.value}" does not exist, is inactive, or has been deleted.`
-    }
+  constructor(private readonly usersService: UsersService) {}
+  async validate(userId: string, args: ValidationArguments): Promise<boolean> {
+    if (!userId) return true;
+    return this.usersService.validateUserIds([userId]);
+  }
+  defaultMessage(args: ValidationArguments) {
+    return `User with ID "${args.value}" does not exist, is inactive, or has been deleted.`;
+  }
 }

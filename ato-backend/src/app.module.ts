@@ -25,7 +25,8 @@ import { IntegrationModule } from './integration/integration.module';
     IntegrationModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',
+      ignoreEnvFile:
+        process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',
       load: [appConfig],
     }),
     LoggerModule.forRootAsync({
@@ -34,11 +35,18 @@ import { IntegrationModule } from './integration/integration.module';
       useFactory: (configService: ConfigService) => ({
         pinoHttp: {
           // Use pino-pretty for local development for human-readable logs
-          transport: configService.get<string>('NODE_ENV') !== 'production' ? { target: 'pino-pretty', options: { singleLine: true } } : undefined,
+          transport:
+            configService.get<string>('NODE_ENV') !== 'production'
+              ? { target: 'pino-pretty', options: { singleLine: true } }
+              : undefined,
           level: configService.get<string>('LOG_LEVEL', 'info'), // Default to 'info'
           // Define custom log message format for requests
-          customSuccessMessage: (req, res) => { return `Request ${req.id} finished with status ${res.statusCode}`; },
-          customErrorMessage: (req, res, err) => { return `Request ${req.id} failed with status ${res.statusCode}: ${err.message}`; },
+          customSuccessMessage: (req, res) => {
+            return `Request ${req.id} finished with status ${res.statusCode}`;
+          },
+          customErrorMessage: (req, res, err) => {
+            return `Request ${req.id} failed with status ${res.statusCode}: ${err.message}`;
+          },
           serializers: {
             req: (req) => ({
               id: req.id,
@@ -52,7 +60,7 @@ import { IntegrationModule } from './integration/integration.module';
           },
           // This creates and adds the Correlation ID to every log
           genReqId: (req, res) => {
-            const existingId = req.id ?? req.headers["x-request-id"];
+            const existingId = req.id ?? req.headers['x-request-id'];
             if (existingId) return existingId;
             const id = require('crypto').randomUUID();
             res.setHeader('X-Request-Id', id);
@@ -86,8 +94,8 @@ import { IntegrationModule } from './integration/integration.module';
   controllers: [AppController],
   providers: [
     AppService,
-    { provide: APP_GUARD, useClass: JwtAuthGuard, },
-    { provide: APP_GUARD, useClass: PermissionsGuard, },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
-export class AppModule { }
+export class AppModule {}
