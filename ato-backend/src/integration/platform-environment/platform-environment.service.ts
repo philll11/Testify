@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { PlatformEnvironment } from './entities/platform-environment.entity';
 import { CreatePlatformEnvironmentDto } from './dto/create-platform-environment.dto';
 import { UpdatePlatformEnvironmentDto } from './dto/update-platform-environment.dto';
+import { PlatformEnvironmentResponseDto } from './dto/platform-environment-response.dto';
 import { PlatformProfileService } from '../platform-profile/platform-profile.service';
 import { EncryptionService } from '../../common/encryption/encryption.service';
 
@@ -63,30 +64,32 @@ export class PlatformEnvironmentService {
     return this.environmentRepository.save(environment);
   }
 
-  async findAll(): Promise<PlatformEnvironment[]> {
-    return this.environmentRepository.find({
+  async findAll(): Promise<PlatformEnvironmentResponseDto[]> {
+    const environments = await this.environmentRepository.find({
       relations: ['profile'],
+      // We don't need to manually select fields here if we rely on the DTO transformation,
+      // but keeping it is an optimization to avoid fetching the large encrypted blobs.
       select: [
         'id',
         'name',
         'description',
         'platformType',
+        'profileId', // Make sure to select profileId for the DTO
         'createdAt',
         'updatedAt',
-      ], // Exclude sensitive details
+      ],
     });
+
+    // Map to DTOs. Note: Credentials are NOT included in the list view for security and performance.
+    return environments.map((env) =>
+      PlatformEnvironmentResponseDto.fromEntity(env, undefined),
+    );
   }
 
-  async findOne(id: string): Promise<PlatformEnvironment> {
-    const environment = await this.environmentRepository.findOne({
-      where: { id },
-      relations: ['profile'],
-    });
-    if (!environment) {
-      throw new NotFoundException(
-        `Platform Environment with ID "${id}" not found.`,
-      );
-    }
+  async findOne(id: string): Promise<PlatformEnvironmentResponseDto> {
+    const environment = await this.findEntityById(id);
+
+    let credentials: Record<string, any> = {};
 
     try {
       if (environment.encryptedData) {
@@ -95,19 +98,26 @@ export class PlatformEnvironmentService {
           iv: environment.iv,
           tag: environment.authTag,
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (environment as any).credentials = JSON.parse(decrypted);
-
-        // Remove sensitive encrypted data from response
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (environment as any).encryptedData;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (environment as any).iv;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (environment as any).authTag;
+        credentials = JSON.parse(decrypted);
       }
     } catch (error) {
-      // Ignore decryption errors for now, just return environment without credentials
+      // In production, log this error securely
+      console.error(`Failed to decrypt credentials for env ${id}`, error);
+    }
+
+    return PlatformEnvironmentResponseDto.fromEntity(environment, credentials);
+  }
+
+  private async findEntityById(id: string): Promise<PlatformEnvironment> {
+    const environment = await this.environmentRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+
+    if (!environment) {
+      throw new NotFoundException(
+        `Platform Environment with ID "${id}" not found.`,
+      );
     }
 
     return environment;
@@ -124,7 +134,7 @@ export class PlatformEnvironmentService {
     id: string,
     updateDto: UpdatePlatformEnvironmentDto,
   ): Promise<PlatformEnvironment> {
-    const environment = await this.findOne(id);
+    const environment = await this.findEntityById(id);
 
     if (updateDto.name && updateDto.name !== environment.name) {
       const existing = await this.environmentRepository.findOne({
@@ -178,7 +188,7 @@ export class PlatformEnvironmentService {
 
   // Helper for internal use (e.g. by IntegrationService)
   async getDecryptedCredentials(id: string): Promise<any> {
-    const environment = await this.findOne(id);
+    const environment = await this.findEntityById(id);
 
     const decrypted = await this.encryptionService.decrypt({
       content: environment.encryptedData,

@@ -26,6 +26,7 @@ import {
     useCreatePlatformEnvironment,
     useUpdatePlatformEnvironment
 } from 'hooks/platform/useEnvironments';
+import { usePlatformProfiles } from 'hooks/platform/useProfiles';
 import { PlatformEnvironment } from 'types/platform/environments';
 import { PlatformEnvironmentFormData } from 'types/platform/environments.schema';
 import EnvironmentForm, { EnvironmentFormMode } from './EnvironmentForm';
@@ -46,6 +47,7 @@ const EnvironmentList = () => {
 
     // Queries & Mutations
     const { data: environments = [], isLoading } = usePlatformEnvironments();
+    const { data: profiles = [] } = usePlatformProfiles();
     const { mutateAsync: deleteEnvironment } = useDeletePlatformEnvironment();
     const { mutateAsync: createEnvironment, isPending: isCreating } = useCreatePlatformEnvironment();
     const { mutateAsync: updateEnvironment, isPending: isUpdating } = useUpdatePlatformEnvironment();
@@ -125,13 +127,9 @@ const EnvironmentList = () => {
     const handleFormSubmit = async (values: PlatformEnvironmentFormData) => {
         try {
             if (mode === 'create') {
-                // Mapping form data (which matches DTO but check types)
-                // Need to remove any extra fields if DTO is strict, but assuming match
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await createEnvironment(values as any);
+                await createEnvironment(values);
             } else if (mode === 'edit' && selectedEnvironment) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await updateEnvironment({ id: selectedEnvironment.id, data: values as any });
+                await updateEnvironment({ id: selectedEnvironment.id, data: values });
             }
             setDrawerOpen(false);
             setCreateDraft({});
@@ -184,9 +182,9 @@ const EnvironmentList = () => {
             headerName: 'Profile',
             flex: 1,
             minWidth: 150,
-            valueGetter: (value, row) => row?.profile?.name || '', // Helper for sorting
+            valueGetter: (value, row) => row?.profile?.name || profiles.find(p => p.id === row.profileId)?.name || '',
             renderCell: (params: GridRenderCellParams) => {
-                const profile = params.row.profile;
+                const profile = params.row.profile || profiles.find(p => p.id === params.row.profileId);
                 return profile ? (
                     <Chip label={profile.name} size="small" />
                 ) : (
@@ -199,9 +197,9 @@ const EnvironmentList = () => {
             headerName: 'Platform Type',
             flex: 1,
             minWidth: 120,
-            valueGetter: (value, row) => row?.profile?.platformType || '',
+            valueGetter: (value, row) => row.platformType || '',
             renderCell: (params: GridRenderCellParams) => {
-                const type = params.row.profile?.platformType;
+                const type = params.row.platformType;
                 return type ? <Chip label={type.toUpperCase()} size="small" variant="outlined" /> : '-';
             }
         },
@@ -269,7 +267,7 @@ const EnvironmentList = () => {
                 );
             }
         }
-    ], [can]);
+    ], [can, profiles]);
 
     return (
         <MainCard

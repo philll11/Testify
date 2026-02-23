@@ -7,15 +7,21 @@ export interface PlatformEnvironment {
     description?: string;
     platformType: IntegrationPlatform;
     profileId: string;
+    // Profile is only populated in GET /:id details view, not in list view
     profile?: PlatformProfile;
+    // Credentials only populated in GET /:id, never in list
+    credentials?: Record<string, any>;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface PlatformCredentials {
-    username: string;
-    token: string; // Password/Token
-    executionInstance: string;
+    username?: string;
+    token?: string;
+    apiKey?: string;
+    accountId?: string;
+    // Flexible structure as per backend "Record<string, any>"
+    [key: string]: any;
 }
 
 export interface CreatePlatformEnvironmentDto {
@@ -29,5 +35,5 @@ export interface UpdatePlatformEnvironmentDto {
     name?: string;
     description?: string;
     profileId?: string;
-    credentials?: Partial<PlatformCredentials>; // Backend handles partial updates logic if implemented
+    credentials?: PlatformCredentials;
 }

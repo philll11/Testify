@@ -72,10 +72,15 @@ describe('Platform Environment E2E', () => {
     });
 
     describe('POST /platform-environments', () => {
-        it('should create environment linked to profile', async () => {
-            const profile = await profileRepo.findOneBy({ name: 'Boomi Default' });
-            if (!profile) throw new Error('Profile not found');
+        let profile: PlatformProfile;
 
+        beforeAll(async () => {
+            const p = await profileRepo.findOneBy({ name: 'Boomi Default' });
+            if (!p) throw new Error('Profile not found');
+            profile = p;
+        });
+
+        it('should create environment linked to profile', async () => {
             const createDto = {
                 name: 'Dev Environment',
                 description: 'Development Sandbox',
@@ -95,12 +100,12 @@ describe('Platform Environment E2E', () => {
             expect(response.body.id).toBeDefined();
             expect(response.body.platformType).toBe(IntegrationPlatform.BOOMI); // Inherited
 
-            // Verify in DB
+            // Verify in DB - Ensure encryptedData is present in DB but not in response if we are modifying the service return types
+            // Standard controller practice is to return the entity or DTO. 
+            // If returning the Entity, fields marked @Exclude are hidden.
             const env = await environmentRepo.findOneBy({ id: response.body.id });
             expect(env).toBeDefined();
-            if (env) {
-                expect(env.encryptedData).toBeDefined(); // Should be encrypted
-            }
+            expect(env?.encryptedData).toBeDefined();
         });
 
         it('should fail if profile does not exist', async () => {
@@ -119,15 +124,23 @@ describe('Platform Environment E2E', () => {
     });
 
     describe('GET /platform-environments', () => {
-        it('should list environments', async () => {
-            await request(app.getHttpServer())
+        it('should list environments without exposing keys', async () => {
+            const response = await request(app.getHttpServer())
                 .get('/platform-environments')
                 .set('Authorization', `Bearer ${adminToken}`)
-                .expect(200)
-                .expect((res) => {
-                    expect(res.body.length).toBeGreaterThan(0);
-                    expect(res.body[0].encryptedData).toBeUndefined(); // Sensitive data should be hidden
-                });
+                .expect(200);
+
+            expect(response.body.length).toBeGreaterThan(0);
+            const item = response.body[0];
+
+            // Should contain ID and name
+            expect(item.id).toBeDefined();
+            expect(item.name).toBeDefined();
+
+            // Should NOT contain credentials or encryptedData
+            expect(item.credentials).toBeUndefined();
+            expect(item.encryptedData).toBeUndefined();
+            expect(item.iv).toBeUndefined();
         });
     });
 
@@ -145,19 +158,21 @@ describe('Platform Environment E2E', () => {
             expect(response.body.name).toBe(env.name);
 
             // Check Profile Relation
-            expect(response.body.profile).toBeDefined();
-            expect(response.body.profile.id).toBeDefined();
+            expect(response.body.profileId).toBeDefined();
 
-            // Check Decrypted Credentials
+            // Check Decrypted Credentials - this confirms our DTO transformation logic works
             expect(response.body.credentials).toBeDefined();
+            // Since our DTO types credentials as Record<string, any>, we access it directly
             expect(response.body.credentials.username).toBe('test-user');
+
             // Check that encrypted properties are not exposed
             expect(response.body.encryptedData).toBeUndefined();
         });
 
         it('should return 404 for non-existent environment', async () => {
+            const fakeId = '00000000-0000-0000-0000-000000000000';
             await request(app.getHttpServer())
-                .get('/platform-environments/00000000-0000-0000-0000-000000000000')
+                .get(`/platform-environments/${fakeId}`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(404);
         });
