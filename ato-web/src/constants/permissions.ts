@@ -20,6 +20,17 @@ export const PERMISSIONS = {
   COUNTERS_EDIT: 'Counters:Edit',
   AUDIT_VIEW: 'Audit:View',
 
+  // --- Integration Tools ---
+  PLATFORM_PROFILE_VIEW: 'PlatformProfile:View',
+  PLATFORM_PROFILE_EDIT: 'PlatformProfile:Edit',
+  PLATFORM_PROFILE_CREATE: 'PlatformProfile:Create',
+  PLATFORM_PROFILE_DELETE: 'PlatformProfile:Delete',
+
+  PLATFORM_ENVIRONMENT_VIEW: 'PlatformEnvironment:View',
+  PLATFORM_ENVIRONMENT_EDIT: 'PlatformEnvironment:Edit',
+  PLATFORM_ENVIRONMENT_CREATE: 'PlatformEnvironment:Create',
+  PLATFORM_ENVIRONMENT_DELETE: 'PlatformEnvironment:Delete',
+
   // --- Global ---
   VIEW_DELETED: 'Global:ViewDeleted',
 };
@@ -34,5 +45,7 @@ export enum Resource {
   ROLE = 'Role',
   COUNTERS = 'Counters',
   SYSTEM_CONFIG = 'SystemConfig',
+  PLATFORM_PROFILE = 'PlatformProfile',
+  PLATFORM_ENVIRONMENT = 'PlatformEnvironment',
   GLOBAL = 'Global',
 }

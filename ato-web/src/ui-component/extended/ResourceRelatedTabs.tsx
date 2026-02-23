@@ -26,7 +26,7 @@ export interface ResourceRelatedTabsProps {
 const ResourceRelatedTabs = ({ tabs, defaultTab }: ResourceRelatedTabsProps) => {
     const theme = useTheme();
     const [searchParams, setSearchParams] = useSearchParams();
-    
+
     // Get current tab from URL or default to first one
     const currentTab = searchParams.get('tab') || defaultTab || tabs[0]?.value;
 
@@ -48,9 +48,9 @@ const ResourceRelatedTabs = ({ tabs, defaultTab }: ResourceRelatedTabsProps) => 
     const activeComponent = tabs.find(t => t.value === currentTab)?.component;
 
     return (
-        <MainCard 
+        <MainCard
             content={false}
-            sx={{ 
+            sx={{
                 '& .MuiTab-root': {
                     minHeight: 50, // Increase tab click area
                     flexDirection: 'row', // Icon formatting
@@ -59,9 +59,9 @@ const ResourceRelatedTabs = ({ tabs, defaultTab }: ResourceRelatedTabsProps) => 
             }}
         >
             <Box sx={{ width: '100%', borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
-                <Tabs 
-                    value={currentTab} 
-                    onChange={handleChange} 
+                <Tabs
+                    value={currentTab}
+                    onChange={handleChange}
                     variant="scrollable"
                     scrollButtons="auto"
                     aria-label="resource related tabs"
@@ -69,23 +69,23 @@ const ResourceRelatedTabs = ({ tabs, defaultTab }: ResourceRelatedTabsProps) => 
                     indicatorColor="secondary"
                 >
                     {tabs.map((tab) => (
-                        <Tab 
-                            key={tab.value} 
-                            value={tab.value} 
+                        <Tab
+                            key={tab.value}
+                            value={tab.value}
                             label={
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     {tab.label}
                                     {tab.count !== undefined && (
-                                        <Chip 
-                                            label={tab.count} 
-                                            size="small" 
-                                            color={currentTab === tab.value ? "secondary" : "default"} 
+                                        <Chip
+                                            label={tab.count}
+                                            size="small"
+                                            color={currentTab === tab.value ? "secondary" : "default"}
                                             variant={currentTab === tab.value ? "filled" : "outlined"}
                                             sx={{ height: 20, minWidth: 20, px: 0.5 }}
                                         />
                                     )}
                                 </Stack>
-                            } 
+                            }
                             icon={tab.icon as React.ReactElement}
                             iconPosition="start"
                             disabled={tab.disabled}
@@ -93,7 +93,7 @@ const ResourceRelatedTabs = ({ tabs, defaultTab }: ResourceRelatedTabsProps) => 
                     ))}
                 </Tabs>
             </Box>
-            
+
             {/* Content Area */}
             <Box sx={{ p: 3 }}>
                 {activeComponent}

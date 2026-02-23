@@ -371,7 +371,7 @@ const UserForm = ({
 
             {/* Buttons (Hidden in View mode if strictly viewing, or you might want an Edit button) */}
             {!isViewing && (
-                <Box sx={{ mt: 3 }}>
+                <Box sx={{ mt: 3, mb: 5 }}>
                     <Grid container>
                         <Grid size={12}>
                             <Box display="flex" justifyContent="space-between" alignItems="center">

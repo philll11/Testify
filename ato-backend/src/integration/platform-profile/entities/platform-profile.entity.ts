@@ -18,6 +18,9 @@ export class PlatformProfile {
   name: string;
 
   @Column({ nullable: true })
+  accountId: string;
+
+  @Column({ nullable: true })
   description: string;
 
   @Column({

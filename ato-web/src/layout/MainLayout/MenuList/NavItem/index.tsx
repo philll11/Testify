@@ -78,7 +78,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
 
   // Calculate colors based on theme mode
   // Reverting to consistent purple styling as per user request
-  const selectedIconColor = 'secondary.main'; 
+  const selectedIconColor = 'secondary.main';
   const selectedBgColor = 'secondary.light';
   const hoverBgColor = 'secondary.light';
 
@@ -108,13 +108,14 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
         selected={isSelected}
         onClick={() => itemHandler()}
       >
-        <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
-          <ListItemIcon
-            sx={{
-              minWidth: level === 1 ? 36 : 18,
-              color: isSelected ? selectedIconColor : 'text.primary',
-              ...(!drawerOpen &&
-                level === 1 && {
+        <Tooltip title={item.title || ''} disableHoverListener={drawerOpen} placement="right">
+          <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
+            <ListItemIcon
+              sx={{
+                minWidth: level === 1 ? 36 : 18,
+                color: isSelected ? selectedIconColor : 'text.primary',
+                ...(!drawerOpen &&
+                  level === 1 && {
                   borderRadius: `${borderRadius}px`,
                   width: 46,
                   height: 46,
@@ -126,11 +127,12 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                     '&:hover': { bgcolor: hoverBgColor }
                   })
                 })
-            }}
-          >
-            {itemIcon}
-          </ListItemIcon>
-        </ButtonBase>
+              }}
+            >
+              {itemIcon}
+            </ListItemIcon>
+          </ButtonBase>
+        </Tooltip>
 
         {(drawerOpen || (!drawerOpen && level !== 1)) && (
           <Tooltip title={item.title} disableHoverListener={!hoverStatus}>

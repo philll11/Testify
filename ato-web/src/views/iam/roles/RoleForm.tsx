@@ -488,7 +488,7 @@ const RoleForm = ({
 
             {/* Actions for Details and Permissions tabs */}
             {!isViewing && (
-                <Box sx={{ mt: 3 }}>
+                <Box sx={{ mt: 3, mb: 5 }}>
                     <Grid container>
                         <Grid size={12}>
                             <Box display="flex" justifyContent="space-between" alignItems="center">

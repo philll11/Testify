@@ -9,19 +9,27 @@ import {
     Tooltip,
     IconButton,
     Divider,
-    Stack
+    Stack,
+    Button
 } from '@mui/material';
 import {
     GridColDef,
     GridRenderCellParams,
 } from '@mui/x-data-grid';
 import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconPencil } from '@tabler/icons-react';
+import { format } from 'date-fns';
 
 // Project Imports
-import { useGetUsers, useDeleteUser, useCreateUser, useUpdateUser } from 'hooks/iam/useUsers';
-import { User } from 'types/iam/user.types';
-import { UserFormData } from 'types/iam/user.schema';
-import UserForm, { UserFormMode } from './UserForm';
+import {
+    usePlatformEnvironments,
+    useDeletePlatformEnvironment,
+    useCreatePlatformEnvironment,
+    useUpdatePlatformEnvironment
+} from 'hooks/platform/useEnvironments';
+import { PlatformEnvironment } from 'types/platform/environments';
+import { PlatformEnvironmentFormData } from 'types/platform/environments.schema';
+import EnvironmentForm, { EnvironmentFormMode } from './EnvironmentForm';
+
 import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { useContextualNavigation } from 'hooks/useContextualNavigation';
 import DataGridWrapper from 'ui-component/extended/DataGridWrapper';
@@ -31,40 +39,22 @@ import { usePermission } from 'contexts/AuthContext';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import MainCard from 'ui-component/cards/MainCard';
 
-// Helper for Status Chip
-const getStatusChip = (isActive?: boolean) => {
-    return isActive ? (
-        <Chip label="Active" color="success" size="small" variant="outlined" />
-    ) : (
-        <Chip label="Inactive" color="error" size="small" variant="outlined" />
-    );
-};
-
-const getInitials = (first: string, last: string) => {
-    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
-};
-
-const userName = (user: User | null) => {
-    if (!user) return 'User Details';
-    return `${user.firstName} ${user.lastName}`;
-}
-
-const UserList = () => {
+const EnvironmentList = () => {
     const navigate = useNavigate();
-    const { getLinkTo } = useContextualNavigation('/users');
+    const { getLinkTo } = useContextualNavigation('/platform/environments');
     const { can } = usePermission();
 
     // Queries & Mutations
-    const { data: users = [], isLoading } = useGetUsers();
-    const { mutateAsync: deleteUser } = useDeleteUser();
-    const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
-    const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
+    const { data: environments = [], isLoading } = usePlatformEnvironments();
+    const { mutateAsync: deleteEnvironment } = useDeletePlatformEnvironment();
+    const { mutateAsync: createEnvironment, isPending: isCreating } = useCreatePlatformEnvironment();
+    const { mutateAsync: updateEnvironment, isPending: isUpdating } = useUpdatePlatformEnvironment();
 
     // Drawer State
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [mode, setMode] = useState<UserFormMode>('create');
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [createDraft, setCreateDraft] = useState<Partial<UserFormData>>({});
+    const [mode, setMode] = useState<EnvironmentFormMode>('create');
+    const [selectedEnvironment, setSelectedEnvironment] = useState<PlatformEnvironment | null>(null);
+    const [createDraft, setCreateDraft] = useState<Partial<PlatformEnvironmentFormData>>({});
 
     // Dirty State for drawer
     const [isFormDirty, setIsFormDirty] = useState(false);
@@ -75,9 +65,9 @@ const UserList = () => {
         'You have unsaved changes. Are you sure you want to discard them?'
     );
 
-    const handleOpenDrawer = (newMode: UserFormMode, user: User | null = null) => {
+    const handleOpenDrawer = (newMode: EnvironmentFormMode, env: PlatformEnvironment | null = null) => {
         setMode(newMode);
-        setSelectedUser(user);
+        setSelectedEnvironment(env);
         setIsFormDirty(false);
         setDrawerOpen(true);
     };
@@ -86,25 +76,20 @@ const UserList = () => {
         const performClose = () => {
             setDrawerOpen(false);
             setIsFormDirty(false);
-            setSelectedUser(null);
+            setSelectedEnvironment(null);
         };
 
-        // If Closing via Backdrop/Escape (Persistence Check)
         if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
             if (mode === 'edit' && isFormDirty) {
                 trigger(performClose);
                 return;
             }
-            // Create mode stashes automatically
-        }
-        // If called manually (fallback)
-        else {
+        } else {
             if (isFormDirty) {
                 trigger(performClose);
                 return;
             }
         }
-
         performClose();
     };
 
@@ -113,14 +98,12 @@ const UserList = () => {
             if (isCreating) setCreateDraft({});
             setDrawerOpen(false);
             setIsFormDirty(false);
-            setSelectedUser(null);
+            setSelectedEnvironment(null);
         };
 
-        // Explicit Cancel Button Click
         if (isCreating) {
-            // For create, Cancel means discard draft
             if (Object.keys(createDraft).length > 0 || isFormDirty) {
-                trigger(performCancel, 'Discard new user draft? This cannot be undone.');
+                trigger(performCancel, 'Discard new environment draft? This cannot be undone.');
                 return;
             }
         } else if (mode === 'edit') {
@@ -133,121 +116,126 @@ const UserList = () => {
         performCancel();
     };
 
-    const handleFormValuesChange = useCallback((values: Partial<UserFormData>) => {
+    const handleFormValuesChange = useCallback((values: Partial<PlatformEnvironmentFormData>) => {
         if (mode === 'create') {
             setCreateDraft(prev => ({ ...prev, ...values }));
         }
     }, [mode]);
 
-    // Form Submit Handler
-    const handleFormSubmit = async (values: any) => {
+    const handleFormSubmit = async (values: PlatformEnvironmentFormData) => {
         try {
             if (mode === 'create') {
-                await createUser(values);
-            } else if (mode === 'edit' && selectedUser) {
-                await updateUser({ id: selectedUser.id, data: values });
+                // Mapping form data (which matches DTO but check types)
+                // Need to remove any extra fields if DTO is strict, but assuming match
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await createEnvironment(values as any);
+            } else if (mode === 'edit' && selectedEnvironment) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await updateEnvironment({ id: selectedEnvironment.id, data: values as any });
             }
             setDrawerOpen(false);
             setCreateDraft({});
             setIsFormDirty(false);
         } catch (error) {
-            // Error is handled by hook notifications
+            // Error handled by query client / toast
+            console.error(error);
         }
     };
 
     // --- Actions ---
-    const handleCreatePage = () => navigate(getLinkTo('/users/create'));
+    const handleCreatePage = () => navigate(getLinkTo('/platform/environments/create'));
     const handleViewPage = (id: string, e?: MouseEvent) => {
         e?.stopPropagation(); // Prevent row click
-        navigate(getLinkTo(`/users/${id}`));
+        navigate(getLinkTo(`/platform/environments/${id}`));
     };
     const handleEditPage = (id: string, e?: MouseEvent) => {
         e?.stopPropagation();
-        navigate(getLinkTo(`/users/${id}/edit`));
+        navigate(getLinkTo(`/platform/environments/${id}/edit`));
     };
-
 
     // Delete State
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [envToDelete, setEnvToDelete] = useState<PlatformEnvironment | null>(null);
 
-    const handleDeleteClick = (user: User, e: MouseEvent) => {
+    const handleDeleteClick = (env: PlatformEnvironment, e: MouseEvent) => {
         e.stopPropagation();
-        setUserToDelete(user);
+        setEnvToDelete(env);
         setDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        if (userToDelete) {
-            await deleteUser(userToDelete.id);
+        if (envToDelete) {
+            await deleteEnvironment(envToDelete.id);
             setDeleteDialogOpen(false);
-            setUserToDelete(null);
+            setEnvToDelete(null);
         }
     };
+
     // --- Column Configuration ---
     const columns: GridColDef[] = useMemo(() => [
         {
-            field: 'recordId',
-            headerName: 'Record ID',
-            flex: 0.5,
-            minWidth: 100
+            field: 'name',
+            headerName: 'Environment Name',
+            flex: 1,
+            minWidth: 150
         },
         {
-            field: 'name',
-            headerName: 'User',
+            field: 'profile',
+            headerName: 'Profile',
             flex: 1,
-            minWidth: 200,
+            minWidth: 150,
+            valueGetter: (value, row) => row?.profile?.name || '', // Helper for sorting
             renderCell: (params: GridRenderCellParams) => {
-                const user = params.row as User;
-                return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-                        <Avatar>{getInitials(user.firstName, user.lastName)}</Avatar>
-                        <Box>
-                            <Typography variant="subtitle1" component="div" sx={{ lineHeight: 1.2 }}>{user.firstName} {user.lastName}</Typography>
-                            <Typography variant="caption" component="div" color="textSecondary" sx={{ lineHeight: 1.2 }}>{user.email}</Typography>
-                        </Box>
-                    </Box>
+                const profile = params.row.profile;
+                return profile ? (
+                    <Chip label={profile.name} size="small" />
+                ) : (
+                    <Typography variant="caption" color="textSecondary">No Profile</Typography>
                 );
             }
         },
         {
-            field: 'isActive',
-            headerName: 'Status',
-            flex: 0.5,
-            minWidth: 100,
-            renderCell: (params: GridRenderCellParams) => getStatusChip(params.value as boolean)
+            field: 'platformType',
+            headerName: 'Platform Type',
+            flex: 1,
+            minWidth: 120,
+            valueGetter: (value, row) => row?.profile?.platformType || '',
+            renderCell: (params: GridRenderCellParams) => {
+                const type = params.row.profile?.platformType;
+                return type ? <Chip label={type.toUpperCase()} size="small" variant="outlined" /> : '-';
+            }
         },
         {
             field: 'actions',
             headerName: 'Actions',
             flex: 1,
-            minWidth: 180,
+            minWidth: 120,
             sortable: false,
             filterable: false,
             align: 'right',
             headerAlign: 'right',
             renderCell: (params: GridRenderCellParams) => {
-                const user = params.row as User;
+                const env = params.row as PlatformEnvironment;
                 return (
                     <>
-                        {can(PERMISSIONS.USER_VIEW) && (
+                        {can(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW) && (
                             <Tooltip title="View Details">
                                 <IconButton
                                     color="primary"
                                     size="small"
-                                    onClick={(e) => handleViewPage(user.id, e)}
+                                    onClick={(e) => handleViewPage(env.id, e)}
                                 >
                                     <IconEye size={18} />
                                 </IconButton>
                             </Tooltip>
                         )}
-                        {can(PERMISSIONS.USER_EDIT) && (
+                        {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
                             <>
                                 <Tooltip title="Edit">
                                     <IconButton
                                         color="secondary"
                                         size="small"
-                                        onClick={(e) => handleEditPage(user.id, e)}
+                                        onClick={(e) => handleEditPage(env.id, e)}
                                     >
                                         <IconEdit size={18} />
                                     </IconButton>
@@ -258,7 +246,7 @@ const UserList = () => {
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleOpenDrawer('edit', user);
+                                            handleOpenDrawer('edit', env);
                                         }}
                                     >
                                         <IconPencil size={18} />
@@ -266,12 +254,12 @@ const UserList = () => {
                                 </Tooltip>
                             </>
                         )}
-                        {can(PERMISSIONS.USER_DELETE) && (
+                        {can(PERMISSIONS.PLATFORM_ENVIRONMENT_DELETE) && (
                             <Tooltip title="Delete">
                                 <IconButton
                                     color="error"
                                     size="small"
-                                    onClick={(e) => handleDeleteClick(user, e)}
+                                    onClick={(e) => handleDeleteClick(env, e)}
                                 >
                                     <IconTrash size={18} />
                                 </IconButton>
@@ -281,15 +269,15 @@ const UserList = () => {
                 );
             }
         }
-    ], [can, handleViewPage, handleEditPage, handleDeleteClick]);
+    ], [can]);
 
     return (
         <MainCard
-            title="Users"
+            title="Platform Environments"
             secondary={
-                can(PERMISSIONS.ROLE_CREATE) && (
+                can(PERMISSIONS.PLATFORM_ENVIRONMENT_CREATE) && (
                     <SplitActionButton
-                        primaryLabel="Create Role"
+                        primaryLabel="Create Environment"
                         primaryStartIcon={<IconPlus size={18} />}
                         primaryAction={() => handleOpenDrawer('create')}
                         options={[
@@ -304,13 +292,13 @@ const UserList = () => {
             }
         >
             <DataGridWrapper
-                rows={users}
+                rows={environments}
                 columns={columns}
                 loading={isLoading}
-                onRowClick={(params) => handleOpenDrawer('view', params.row as User)}
+                onRowClick={(params) => handleOpenDrawer('view', params.row as PlatformEnvironment)}
                 getRowId={(row) => row.id}
             />
-            {/* Quick View / Create / Edit Drawer */}
+            {/* Drawer */}
             <Drawer
                 anchor="right"
                 open={drawerOpen}
@@ -320,22 +308,22 @@ const UserList = () => {
                 <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h4">
-                            {mode === 'create' ? 'New User' : mode === 'edit' ? 'Edit User' : userName(selectedUser)}
+                            {mode === 'create' ? 'New Environment' : mode === 'edit' ? 'Edit Environment' : selectedEnvironment?.name}
                         </Typography>
-                        {mode === 'view' && selectedUser && (
+                        {mode === 'view' && selectedEnvironment && (
                             <Stack direction="row" spacing={1}>
-                                {can(PERMISSIONS.ROLE_EDIT) && (
+                                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
                                     <Tooltip title="Edit">
                                         <IconButton size="small" onClick={() => setMode('edit')} color="primary">
                                             <IconEdit size={18} />
                                         </IconButton>
                                     </Tooltip>
                                 )}
-                                {can(PERMISSIONS.ROLE_DELETE) && (
+                                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_DELETE) && (
                                     <Tooltip title="Delete">
                                         <IconButton
                                             size="small"
-                                            onClick={(e) => handleDeleteClick(selectedUser, e)}
+                                            onClick={(e) => handleDeleteClick(selectedEnvironment, e)}
                                             color="error"
                                         >
                                             <IconTrash size={18} />
@@ -348,9 +336,9 @@ const UserList = () => {
 
                     <Divider sx={{ mb: 3 }} />
 
-                    <UserForm
+                    <EnvironmentForm
                         mode={mode}
-                        user={selectedUser}
+                        environment={selectedEnvironment}
                         initialValues={mode === 'create' ? createDraft : undefined}
                         onSubmit={handleFormSubmit}
                         onCancel={handleCancelForm}
@@ -367,8 +355,8 @@ const UserList = () => {
             {/* Delete Confirmation */}
             <ConfirmDialog
                 open={deleteDialogOpen}
-                title="Delete User"
-                content={`Are you sure you want to delete ${userName(selectedUser)}? This action cannot be undone.`}
+                title="Delete Environment"
+                content={`Are you sure you want to delete ${envToDelete?.name}? This action cannot be undone.`}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeleteDialogOpen(false)}
                 confirmLabel="Delete"
@@ -380,5 +368,4 @@ const UserList = () => {
     );
 };
 
-
-export default UserList;
+export default EnvironmentList;

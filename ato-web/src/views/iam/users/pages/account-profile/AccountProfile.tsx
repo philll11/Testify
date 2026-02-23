@@ -6,13 +6,12 @@ import {
     useTheme,
     Typography
 } from '@mui/material';
-import { IconUser, IconLock, IconSettings, IconKey } from '@tabler/icons-react';
+import { IconUser, IconLock, IconSettings } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import ProfileTab from './tabs/ProfileTab';
 import SecurityTab from './tabs/SecurityTab';
-import PlatformCredentialsTab from './tabs/PlatformCredentialsTab';
 
 // Tab Panel Helper
 interface TabPanelProps {
@@ -88,16 +87,10 @@ const AccountProfile = () => {
                         {...a11yProps(1)}
                     />
                     <Tab
-                        icon={<IconKey size={18} />}
-                        iconPosition="start"
-                        label="Platform Credentials"
-                        {...a11yProps(2)}
-                    />
-                    <Tab
                         icon={<IconSettings size={18} />}
                         iconPosition="start"
                         label="Preferences"
-                        {...a11yProps(3)}
+                        {...a11yProps(2)}
                         disabled
                     />
                 </Tabs>
@@ -110,9 +103,6 @@ const AccountProfile = () => {
                         <SecurityTab />
                     </TabPanel>
                     <TabPanel value={value} index={2}>
-                        <PlatformCredentialsTab />
-                    </TabPanel>
-                    <TabPanel value={value} index={3}>
                         <Box sx={{ p: 3 }}>
                             <Typography variant="h4">Preferences Coming Soon</Typography>
                         </Box>

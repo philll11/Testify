@@ -13,6 +13,10 @@ export class CreatePlatformProfileDto {
   @IsString()
   name: string;
 
+  @IsNotEmpty()
+  @IsString()
+  accountId: string;
+
   @IsOptional()
   @IsString()
   description?: string;

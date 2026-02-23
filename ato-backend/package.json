@@ -34,8 +34,8 @@
     "test:e2e:system-config:crud": "jest --config ./test/jest-e2e.json test/system-config/system-config.crud.e2e-spec.ts --verbose",
     "test:e2e:system-config:auth": "jest --config ./test/jest-e2e.json test/system-config/system-config.auth.e2e-spec.ts --verbose",
     "test:e2e:audit": "jest --config ./test/jest-e2e.json test/audit/audit.e2e-spec.ts --verbose",
-    "test:e2e:platform-env": "jest --config ./test/jest-e2e.json test/integration/platform-environment.e2e-spec.ts --verbose",
-    "test:e2e:platform-prof": "jest --config ./test/jest-e2e.json test/integration/platform-profile.e2e-spec.ts --verbose",
+    "test:e2e:platform-env": "jest --config ./test/jest-e2e.json test/platform/platform-environment.e2e-spec.ts --verbose",
+    "test:e2e:platform-prof": "jest --config ./test/jest-e2e.json test/platform/platform-profile.e2e-spec.ts --verbose",
     "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit && npm run test:e2e:platform-env && npm run test:e2e:platform-prof",
     "seed": "ts-node src/seed.ts",
     "seed:prod": "node dist/seed.js"

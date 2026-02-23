@@ -55,7 +55,8 @@ export class IntegrationService {
             case IntegrationPlatform.BOOMI:
                 return new BoomiService(
                     {
-                        accountId: credentials.accountId,
+                        // Use accountId from profile, fallback to credentials for backward compatibility
+                        accountId: profile.accountId || credentials.accountId,
                         username: credentials.username,
                         passwordOrToken: credentials.passwordOrToken,
                         executionInstanceId: credentials.executionInstanceId,

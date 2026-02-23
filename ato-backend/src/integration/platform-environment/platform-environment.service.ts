@@ -18,7 +18,7 @@ export class PlatformEnvironmentService {
     private readonly environmentRepository: Repository<PlatformEnvironment>,
     private readonly platformProfileService: PlatformProfileService,
     private readonly encryptionService: EncryptionService, // Inject EncryptionService
-  ) {}
+  ) { }
 
   async create(
     createDto: CreatePlatformEnvironmentDto,
@@ -87,6 +87,29 @@ export class PlatformEnvironmentService {
         `Platform Environment with ID "${id}" not found.`,
       );
     }
+
+    try {
+      if (environment.encryptedData) {
+        const decrypted = await this.encryptionService.decrypt({
+          content: environment.encryptedData,
+          iv: environment.iv,
+          tag: environment.authTag,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (environment as any).credentials = JSON.parse(decrypted);
+
+        // Remove sensitive encrypted data from response
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (environment as any).encryptedData;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (environment as any).iv;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (environment as any).authTag;
+      }
+    } catch (error) {
+      // Ignore decryption errors for now, just return environment without credentials
+    }
+
     return environment;
   }
 

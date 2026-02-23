@@ -23,6 +23,18 @@ const UserViewPage = Loadable(lazy(() => import('views/iam/users/pages/UserViewP
 // system routing
 const SystemSettingsPage = Loadable(lazy(() => import('views/system/config/SystemSettingsPage')));
 
+// platform routing
+const ProfileList = Loadable(lazy(() => import('views/platform/profiles/ProfileList')));
+const ProfileCreatePage = Loadable(lazy(() => import('views/platform/profiles/pages/ProfileCreatePage')));
+const ProfileViewPage = Loadable(lazy(() => import('views/platform/profiles/pages/ProfileViewPage')));
+const ProfileEditPage = Loadable(lazy(() => import('views/platform/profiles/pages/ProfileEditPage')));
+
+const EnvironmentList = Loadable(lazy(() => import('views/platform/environments/EnvironmentList')));
+const EnvironmentCreatePage = Loadable(lazy(() => import('views/platform/environments/pages/EnvironmentCreatePage')));
+const EnvironmentViewPage = Loadable(lazy(() => import('views/platform/environments/pages/EnvironmentViewPage')));
+const EnvironmentEditPage = Loadable(lazy(() => import('views/platform/environments/pages/EnvironmentEditPage')));
+
+
 // user routing
 const AccountProfile = Loadable(lazy(() => import('views/iam/users/pages/account-profile/AccountProfile')));
 
@@ -101,6 +113,53 @@ const MainRoutes: RouteObject = {
         {
           path: 'settings',
           element: <SystemSettingsPage />
+        }
+      ]
+    },
+    {
+      path: 'platform',
+      children: [
+        {
+          path: 'profiles',
+          children: [
+            {
+              path: '',
+              element: <ProfileList />
+            },
+            {
+              path: 'create',
+              element: <ProfileCreatePage />
+            },
+            {
+              path: ':id',
+              element: <ProfileViewPage />
+            },
+            {
+              path: ':id/edit',
+              element: <ProfileEditPage />
+            }
+          ]
+        },
+        {
+          path: 'environments',
+          children: [
+            {
+              path: '',
+              element: <EnvironmentList />
+            },
+            {
+              path: 'create',
+              element: <EnvironmentCreatePage />
+            },
+            {
+              path: ':id',
+              element: <EnvironmentViewPage />
+            },
+            {
+              path: ':id/edit',
+              element: <EnvironmentEditPage />
+            }
+          ]
         }
       ]
     }

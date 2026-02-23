@@ -192,7 +192,7 @@ const RoleList = () => {
         {
             field: 'name',
             headerName: 'Name',
-            flex: 1.5,
+            flex: 1,
             minWidth: 200
         },
         {
@@ -206,7 +206,7 @@ const RoleList = () => {
         {
             field: 'actions',
             headerName: 'Actions',
-            flex: 0.8,
+            flex: 1,
             minWidth: 180,
             sortable: false,
             filterable: false,

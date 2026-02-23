@@ -60,11 +60,12 @@ describe('Platform Environment E2E', () => {
         // Seed a Platform Profile first (Environment depends on it)
         const profile = await profileRepo.save(profileRepo.create({
             name: 'Boomi Default',
+            accountId: 'boomi-account-seed',
             platformType: IntegrationPlatform.BOOMI,
             isDefault: true,
             config: { pollInterval: 3000 }
         }));
-    });
+    }, 30000);
 
     afterAll(async () => {
         await teardownTestApp({ app, dataSource });
@@ -127,6 +128,38 @@ describe('Platform Environment E2E', () => {
                     expect(res.body.length).toBeGreaterThan(0);
                     expect(res.body[0].encryptedData).toBeUndefined(); // Sensitive data should be hidden
                 });
+        });
+    });
+
+    describe('GET /platform-environments/:id', () => {
+        it('should return a single environment with decrypted credentials and profile', async () => {
+            const env = await environmentRepo.findOneBy({ name: 'Dev Environment' });
+            if (!env) throw new Error('Environment not found');
+
+            const response = await request(app.getHttpServer())
+                .get(`/platform-environments/${env.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(response.body.id).toBe(env.id);
+            expect(response.body.name).toBe(env.name);
+
+            // Check Profile Relation
+            expect(response.body.profile).toBeDefined();
+            expect(response.body.profile.id).toBeDefined();
+
+            // Check Decrypted Credentials
+            expect(response.body.credentials).toBeDefined();
+            expect(response.body.credentials.username).toBe('test-user');
+            // Check that encrypted properties are not exposed
+            expect(response.body.encryptedData).toBeUndefined();
+        });
+
+        it('should return 404 for non-existent environment', async () => {
+            await request(app.getHttpServer())
+                .get('/platform-environments/00000000-0000-0000-0000-000000000000')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(404);
         });
     });
 

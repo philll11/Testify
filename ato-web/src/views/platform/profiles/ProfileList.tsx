@@ -11,6 +11,7 @@ import {
     Divider,
     Stack
 } from '@mui/material';
+import { startCase, toLower } from 'lodash-es';
 import {
     GridColDef,
     GridRenderCellParams,
@@ -18,10 +19,10 @@ import {
 import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconPencil } from '@tabler/icons-react';
 
 // Project Imports
-import { useGetUsers, useDeleteUser, useCreateUser, useUpdateUser } from 'hooks/iam/useUsers';
-import { User } from 'types/iam/user.types';
-import { UserFormData } from 'types/iam/user.schema';
-import UserForm, { UserFormMode } from './UserForm';
+import { usePlatformProfiles, useCreatePlatformProfile, useUpdatePlatformProfile, useDeletePlatformProfile } from 'hooks/platform/useProfiles';
+import { PlatformProfile } from 'types/platform/profiles';
+import { PlatformProfileFormData } from 'types/platform/profiles.schema';
+import ProfileForm, { ProfileFormMode } from './ProfileForm';
 import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { useContextualNavigation } from 'hooks/useContextualNavigation';
 import DataGridWrapper from 'ui-component/extended/DataGridWrapper';
@@ -34,37 +35,31 @@ import MainCard from 'ui-component/cards/MainCard';
 // Helper for Status Chip
 const getStatusChip = (isActive?: boolean) => {
     return isActive ? (
-        <Chip label="Active" color="success" size="small" variant="outlined" />
-    ) : (
-        <Chip label="Inactive" color="error" size="small" variant="outlined" />
-    );
+        <Chip label="Default Profile" color="success" size="small" variant="outlined" />
+    ) : null;
 };
 
-const getInitials = (first: string, last: string) => {
-    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+const profileName = (profile?: PlatformProfile | null) => {
+    if (!profile) return 'Profile Details';
+    return profile.name;
 };
 
-const userName = (user: User | null) => {
-    if (!user) return 'User Details';
-    return `${user.firstName} ${user.lastName}`;
-}
-
-const UserList = () => {
+const ProfileList = () => {
     const navigate = useNavigate();
-    const { getLinkTo } = useContextualNavigation('/users');
+    const { getLinkTo } = useContextualNavigation('/platform/profiles');
     const { can } = usePermission();
 
     // Queries & Mutations
-    const { data: users = [], isLoading } = useGetUsers();
-    const { mutateAsync: deleteUser } = useDeleteUser();
-    const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
-    const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
+    const { data: profiles = [], isLoading } = usePlatformProfiles();
+    const { mutateAsync: deleteProfile } = useDeletePlatformProfile();
+    const { mutateAsync: createProfile, isPending: isCreating } = useCreatePlatformProfile();
+    const { mutateAsync: updateProfile, isPending: isUpdating } = useUpdatePlatformProfile();
 
     // Drawer State
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [mode, setMode] = useState<UserFormMode>('create');
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [createDraft, setCreateDraft] = useState<Partial<UserFormData>>({});
+    const [mode, setMode] = useState<ProfileFormMode>('create');
+    const [selectedProfile, setSelectedProfile] = useState<PlatformProfile | null>(null);
+    const [createDraft, setCreateDraft] = useState<Partial<PlatformProfileFormData>>({});
 
     // Dirty State for drawer
     const [isFormDirty, setIsFormDirty] = useState(false);
@@ -75,9 +70,9 @@ const UserList = () => {
         'You have unsaved changes. Are you sure you want to discard them?'
     );
 
-    const handleOpenDrawer = (newMode: UserFormMode, user: User | null = null) => {
+    const handleOpenDrawer = (newMode: ProfileFormMode, profile: PlatformProfile | null = null) => {
         setMode(newMode);
-        setSelectedUser(user);
+        setSelectedProfile(profile);
         setIsFormDirty(false);
         setDrawerOpen(true);
     };
@@ -86,7 +81,7 @@ const UserList = () => {
         const performClose = () => {
             setDrawerOpen(false);
             setIsFormDirty(false);
-            setSelectedUser(null);
+            setSelectedProfile(null);
         };
 
         // If Closing via Backdrop/Escape (Persistence Check)
@@ -113,14 +108,14 @@ const UserList = () => {
             if (isCreating) setCreateDraft({});
             setDrawerOpen(false);
             setIsFormDirty(false);
-            setSelectedUser(null);
+            setSelectedProfile(null);
         };
 
         // Explicit Cancel Button Click
         if (isCreating) {
             // For create, Cancel means discard draft
             if (Object.keys(createDraft).length > 0 || isFormDirty) {
-                trigger(performCancel, 'Discard new user draft? This cannot be undone.');
+                trigger(performCancel, 'Discard new profile draft? This cannot be undone.');
                 return;
             }
         } else if (mode === 'edit') {
@@ -133,7 +128,7 @@ const UserList = () => {
         performCancel();
     };
 
-    const handleFormValuesChange = useCallback((values: Partial<UserFormData>) => {
+    const handleFormValuesChange = useCallback((values: Partial<PlatformProfileFormData>) => {
         if (mode === 'create') {
             setCreateDraft(prev => ({ ...prev, ...values }));
         }
@@ -143,9 +138,9 @@ const UserList = () => {
     const handleFormSubmit = async (values: any) => {
         try {
             if (mode === 'create') {
-                await createUser(values);
-            } else if (mode === 'edit' && selectedUser) {
-                await updateUser({ id: selectedUser.id, data: values });
+                await createProfile(values);
+            } else if (mode === 'edit' && selectedProfile) {
+                await updateProfile({ id: selectedProfile.id, data: values });
             }
             setDrawerOpen(false);
             setCreateDraft({});
@@ -156,63 +151,59 @@ const UserList = () => {
     };
 
     // --- Actions ---
-    const handleCreatePage = () => navigate(getLinkTo('/users/create'));
+    const handleCreatePage = () => navigate(getLinkTo('/platform/profiles/create'));
     const handleViewPage = (id: string, e?: MouseEvent) => {
         e?.stopPropagation(); // Prevent row click
-        navigate(getLinkTo(`/users/${id}`));
+        navigate(getLinkTo(`/platform/profiles/${id}`));
     };
     const handleEditPage = (id: string, e?: MouseEvent) => {
         e?.stopPropagation();
-        navigate(getLinkTo(`/users/${id}/edit`));
+        navigate(getLinkTo(`/platform/profiles/${id}/edit`));
     };
 
 
     // Delete State
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [profileToDelete, setProfileToDelete] = useState<PlatformProfile | null>(null);
 
-    const handleDeleteClick = (user: User, e: MouseEvent) => {
+    const handleDeleteClick = (profile: PlatformProfile, e: MouseEvent) => {
         e.stopPropagation();
-        setUserToDelete(user);
+        setProfileToDelete(profile);
         setDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        if (userToDelete) {
-            await deleteUser(userToDelete.id);
+        if (profileToDelete) {
+            await deleteProfile(profileToDelete.id);
             setDeleteDialogOpen(false);
-            setUserToDelete(null);
+            setProfileToDelete(null);
         }
     };
     // --- Column Configuration ---
     const columns: GridColDef[] = useMemo(() => [
         {
-            field: 'recordId',
-            headerName: 'Record ID',
-            flex: 0.5,
-            minWidth: 100
-        },
-        {
             field: 'name',
-            headerName: 'User',
+            headerName: 'Profile Name',
             flex: 1,
             minWidth: 200,
-            renderCell: (params: GridRenderCellParams) => {
-                const user = params.row as User;
-                return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-                        <Avatar>{getInitials(user.firstName, user.lastName)}</Avatar>
-                        <Box>
-                            <Typography variant="subtitle1" component="div" sx={{ lineHeight: 1.2 }}>{user.firstName} {user.lastName}</Typography>
-                            <Typography variant="caption" component="div" color="textSecondary" sx={{ lineHeight: 1.2 }}>{user.email}</Typography>
-                        </Box>
-                    </Box>
-                );
-            }
         },
         {
-            field: 'isActive',
-            headerName: 'Status',
+            field: 'platformType',
+            headerName: 'Platform',
+            flex: 1,
+            minWidth: 150,
+            valueGetter: (params: any, row: PlatformProfile) => startCase(toLower(row.platformType))
+        },
+        {
+            field: 'config.pollInterval',
+            headerName: 'Poll Interval',
+            flex: 1,
+            minWidth: 150,
+            valueGetter: (params: any, row: PlatformProfile) => `${row.config.pollInterval} ms`
+        },
+        {
+            field: 'isDefault',
+            headerName: 'Flags',
             flex: 0.5,
             minWidth: 100,
             renderCell: (params: GridRenderCellParams) => getStatusChip(params.value as boolean)
@@ -227,27 +218,27 @@ const UserList = () => {
             align: 'right',
             headerAlign: 'right',
             renderCell: (params: GridRenderCellParams) => {
-                const user = params.row as User;
+                const profile = params.row as PlatformProfile;
                 return (
                     <>
-                        {can(PERMISSIONS.USER_VIEW) && (
+                        {can(PERMISSIONS.PLATFORM_PROFILE_VIEW) && (
                             <Tooltip title="View Details">
                                 <IconButton
                                     color="primary"
                                     size="small"
-                                    onClick={(e) => handleViewPage(user.id, e)}
+                                    onClick={(e) => handleViewPage(profile.id, e)}
                                 >
                                     <IconEye size={18} />
                                 </IconButton>
                             </Tooltip>
                         )}
-                        {can(PERMISSIONS.USER_EDIT) && (
+                        {can(PERMISSIONS.PLATFORM_PROFILE_EDIT) && (
                             <>
                                 <Tooltip title="Edit">
                                     <IconButton
                                         color="secondary"
                                         size="small"
-                                        onClick={(e) => handleEditPage(user.id, e)}
+                                        onClick={(e) => handleEditPage(profile.id, e)}
                                     >
                                         <IconEdit size={18} />
                                     </IconButton>
@@ -258,7 +249,7 @@ const UserList = () => {
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleOpenDrawer('edit', user);
+                                            handleOpenDrawer('edit', profile);
                                         }}
                                     >
                                         <IconPencil size={18} />
@@ -266,12 +257,12 @@ const UserList = () => {
                                 </Tooltip>
                             </>
                         )}
-                        {can(PERMISSIONS.USER_DELETE) && (
+                        {can(PERMISSIONS.PLATFORM_PROFILE_DELETE) && (
                             <Tooltip title="Delete">
                                 <IconButton
                                     color="error"
                                     size="small"
-                                    onClick={(e) => handleDeleteClick(user, e)}
+                                    onClick={(e) => handleDeleteClick(profile, e)}
                                 >
                                     <IconTrash size={18} />
                                 </IconButton>
@@ -285,11 +276,11 @@ const UserList = () => {
 
     return (
         <MainCard
-            title="Users"
+            title="Platform Profiles"
             secondary={
-                can(PERMISSIONS.ROLE_CREATE) && (
+                can(PERMISSIONS.PLATFORM_PROFILE_CREATE) && (
                     <SplitActionButton
-                        primaryLabel="Create Role"
+                        primaryLabel="Create Profile"
                         primaryStartIcon={<IconPlus size={18} />}
                         primaryAction={() => handleOpenDrawer('create')}
                         options={[
@@ -304,10 +295,10 @@ const UserList = () => {
             }
         >
             <DataGridWrapper
-                rows={users}
+                rows={profiles}
                 columns={columns}
                 loading={isLoading}
-                onRowClick={(params) => handleOpenDrawer('view', params.row as User)}
+                onRowClick={(params) => handleOpenDrawer('view', params.row as PlatformProfile)}
                 getRowId={(row) => row.id}
             />
             {/* Quick View / Create / Edit Drawer */}
@@ -320,22 +311,22 @@ const UserList = () => {
                 <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h4">
-                            {mode === 'create' ? 'New User' : mode === 'edit' ? 'Edit User' : userName(selectedUser)}
+                            {mode === 'create' ? 'New Profile' : mode === 'edit' ? 'Edit Profile' : profileName(selectedProfile)}
                         </Typography>
-                        {mode === 'view' && selectedUser && (
+                        {mode === 'view' && selectedProfile && (
                             <Stack direction="row" spacing={1}>
-                                {can(PERMISSIONS.ROLE_EDIT) && (
+                                {can(PERMISSIONS.PLATFORM_PROFILE_EDIT) && (
                                     <Tooltip title="Edit">
                                         <IconButton size="small" onClick={() => setMode('edit')} color="primary">
                                             <IconEdit size={18} />
                                         </IconButton>
                                     </Tooltip>
                                 )}
-                                {can(PERMISSIONS.ROLE_DELETE) && (
+                                {can(PERMISSIONS.PLATFORM_PROFILE_DELETE) && (
                                     <Tooltip title="Delete">
                                         <IconButton
                                             size="small"
-                                            onClick={(e) => handleDeleteClick(selectedUser, e)}
+                                            onClick={(e) => handleDeleteClick(selectedProfile, e)}
                                             color="error"
                                         >
                                             <IconTrash size={18} />
@@ -348,9 +339,9 @@ const UserList = () => {
 
                     <Divider sx={{ mb: 3 }} />
 
-                    <UserForm
+                    <ProfileForm
                         mode={mode}
-                        user={selectedUser}
+                        profile={selectedProfile}
                         initialValues={mode === 'create' ? createDraft : undefined}
                         onSubmit={handleFormSubmit}
                         onCancel={handleCancelForm}
@@ -367,8 +358,8 @@ const UserList = () => {
             {/* Delete Confirmation */}
             <ConfirmDialog
                 open={deleteDialogOpen}
-                title="Delete User"
-                content={`Are you sure you want to delete ${userName(selectedUser)}? This action cannot be undone.`}
+                title="Delete Profile"
+                content={`Are you sure you want to delete ${profileName(selectedProfile)}? This action cannot be undone.`}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeleteDialogOpen(false)}
                 confirmLabel="Delete"
@@ -381,4 +372,4 @@ const UserList = () => {
 };
 
 
-export default UserList;
+export default ProfileList;

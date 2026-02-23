@@ -83,6 +83,7 @@ describe('Platform Profile E2E', () => {
         it('should create a new platform profile', async () => {
             const createDto = {
                 name: 'Boomi Standard',
+                accountId: 'boomi-account-123',
                 description: 'Standard Boomi configuration',
                 platformType: IntegrationPlatform.BOOMI,
                 isDefault: true,
