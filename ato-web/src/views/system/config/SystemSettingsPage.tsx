@@ -3,7 +3,7 @@ import {
     Box, Stack, Typography, Switch, FormControlLabel, Divider,
     Tabs, Tab, useMediaQuery, useTheme, TextField, InputAdornment
 } from '@mui/material';
-import { IconSettings, IconShieldLock, IconDeviceAnalytics } from '@tabler/icons-react';
+import { IconSettings, IconShieldLock } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -61,8 +61,6 @@ const SystemSettingsPage = () => {
 
     // --- Config Data ---
     const { data: auditConfig, isLoading: isAuditLoading } = useGetSystemConfig<AuditConfig>(SystemConfigKeys.AUDIT);
-    const { data: pollIntervalConfig, isLoading: isPollLoading } = useGetSystemConfig<number>(SystemConfigKeys.BOOMI_POLL_INTERVAL);
-    const { data: maxPollsConfig, isLoading: isMaxPollsLoading } = useGetSystemConfig<number>(SystemConfigKeys.BOOMI_MAX_POLLS);
 
     const { mutate: updateConfig, isPending: isUpdating } = useUpdateSystemConfig();
 
@@ -76,13 +74,6 @@ const SystemSettingsPage = () => {
                     enabled: checked
                 }
             }
-        });
-    };
-
-    const handleBoomiConfigUpdate = (key: string, value: number) => {
-        updateConfig({
-            key,
-            data: { value }
         });
     };
 
@@ -108,13 +99,6 @@ const SystemSettingsPage = () => {
                         iconPosition="start"
                         label="General"
                         {...a11yProps(0)}
-                    />
-
-                    <Tab
-                        icon={<IconDeviceAnalytics size={18} />}
-                        iconPosition="start"
-                        label="Integration Platform"
-                        {...a11yProps(1)}
                     />
                 </Tabs>
 
@@ -154,62 +138,6 @@ const SystemSettingsPage = () => {
                         </SubCard>
 
                         {/* Add more general system settings here as needed */}
-                    </Stack>
-                </TabPanel>
-
-                {/* --- Tab 1: Integration Platform Settings --- */}
-                <TabPanel value={value} index={1}>
-                    <Stack spacing={3}>
-                        <Box>
-                            <Typography variant="h4" gutterBottom>Integration Configuration</Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                Configure parameters for external integration platforms like Boomi.
-                            </Typography>
-                        </Box>
-                        <Divider />
-                        <SubCard title="Boomi Execution Policy">
-                            <Stack spacing={3} sx={{ maxWidth: 600 }}>
-                                <TextField
-                                    // Key forces remount when data arrives, acting like defaultValue update
-                                    key={pollIntervalConfig ? `poll-${pollIntervalConfig.value}` : 'poll-loading'}
-                                    label="Poll Interval"
-                                    type="number"
-                                    defaultValue={pollIntervalConfig?.value ?? ''}
-                                    onBlur={(e) => {
-                                        const val = Number(e.target.value);
-                                        // Update if value changed from what server has (including 0/empty logic if needed)
-                                        if (pollIntervalConfig && val !== pollIntervalConfig.value) {
-                                            handleBoomiConfigUpdate('boomi.pollInterval', val);
-                                        } else if (!pollIntervalConfig && val) {
-                                            handleBoomiConfigUpdate('boomi.pollInterval', val);
-                                        }
-                                    }}
-                                    disabled={!canEdit || isUpdating || isPollLoading}
-                                    helperText="Time to wait between status checks"
-                                    slotProps={{
-                                        input: {
-                                            endAdornment: <InputAdornment position="end">ms</InputAdornment>,
-                                        }
-                                    }}
-                                />
-                                <TextField
-                                    key={maxPollsConfig ? `max-${maxPollsConfig.value}` : 'max-loading'}
-                                    label="Max Polls"
-                                    type="number"
-                                    defaultValue={maxPollsConfig?.value ?? ''}
-                                    onBlur={(e) => {
-                                        const val = Number(e.target.value);
-                                        if (maxPollsConfig && val !== maxPollsConfig.value) {
-                                            handleBoomiConfigUpdate('boomi.maxPolls', val);
-                                        } else if (!maxPollsConfig && val) {
-                                            handleBoomiConfigUpdate('boomi.maxPolls', val);
-                                        }
-                                    }}
-                                    disabled={!canEdit || isUpdating || isMaxPollsLoading}
-                                    helperText="Maximum number of status checks before timeout"
-                                />
-                            </Stack>
-                        </SubCard>
                     </Stack>
                 </TabPanel>
             </Box>
