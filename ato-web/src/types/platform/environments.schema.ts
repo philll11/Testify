@@ -7,7 +7,7 @@ export const platformEnvironmentSchema = z.object({
     isDefault: z.boolean().optional(),
     credentials: z.object({
         username: z.string().min(1, 'Username is required'), // Or simpler auth
-        passwordOrToken: z.string().min(1, 'Token is required'), // Required on create
+        passwordOrToken: z.string().optional(), // Optional to allow unchanged credentials on update
         executionInstanceId: z.string().min(1, 'Execution Instance is required')
     })
 });
