@@ -50,6 +50,9 @@ export class PlatformEnvironment {
   @Column({ nullable: true })
   profileId: string;
 
+  @Column({ default: false })
+  isDefault: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -21,9 +21,7 @@ export class PlatformEnvironmentService {
     private readonly encryptionService: EncryptionService, // Inject EncryptionService
   ) { }
 
-  async create(
-    createDto: CreatePlatformEnvironmentDto,
-  ): Promise<PlatformEnvironment> {
+  async create(createDto: CreatePlatformEnvironmentDto): Promise<PlatformEnvironment> {
     // 1. Verify Profile Exists
     const profile = await this.platformProfileService.findOne(
       createDto.profileId,
@@ -56,12 +54,20 @@ export class PlatformEnvironmentService {
       description: createDto.description,
       platformType: profile.platformType, // Inherit from profile
       profile: profile,
+      isDefault: createDto.isDefault || false,
       encryptedData: encrypted.content,
       iv: encrypted.iv,
       authTag: encrypted.tag,
     });
 
-    return this.environmentRepository.save(environment);
+    const savedEnvironment = await this.environmentRepository.save(environment);
+
+    // 5. Handle isDefault
+    if (createDto.isDefault) {
+      await this.setDefaultEnvironment(savedEnvironment.id);
+    }
+
+    return savedEnvironment;
   }
 
   async findAll(): Promise<PlatformEnvironmentResponseDto[]> {
@@ -75,6 +81,7 @@ export class PlatformEnvironmentService {
         'description',
         'platformType',
         'profileId', // Make sure to select profileId for the DTO
+        'isDefault',
         'createdAt',
         'updatedAt',
       ],
@@ -183,7 +190,9 @@ export class PlatformEnvironmentService {
           updateDto.credentials.passwordOrToken = currentCreds.passwordOrToken;
         } catch (error) {
           console.error(`Failed to decrypt credentials for env ${id}`, error);
-          throw new ConflictException('Failed to verify existing credentials. Please re-enter the password.',);
+          throw new ConflictException(
+            'Failed to verify existing credentials. Please re-enter the password.',
+          );
         }
       }
 
@@ -195,7 +204,17 @@ export class PlatformEnvironmentService {
       environment.authTag = encrypted.tag;
     }
 
-    return this.environmentRepository.save(environment);
+    if (updateDto.isDefault !== undefined) {
+      environment.isDefault = updateDto.isDefault;
+    }
+
+    const savedEnvironment = await this.environmentRepository.save(environment);
+
+    if (updateDto.isDefault) {
+      await this.setDefaultEnvironment(savedEnvironment.id);
+    }
+
+    return savedEnvironment;
   }
 
   async remove(id: string): Promise<void> {
@@ -217,5 +236,18 @@ export class PlatformEnvironmentService {
       tag: environment.authTag,
     });
     return JSON.parse(decrypted);
+  }
+
+  async setDefaultEnvironment(id: string | null): Promise<void> {
+    // First, clear the default flag from all environments
+    await this.environmentRepository.update(
+      { isDefault: true },
+      { isDefault: false },
+    );
+
+    // If an ID is provided, set it as the new default
+    if (id) {
+      await this.environmentRepository.update({ id }, { isDefault: true });
+    }
   }
 }

@@ -34,4 +34,4 @@ import { PasswordResetToken } from './entities/password-reset-token.entity';
   providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
   exports: [PassportModule, JwtAuthGuard, AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

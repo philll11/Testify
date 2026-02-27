@@ -23,7 +23,6 @@ const ProfileCreatePage = () => {
                 accountId: values.accountId,
                 description: values.description,
                 platformType: values.platformType,
-                isDefault: values.isDefault,
                 config: values.config
             };
             const newProfile = await createProfile(dto);

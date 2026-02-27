@@ -21,10 +21,18 @@ export interface BoomiConfig {
   maxPolls: number;
 }
 
+export interface DiscoveryConfig {
+  componentTypes: string[];
+  testDirectoryFolderName: string | null;
+  defaultSyncEnvironmentId: string | null;
+  syncScheduleCron: string;
+}
+
 export const SystemConfigKeys = {
   AUDIT: 'audit',
   BOOMI_POLL_INTERVAL: 'boomi.pollInterval',
   BOOMI_MAX_POLLS: 'boomi.maxPolls',
+  DISCOVERY: 'discovery',
 };
 
 // API Functions

@@ -1,26 +1,31 @@
 import {
-    IsEnum,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    IsObject,
-    IsUUID,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsObject,
+  IsUUID,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreatePlatformEnvironmentDto {
-    @IsNotEmpty()
-    @IsString()
-    name: string;
+  @IsNotEmpty()
+  @IsString()
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    description?: string;
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-    @IsUUID()
-    @IsNotEmpty()
-    profileId: string;
+  @IsUUID()
+  @IsNotEmpty()
+  profileId: string;
 
-    @IsObject()
-    @IsNotEmpty()
-    credentials: Record<string, any>;
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
+
+  @IsObject()
+  @IsNotEmpty()
+  credentials: Record<string, any>;
 }

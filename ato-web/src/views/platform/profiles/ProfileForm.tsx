@@ -69,7 +69,6 @@ const ProfileForm = ({
             accountId: '',
             description: '',
             platformType: IntegrationPlatform.BOOMI,
-            isDefault: false,
             config: {
                 pollInterval: 5000,
                 maxPolls: 12
@@ -124,7 +123,6 @@ const ProfileForm = ({
                 accountId: profile.accountId,
                 description: profile.description || '',
                 platformType: profile.platformType,
-                isDefault: profile.isDefault,
                 config: {
                     pollInterval: profile.config?.pollInterval ?? 5000,
                     maxPolls: profile.config?.maxPolls ?? 12
@@ -136,7 +134,6 @@ const ProfileForm = ({
                 name: initialValues?.name || '',
                 description: initialValues?.description || '',
                 platformType: initialValues?.platformType || IntegrationPlatform.BOOMI,
-                isDefault: initialValues?.isDefault || false,
                 config: initialValues?.config || {
                     pollInterval: 5000,
                     maxPolls: 12
@@ -156,7 +153,6 @@ const ProfileForm = ({
             name: '',
             description: '',
             platformType: IntegrationPlatform.BOOMI,
-            isDefault: false,
             config: {
                 pollInterval: 5000,
                 maxPolls: 12
@@ -306,26 +302,6 @@ const ProfileForm = ({
                                 error={!!errors.config?.maxPolls}
                                 helperText={errors.config?.maxPolls?.message}
                                 disabled={isViewing}
-                            />
-                        )}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <Controller
-                        name="isDefault"
-                        control={control}
-                        render={({ field: { value, onChange, ...rest } }) => (
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={value}
-                                        onChange={(e) => onChange(e.target.checked)}
-                                        disabled={isViewing}
-                                        {...rest}
-                                    />
-                                }
-                                label="Set as Default Profile"
                             />
                         )}
                     />

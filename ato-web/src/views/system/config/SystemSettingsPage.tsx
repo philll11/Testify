@@ -1,17 +1,11 @@
 import { useState, SyntheticEvent } from 'react';
-import {
-    Box, Stack, Typography, Switch, FormControlLabel, Divider,
-    Tabs, Tab, useMediaQuery, useTheme, TextField, InputAdornment
-} from '@mui/material';
-import { IconSettings, IconShieldLock } from '@tabler/icons-react';
+import { Box, Tabs, Tab, useMediaQuery, useTheme } from '@mui/material';
+import { IconSettings, IconDatabaseImport } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
-import SubCard from 'ui-component/cards/SubCard';
-import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useConfig';
-import { AuditConfig, SystemConfigKeys } from 'api/system/config';
-import { usePermission } from 'contexts/AuthContext';
-import { PERMISSIONS } from 'constants/permissions';
+import GeneralSettingsTab from './tabs/GeneralSettingsTab';
+import DiscoverySettingsTab from './tabs/DiscoverySettingsTab';
 
 // Tab Panel Helper
 interface TabPanelProps {
@@ -52,29 +46,9 @@ const SystemSettingsPage = () => {
     const theme = useTheme();
     const matchDownMD = useMediaQuery(theme.breakpoints.down('md'));
     const [value, setValue] = useState(0);
-    const { can } = usePermission();
-    const canEdit = can(PERMISSIONS.SYSTEM_CONFIG_EDIT);
 
     const handleChange = (event: SyntheticEvent, newValue: number) => {
         setValue(newValue);
-    };
-
-    // --- Config Data ---
-    const { data: auditConfig, isLoading: isAuditLoading } = useGetSystemConfig<AuditConfig>(SystemConfigKeys.AUDIT);
-
-    const { mutate: updateConfig, isPending: isUpdating } = useUpdateSystemConfig();
-
-    const handleAuditToggle = (checked: boolean) => {
-        if (!auditConfig) return;
-        updateConfig({
-            key: SystemConfigKeys.AUDIT,
-            data: {
-                value: {
-                    ...auditConfig.value,
-                    enabled: checked
-                }
-            }
-        });
     };
 
     return (
@@ -91,7 +65,7 @@ const SystemSettingsPage = () => {
                         borderRight: 1,
                         borderColor: 'divider',
                         minWidth: 200,
-                        '& .MuiTab-root': { minHeight: 60, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }
+                        '& .MuiTab-root': { minHeight: 60, display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', px: 3 }
                     }}
                 >
                     <Tab
@@ -100,45 +74,22 @@ const SystemSettingsPage = () => {
                         label="General"
                         {...a11yProps(0)}
                     />
+                    <Tab
+                        icon={<IconDatabaseImport size={18} />}
+                        iconPosition="start"
+                        label="Discovery Engine"
+                        {...a11yProps(1)}
+                    />
                 </Tabs>
 
                 {/* --- Tab 0: General System Settings --- */}
                 <TabPanel value={value} index={0}>
-                    <Stack spacing={3}>
-                        <Box>
-                            <Typography variant="h4" gutterBottom>General Configuration</Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                Manage global system behaviors and logging policies.
-                            </Typography>
-                        </Box>
+                    <GeneralSettingsTab />
+                </TabPanel>
 
-                        <Divider />
-
-                        <SubCard title="Audit Logging">
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Box>
-                                    <Typography variant="subtitle1">Enable Global Audit Trail</Typography>
-                                    <Typography variant="caption" color="textSecondary">
-                                        When enabled, all critical changes (Create, Update, Delete) to resources will be logged.
-                                    </Typography>
-                                </Box>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={auditConfig?.value?.enabled ?? false}
-                                            onChange={(e) => handleAuditToggle(e.target.checked)}
-                                            disabled={!canEdit || isUpdating || isAuditLoading}
-                                            name="audit-toggle"
-                                            color="primary"
-                                        />
-                                    }
-                                    label={auditConfig?.value?.enabled ? "On" : "Off"}
-                                />
-                            </Stack>
-                        </SubCard>
-
-                        {/* Add more general system settings here as needed */}
-                    </Stack>
+                {/* --- Tab 1: Discovery Engine Settings --- */}
+                <TabPanel value={value} index={1}>
+                    <DiscoverySettingsTab />
                 </TabPanel>
             </Box>
         </MainCard>

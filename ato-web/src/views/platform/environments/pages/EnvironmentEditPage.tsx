@@ -25,6 +25,7 @@ const EnvironmentEditPage = () => {
                 name: values.name,
                 description: values.description,
                 profileId: values.profileId,
+                isDefault: values.isDefault,
                 credentials: values.credentials // We send full credentials object if updated
             };
             await updateEnvironment({ id: environment.id, data: dto });

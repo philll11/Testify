@@ -11,7 +11,6 @@ export interface PlatformProfile {
     accountId: string;
     description?: string;
     platformType: IntegrationPlatform;
-    isDefault: boolean;
     config: PlatformProfileConfig;
     createdAt: string;
     updatedAt: string;
@@ -22,7 +21,6 @@ export interface CreatePlatformProfileDto {
     accountId: string;
     description?: string;
     platformType: IntegrationPlatform;
-    isDefault?: boolean;
     config: PlatformProfileConfig;
 }
 
@@ -30,6 +28,5 @@ export interface UpdatePlatformProfileDto {
     name?: string;
     accountId?: string;
     description?: string;
-    isDefault?: boolean;
     config?: PlatformProfileConfig;
 }

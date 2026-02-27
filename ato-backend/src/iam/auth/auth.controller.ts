@@ -30,7 +30,7 @@ export class AuthController {
     private authService: AuthService,
     private usersService: UsersService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   @Get('profile')
   async getProfile(@Request() req) {

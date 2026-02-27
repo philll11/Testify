@@ -15,16 +15,11 @@ export class PlatformProfileService {
   constructor(
     @InjectRepository(PlatformProfile)
     private platformProfileRepository: Repository<PlatformProfile>,
-  ) {}
+  ) { }
 
   async create(
     createPlatformProfileDto: CreatePlatformProfileDto,
   ): Promise<PlatformProfile> {
-    // If isDefault is true, ensure no other profile is default for this platform
-    if (createPlatformProfileDto.isDefault) {
-      await this.clearDefaultFlag(createPlatformProfileDto.platformType);
-    }
-
     const profile = this.platformProfileRepository.create(
       createPlatformProfileDto,
     );
@@ -45,23 +40,11 @@ export class PlatformProfileService {
     return profile;
   }
 
-  async findDefault(
-    platformType: IntegrationPlatform,
-  ): Promise<PlatformProfile | null> {
-    return this.platformProfileRepository.findOne({
-      where: { platformType, isDefault: true },
-    });
-  }
-
   async update(
     id: string,
     updatePlatformProfileDto: UpdatePlatformProfileDto,
   ): Promise<PlatformProfile> {
     const profile = await this.findOne(id);
-
-    if (updatePlatformProfileDto.isDefault) {
-      await this.clearDefaultFlag(profile.platformType);
-    }
 
     // Merge config if provided
     if (updatePlatformProfileDto.config) {
@@ -78,12 +61,5 @@ export class PlatformProfileService {
     if (result.affected === 0) {
       throw new NotFoundException(`Platform profile with ID "${id}" not found`);
     }
-  }
-
-  private async clearDefaultFlag(platformType: IntegrationPlatform) {
-    await this.platformProfileRepository.update(
-      { platformType, isDefault: true },
-      { isDefault: false },
-    );
   }
 }

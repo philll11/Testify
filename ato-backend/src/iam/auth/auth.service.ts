@@ -27,7 +27,7 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
-  ) { }
+  ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.validateUser(email, pass);

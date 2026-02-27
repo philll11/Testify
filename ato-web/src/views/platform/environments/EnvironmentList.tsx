@@ -204,6 +204,23 @@ const EnvironmentList = () => {
             }
         },
         {
+            field: 'isDefault',
+            headerName: 'Flags',
+            flex: 0.5,
+            minWidth: 100,
+            renderCell: (params: GridRenderCellParams) => {
+                const isDefault = params.value as boolean;
+                return isDefault ? (
+                    <Chip
+                        label="Default"
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                    />
+                ) : null;
+            }
+        },
+        {
             field: 'actions',
             headerName: 'Actions',
             flex: 1,

@@ -25,10 +25,6 @@ export class CreatePlatformProfileDto {
   platformType: IntegrationPlatform;
 
   @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
-
-  @IsOptional()
   @IsObject()
   config?: Record<string, any>;
 }

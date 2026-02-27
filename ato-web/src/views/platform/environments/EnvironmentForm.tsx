@@ -16,7 +16,9 @@ import {
     Autocomplete,
     OutlinedInput,
     InputAdornment,
-    IconButton
+    IconButton,
+    FormControlLabel,
+    Switch
 } from '@mui/material';
 import { IconHistory, IconEye, IconEyeOff } from '@tabler/icons-react';
 
@@ -84,6 +86,7 @@ const EnvironmentForm = ({
             name: '',
             description: '',
             profileId: '',
+            isDefault: false,
             credentials: {
                 username: '',
                 passwordOrToken: '',
@@ -140,6 +143,7 @@ const EnvironmentForm = ({
                 name: effectiveEnv.name,
                 description: effectiveEnv.description || '',
                 profileId: effectiveEnv.profile?.id || effectiveEnv.profileId || '',
+                isDefault: effectiveEnv.isDefault,
                 credentials: {
                     username: effectiveEnv.credentials?.username || '',
                     passwordOrToken: effectiveEnv.credentials?.passwordOrToken || '',
@@ -151,6 +155,7 @@ const EnvironmentForm = ({
                 name: initialValues?.name || '',
                 description: initialValues?.description || '',
                 profileId: initialValues?.profileId || '',
+                isDefault: initialValues?.isDefault || false,
                 credentials: {
                     username: '',
                     passwordOrToken: '',
@@ -287,6 +292,26 @@ const EnvironmentForm = ({
                                 error={!!errors.description}
                                 helperText={errors.description?.message}
                                 disabled={isViewing}
+                            />
+                        )}
+                    />
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                    <Controller
+                        name="isDefault"
+                        control={control}
+                        render={({ field: { value, onChange, ...rest } }) => (
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={value}
+                                        onChange={(e) => onChange(e.target.checked)}
+                                        disabled={isViewing}
+                                        {...rest}
+                                    />
+                                }
+                                label="Set as Default Environment"
                             />
                         )}
                     />

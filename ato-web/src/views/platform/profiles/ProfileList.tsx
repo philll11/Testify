@@ -32,13 +32,6 @@ import { usePermission } from 'contexts/AuthContext';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import MainCard from 'ui-component/cards/MainCard';
 
-// Helper for Status Chip
-const getStatusChip = (isActive?: boolean) => {
-    return isActive ? (
-        <Chip label="Default Profile" color="success" size="small" variant="outlined" />
-    ) : null;
-};
-
 const profileName = (profile?: PlatformProfile | null) => {
     if (!profile) return 'Profile Details';
     return profile.name;
@@ -200,13 +193,6 @@ const ProfileList = () => {
             flex: 1,
             minWidth: 150,
             valueGetter: (params: any, row: PlatformProfile) => `${row.config.pollInterval} ms`
-        },
-        {
-            field: 'isDefault',
-            headerName: 'Flags',
-            flex: 0.5,
-            minWidth: 100,
-            renderCell: (params: GridRenderCellParams) => getStatusChip(params.value as boolean)
         },
         {
             field: 'actions',

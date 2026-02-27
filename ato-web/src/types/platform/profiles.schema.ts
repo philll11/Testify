@@ -6,7 +6,6 @@ export const platformProfileSchema = z.object({
     accountId: z.string().min(1, 'Account ID is required'),
     description: z.string().optional(),
     platformType: z.enum(IntegrationPlatform),
-    isDefault: z.boolean(),
     config: z.object({
         pollInterval: z.number().min(100, 'Minimum 100ms').max(60000, 'Maximum 60s'),
         maxPolls: z.number().min(1).max(1000)

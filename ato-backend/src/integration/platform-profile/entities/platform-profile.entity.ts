@@ -29,9 +29,6 @@ export class PlatformProfile {
   })
   platformType: IntegrationPlatform;
 
-  @Column({ default: false })
-  isDefault: boolean;
-
   @Column({ type: 'jsonb', default: {} })
   config: Record<string, any>;
 

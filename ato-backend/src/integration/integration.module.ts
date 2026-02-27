@@ -20,6 +20,6 @@ import { CommonModule } from '../common/common.module';
     PlatformProfileService,
   ],
   controllers: [PlatformEnvironmentController, PlatformProfileController],
-  exports: [IntegrationService],
+  exports: [IntegrationService, PlatformEnvironmentService],
 })
-export class IntegrationModule {}
+export class IntegrationModule { }

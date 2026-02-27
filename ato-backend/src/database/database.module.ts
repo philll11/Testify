@@ -15,4 +15,4 @@ import { AuditEntry } from '../system/audits/entities/audit.entity';
   ],
   exports: [TypeOrmModule],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

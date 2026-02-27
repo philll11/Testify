@@ -36,6 +36,16 @@ async function bootstrap() {
         value: { enabled: true, retentionDays: 90 },
         description: 'Global Audit Logging Settings',
       },
+      {
+        key: SystemConfigKeys.DISCOVERY.CONFIG,
+        value: {
+          componentTypes: ['process', 'webservice', 'processroute'],
+          testDirectoryFolderName: null,
+          defaultSyncEnvironmentId: null,
+          syncScheduleCron: '0 */4 * * *',
+        },
+        description: 'Discovery and Synchronization Engine Settings',
+      },
     ];
 
     for (const config of seedConfigs) {

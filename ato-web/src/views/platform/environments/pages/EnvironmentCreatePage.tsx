@@ -22,6 +22,7 @@ const EnvironmentCreatePage = () => {
                 name: values.name,
                 description: values.description,
                 profileId: values.profileId,
+                isDefault: values.isDefault,
                 credentials: values.credentials
             };
             const newEnv = await createEnvironment(dto);

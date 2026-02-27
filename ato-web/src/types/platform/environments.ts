@@ -7,6 +7,7 @@ export interface PlatformEnvironment {
     description?: string;
     platformType: IntegrationPlatform;
     profileId: string;
+    isDefault: boolean;
     // Profile is only populated in GET /:id details view, not in list view
     profile?: PlatformProfile;
     // Credentials only populated in GET /:id, never in list
@@ -25,6 +26,7 @@ export interface CreatePlatformEnvironmentDto {
     name: string;
     description?: string;
     profileId: string;
+    isDefault?: boolean;
     credentials: PlatformCredentials;
 }
 
@@ -32,5 +34,6 @@ export interface UpdatePlatformEnvironmentDto {
     name?: string;
     description?: string;
     profileId?: string;
+    isDefault?: boolean;
     credentials?: PlatformCredentials;
 }

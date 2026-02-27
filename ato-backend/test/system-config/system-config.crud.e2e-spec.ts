@@ -175,4 +175,104 @@ describe('System Config CRUD (e2e)', () => {
       expect(newConfig!.value).toEqual(updateDto.value);
     });
   });
+
+  describe('PATCH /system/config/discovery', () => {
+    it('should successfully update discovery config with valid payload', async () => {
+      const updateDto = {
+        value: {
+          componentTypes: ['process', 'transform.map'],
+          testDirectoryFolderName: 'testFolder',
+          defaultSyncEnvironmentId: '123e4567-e89b-12d3-a456-426614174000',
+          syncScheduleCron: '0 */4 * * *',
+        },
+      };
+
+      await request(app.getHttpServer())
+        .patch('/system/config/discovery')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateDto)
+        .expect(200);
+
+      const updatedConfig = await systemConfigRepository.findOneBy({
+        key: 'discovery',
+      });
+      expect(updatedConfig).not.toBeNull();
+      expect(updatedConfig!.value).toEqual(updateDto.value);
+    });
+
+    it('should fail to update discovery config with invalid componentTypes', async () => {
+      const updateDto = {
+        value: {
+          componentTypes: ['invalid-type'],
+          testDirectoryFolderName: 'testFolder',
+          defaultSyncEnvironmentId: null,
+          syncScheduleCron: '0 */4 * * *',
+        },
+      };
+
+      const res = await request(app.getHttpServer())
+        .patch('/system/config/discovery')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateDto)
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
+    });
+
+    it('should fail to update discovery config with invalid defaultSyncEnvironmentId', async () => {
+      const updateDto = {
+        value: {
+          componentTypes: ['process'],
+          testDirectoryFolderName: 'testFolder',
+          defaultSyncEnvironmentId: 'not-a-uuid',
+          syncScheduleCron: '0 */4 * * *',
+        },
+      };
+
+      const res = await request(app.getHttpServer())
+        .patch('/system/config/discovery')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateDto)
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
+    });
+
+    it('should fail to update discovery config with invalid testDirectoryFolderName', async () => {
+      const updateDto = {
+        value: {
+          componentTypes: ['process'],
+          testDirectoryFolderName: 123, // Invalid type
+          defaultSyncEnvironmentId: null,
+          syncScheduleCron: '0 */4 * * *',
+        },
+      };
+
+      const res = await request(app.getHttpServer())
+        .patch('/system/config/discovery')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateDto)
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
+    });
+
+    it('should fail to update discovery config with missing syncScheduleCron', async () => {
+      const updateDto = {
+        value: {
+          componentTypes: ['process'],
+          testDirectoryFolderName: 'testFolder',
+          defaultSyncEnvironmentId: null,
+        },
+      };
+
+      const res = await request(app.getHttpServer())
+        .patch('/system/config/discovery')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateDto)
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
+    });
+  });
 });

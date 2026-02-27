@@ -24,7 +24,6 @@ const ProfileEditPage = () => {
             const dto: UpdatePlatformProfileDto = {
                 name: values.name,
                 description: values.description,
-                isDefault: values.isDefault,
                 config: values.config
             };
             await updateProfile({ id: profile.id, data: dto });

@@ -37,7 +37,7 @@ export class UsersService {
     @Inject(forwardRef(() => AuditsService))
     private readonly auditsService: AuditsService,
     private readonly countersService: CountersService,
-  ) { }
+  ) {}
 
   /**
    * Creates a new user based on the provided DTO.
@@ -205,8 +205,14 @@ export class UsersService {
    * @param requestingUser - The authenticated user making the request.
    * @returns The updated user document.
    */
-  async update(id: string, updateUserDto: UpdateUserDto, requestingUser: User): Promise<User> {
-    const hasEditPermission = (requestingUser.role?.permissions || []).includes(PERMISSIONS.USER_EDIT);
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    requestingUser: User,
+  ): Promise<User> {
+    const hasEditPermission = (requestingUser.role?.permissions || []).includes(
+      PERMISSIONS.USER_EDIT,
+    );
 
     if (id !== requestingUser.id) {
       if (!hasEditPermission)
@@ -456,7 +462,11 @@ export class UsersService {
     return null;
   }
 
-  async setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void> {
+  async setPasswordResetToken(
+    userId: string,
+    token: string,
+    expires: Date,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       passwordResetToken: token,
       passwordResetExpires: expires,
@@ -472,7 +482,10 @@ export class UsersService {
     });
   }
 
-  async updatePasswordAndClearToken(userId: string, newPasswordHash: string): Promise<void> {
+  async updatePasswordAndClearToken(
+    userId: string,
+    newPasswordHash: string,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       password: newPasswordHash,
       passwordResetToken: null,
@@ -482,7 +495,10 @@ export class UsersService {
     await this.invalidateTokens(userId);
   }
 
-  async updateAuthDetails(userId: string, newPasswordHash: string): Promise<void> {
+  async updateAuthDetails(
+    userId: string,
+    newPasswordHash: string,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       password: newPasswordHash,
     });
