@@ -7,7 +7,7 @@ import { MenuItem } from './types';
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems: MenuItem = {
-  items: [dashboard, iam, platform, system]
+  items: [dashboard, platform, iam, system]
 };
 
 export default menuItems;
