@@ -181,21 +181,16 @@ export class AuthService {
     await this.passwordResetTokenRepository.save(resetToken);
 
     const fullToken = `${resetToken.id}.${tokenPayload}`;
-    const frontendUrl =
-      this.configService.get<string>('app.frontendUrl') ||
-      'http://localhost:3000';
-    const resetLink = `${frontendUrl}/auth/reset-password?token=${fullToken}`;
+    const frontendUrl = this.configService.get<string>('app.frontendUrl');
+    const resetLink = `${frontendUrl}/reset-password/${fullToken}`;
     const cliCommand = `ato login --reset-password --token ${fullToken}`;
 
-    Logger.log(`
-      ========================================================
-      EMAIL MOCK: Password Reset
-      To: ${email}
-      
-      Web Link: ${resetLink}
-      CLI Command: ${cliCommand}
-      ========================================================
-    `);
+    Logger.log('========================================================');
+    Logger.log('EMAIL MOCK: Password Reset');
+    Logger.log(`To: ${email}`);
+    Logger.log(`Web Link: ${resetLink}`);
+    Logger.log(`CLI Command: ${cliCommand}`);
+    Logger.log('========================================================');
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

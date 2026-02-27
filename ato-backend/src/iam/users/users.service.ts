@@ -205,14 +205,8 @@ export class UsersService {
    * @param requestingUser - The authenticated user making the request.
    * @returns The updated user document.
    */
-  async update(
-    id: string,
-    updateUserDto: UpdateUserDto,
-    requestingUser: User,
-  ): Promise<User> {
-    const hasEditPermission = (requestingUser.role?.permissions || []).includes(
-      PERMISSIONS.USER_EDIT,
-    );
+  async update(id: string, updateUserDto: UpdateUserDto, requestingUser: User): Promise<User> {
+    const hasEditPermission = (requestingUser.role?.permissions || []).includes(PERMISSIONS.USER_EDIT);
 
     if (id !== requestingUser.id) {
       if (!hasEditPermission)
@@ -462,11 +456,7 @@ export class UsersService {
     return null;
   }
 
-  async setPasswordResetToken(
-    userId: string,
-    token: string,
-    expires: Date,
-  ): Promise<void> {
+  async setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void> {
     await this.userRepository.update(userId, {
       passwordResetToken: token,
       passwordResetExpires: expires,

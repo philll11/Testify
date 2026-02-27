@@ -3,8 +3,8 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
-  version: process.env.npm_package_version || '0.0.0',
-  environment: process.env.NODE_ENV || 'development',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3432',
+  version: process.env.npm_package_version,
+  environment: process.env.NODE_ENV,
+  frontendUrl: process.env.FRONTEND_URL,
   encryptionKey: process.env.ENCRYPTION_KEY,
 }));
