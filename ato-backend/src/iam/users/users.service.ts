@@ -37,7 +37,7 @@ export class UsersService {
     @Inject(forwardRef(() => AuditsService))
     private readonly auditsService: AuditsService,
     private readonly countersService: CountersService,
-  ) {}
+  ) { }
 
   /**
    * Creates a new user based on the provided DTO.
@@ -482,16 +482,21 @@ export class UsersService {
     });
   }
 
-  async updatePasswordAndClearToken(
-    userId: string,
-    newPasswordHash: string,
-  ): Promise<void> {
+  async updatePasswordAndClearToken(userId: string, newPasswordHash: string): Promise<void> {
     await this.userRepository.update(userId, {
       password: newPasswordHash,
       passwordResetToken: null,
       passwordResetExpires: null,
     });
     // Invalidate tokens
+    await this.invalidateTokens(userId);
+  }
+
+  async updateAuthDetails(userId: string, newPasswordHash: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      password: newPasswordHash,
+    });
+    // Invalidate tokens to sign out all sessions
     await this.invalidateTokens(userId);
   }
 }

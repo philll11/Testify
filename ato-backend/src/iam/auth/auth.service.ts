@@ -11,6 +11,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -22,7 +25,9 @@ export class AuthService {
     private readonly configService: ConfigService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
-  ) {}
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+  ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.validateUser(email, pass);
@@ -156,63 +161,81 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    // 1. Find user
     const user = await this.usersService.findOneByEmailAndPopulateRole(email);
     if (!user) {
-      // Security: Don't reveal if user exists or not
       return;
     }
 
-    // 2. Generate and Hash Token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
+    const tokenPayload = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(tokenPayload, 10);
 
-    // 3. Set Expiration (e.g., 10 minutes)
-    const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 1);
 
-    // 4. Save to User
-    await this.usersService.setPasswordResetToken(
-      user.id,
-      passwordResetToken,
-      passwordResetExpires,
-    );
+    const resetToken = this.passwordResetTokenRepository.create({
+      user,
+      tokenHash,
+      expiresAt: expiry,
+    });
 
-    // 5. Mock Email Sending
-    const frontendUrl = this.configService.get<string>('app.frontendUrl');
-    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+    await this.passwordResetTokenRepository.save(resetToken);
+
+    const fullToken = `${resetToken.id}.${tokenPayload}`;
+    const frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ||
+      'http://localhost:3000';
+    const resetLink = `${frontendUrl}/auth/reset-password?token=${fullToken}`;
+    const cliCommand = `ato login --reset-password --token ${fullToken}`;
 
     Logger.log(`
       ========================================================
       EMAIL MOCK: Password Reset
       To: ${email}
-      Subject: Your password reset token (valid for 10 min)
       
-      Click here: ${resetUrl}
+      Web Link: ${resetLink}
+      CLI Command: ${cliCommand}
       ========================================================
     `);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    // 1. Hash the incoming token to compare with DB
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const [tokenId, tokenSecret] = token.split('.');
 
-    // 2. Find user by token and check expiration
-    const user = await this.usersService.findByPasswordResetToken(hashedToken);
-
-    if (!user) {
-      throw new BadRequestException('Token is invalid or has expired');
+    if (!tokenId || !tokenSecret) {
+      throw new BadRequestException('Invalid token format');
     }
 
-    // 3. Hash new password
+    const resetToken = await this.passwordResetTokenRepository.findOne({
+      where: { id: tokenId },
+      relations: ['user'],
+    });
+
+    if (!resetToken) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    if (resetToken.isUsed) {
+      throw new BadRequestException('Token has already been used');
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      throw new BadRequestException('Token has expired');
+    }
+
+    const isMatch = await bcrypt.compare(tokenSecret, resetToken.tokenHash);
+    if (!isMatch) {
+      throw new BadRequestException('Invalid token');
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 4. Update password and clear token
-    await this.usersService.updatePasswordAndClearToken(
-      user.id,
+    // Update user password and token version
+    await this.usersService.updateAuthDetails(
+      resetToken.user.id,
       hashedPassword,
     );
+
+    resetToken.isUsed = true;
+    await this.passwordResetTokenRepository.save(resetToken);
   }
 }

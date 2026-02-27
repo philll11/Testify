@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
+import { PasswordResetToken } from '../../auth/entities/password-reset-token.entity';
 
 @Entity('users')
 export class User {
@@ -62,4 +64,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => PasswordResetToken, (token) => token.user)
+  passwordResetTokens: PasswordResetToken[];
 }

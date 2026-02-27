@@ -21,6 +21,8 @@ import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,7 +30,7 @@ export class AuthController {
     private authService: AuthService,
     private usersService: UsersService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   @Get('profile')
   async getProfile(@Request() req) {
@@ -171,8 +173,8 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body('email') email: string) {
-    await this.authService.forgotPassword(email);
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto.email);
     return {
       message:
         'If an account with that email exists, we have sent a password reset link.',
@@ -182,18 +184,8 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(
-    @Body() body: { token: string; newPassword: string },
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    await this.authService.resetPassword(body.token, body.newPassword);
-
-    // Clear the cookie to prevent stale session 401s
-    response.cookie('Authentication', '', {
-      httpOnly: true,
-      expires: new Date(0),
-    });
-
-    return { message: 'Password has been successfully reset.' };
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Password has been reset successfully.' };
   }
 }

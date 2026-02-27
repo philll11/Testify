@@ -10,12 +10,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UsersModule,
-    TypeOrmModule.forFeature([RefreshToken]),
+    TypeOrmModule.forFeature([RefreshToken, PasswordResetToken]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
@@ -33,4 +34,4 @@ import { RefreshToken } from './entities/refresh-token.entity';
   providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
   exports: [PassportModule, JwtAuthGuard, AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }
