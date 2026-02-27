@@ -10,18 +10,15 @@ export interface PlatformEnvironment {
     // Profile is only populated in GET /:id details view, not in list view
     profile?: PlatformProfile;
     // Credentials only populated in GET /:id, never in list
-    credentials?: Record<string, any>;
+    credentials?: PlatformCredentials;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface PlatformCredentials {
     username?: string;
-    token?: string;
-    apiKey?: string;
-    accountId?: string;
-    // Flexible structure as per backend "Record<string, any>"
-    [key: string]: any;
+    passwordOrToken?: string;
+    executionInstanceId?: string;
 }
 
 export interface CreatePlatformEnvironmentDto {

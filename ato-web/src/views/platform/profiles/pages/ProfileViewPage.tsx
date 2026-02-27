@@ -27,7 +27,7 @@ const ProfileViewPage = () => {
 
     const handleEdit = () => {
         if (!id) return;
-        navigate(getLinkTo(`${id}/edit`));
+        navigate(getLinkTo('edit', { strategy: 'stack' }));
     };
 
     const handleDelete = async () => {

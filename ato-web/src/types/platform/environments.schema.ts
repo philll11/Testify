@@ -6,8 +6,8 @@ export const platformEnvironmentSchema = z.object({
     profileId: z.string().min(1, 'Profile is required'),
     credentials: z.object({
         username: z.string().min(1, 'Username is required'), // Or simpler auth
-        token: z.string().min(1, 'Token is required'), // Required on create
-        executionInstance: z.string().min(1, 'Execution Instance is required')
+        passwordOrToken: z.string().min(1, 'Token is required'), // Required on create
+        executionInstanceId: z.string().min(1, 'Execution Instance is required')
     })
 });
 

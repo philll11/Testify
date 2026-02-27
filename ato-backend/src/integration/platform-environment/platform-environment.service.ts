@@ -99,6 +99,10 @@ export class PlatformEnvironmentService {
           tag: environment.authTag,
         });
         credentials = JSON.parse(decrypted);
+        // Clear sensitive fields before returning to client
+        if (credentials.passwordOrToken) {
+          credentials.passwordOrToken = '';
+        }
       }
     } catch (error) {
       // In production, log this error securely
@@ -130,10 +134,7 @@ export class PlatformEnvironmentService {
     });
   }
 
-  async update(
-    id: string,
-    updateDto: UpdatePlatformEnvironmentDto,
-  ): Promise<PlatformEnvironment> {
+  async update(id: string, updateDto: UpdatePlatformEnvironmentDto): Promise<PlatformEnvironment> {
     const environment = await this.findEntityById(id);
 
     if (updateDto.name && updateDto.name !== environment.name) {
@@ -166,6 +167,26 @@ export class PlatformEnvironmentService {
     }
 
     if (updateDto.credentials) {
+      // Logic for secure partial update:
+      // If passwordOrToken is empty, it means the user did not provide a new one.
+      // We must retain the existing password.
+      if (!updateDto.credentials.passwordOrToken) {
+        try {
+          // Decrypt existing to get the current password
+          const decrypted = await this.encryptionService.decrypt({
+            content: environment.encryptedData,
+            iv: environment.iv,
+            tag: environment.authTag,
+          });
+          const currentCreds = JSON.parse(decrypted);
+          // Overwrite the empty incoming field with the actual existing password
+          updateDto.credentials.passwordOrToken = currentCreds.passwordOrToken;
+        } catch (error) {
+          console.error(`Failed to decrypt credentials for env ${id}`, error);
+          throw new ConflictException('Failed to verify existing credentials. Please re-enter the password.',);
+        }
+      }
+
       const encrypted = await this.encryptionService.encrypt(
         JSON.stringify(updateDto.credentials),
       );

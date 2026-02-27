@@ -43,7 +43,7 @@ const ProfileEditPage = () => {
         <MainCard title={`Edit Profile: ${profile.name}`}>
             <ProfileForm
                 mode="edit"
-                initialValues={profile}
+                profile={profile}
                 onSubmit={handleSubmit}
                 isLoading={isUpdating}
                 onCancel={() => goBack()}

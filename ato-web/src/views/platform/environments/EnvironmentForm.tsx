@@ -29,6 +29,7 @@ import { usePlatformEnvironment } from 'hooks/platform/useEnvironments';
 import { usePermission } from 'contexts/AuthContext';
 import ResourceRelatedTabs from 'ui-component/extended/ResourceRelatedTabs';
 import ResourceAuditTable from 'ui-component/extended/ResourceAuditTable';
+import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { IntegrationPlatform } from 'types/iam/credential.types';
 
 export type EnvironmentFormMode = 'create' | 'edit' | 'view';
@@ -67,6 +68,8 @@ const EnvironmentForm = ({
     const { data: detailEnvironment, isLoading: isDetailLoading } = usePlatformEnvironment(environment?.id || '');
 
     const [showToken, setShowToken] = useState(false);
+    const [confirmPasswordUpdate, setConfirmPasswordUpdate] = useState(false);
+    const [pendingValues, setPendingValues] = useState<PlatformEnvironmentFormData | null>(null);
 
     const {
         control,
@@ -83,8 +86,8 @@ const EnvironmentForm = ({
             profileId: '',
             credentials: {
                 username: '',
-                token: '',
-                executionInstance: ''
+                passwordOrToken: '',
+                executionInstanceId: ''
             },
             ...initialValues,
         }
@@ -137,13 +140,10 @@ const EnvironmentForm = ({
                 name: effectiveEnv.name,
                 description: effectiveEnv.description || '',
                 profileId: effectiveEnv.profile?.id || effectiveEnv.profileId || '',
-                // Note: Credentials are typically masked or not returned fully. 
-                // Assumption: Backend provides them or we accept empty on edit to mean "no change"
                 credentials: {
-                    username: '',
-                    token: '',
-                    executionInstance: '',
-                    ...(effectiveEnv as any).credentials
+                    username: effectiveEnv.credentials?.username || '',
+                    passwordOrToken: effectiveEnv.credentials?.passwordOrToken || '',
+                    executionInstanceId: effectiveEnv.credentials?.executionInstanceId || '',
                 }
             });
         } else if (isCreating) {
@@ -153,9 +153,8 @@ const EnvironmentForm = ({
                 profileId: initialValues?.profileId || '',
                 credentials: {
                     username: '',
-                    token: '',
-                    executionInstance: '',
-                    ...initialValues?.credentials
+                    passwordOrToken: '',
+                    executionInstanceId: '',
                 },
                 ...initialValues
             });
@@ -163,7 +162,31 @@ const EnvironmentForm = ({
     }, [environment, detailEnvironment, mode, isEditing, isViewing, isCreating, reset]);
 
     const handleFormSubmit = (values: PlatformEnvironmentFormData) => {
+        if (isEditing && values.credentials.passwordOrToken) {
+            // If editing and password field is NOT empty, ask for confirmation
+            setPendingValues(values);
+            setConfirmPasswordUpdate(true);
+        } else {
+            // Create mode or Edit mode with empty password (no change) -> Proceed directly
+            handleFormSubmitAction(values);
+        }
+    };
+
+    const handleConfirmUpdate = () => {
+        if (pendingValues) {
+            handleFormSubmitAction(pendingValues);
+            setPendingValues(null);
+        }
+        setConfirmPasswordUpdate(false);
+    };
+
+    const handleFormSubmitAction = (values: PlatformEnvironmentFormData) => {
         onSubmit(values);
+    };
+
+    const handleCancelUpdate = () => {
+        setConfirmPasswordUpdate(false);
+        setPendingValues(null);
     };
 
     const handleClear = () => {
@@ -173,8 +196,8 @@ const EnvironmentForm = ({
             profileId: '',
             credentials: {
                 username: '',
-                token: '',
-                executionInstance: ''
+                passwordOrToken: '',
+                executionInstanceId: ''
             },
         });
     };
@@ -291,10 +314,10 @@ const EnvironmentForm = ({
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                     <Controller
-                        name="credentials.token"
+                        name="credentials.passwordOrToken"
                         control={control}
                         render={({ field }) => (
-                            <FormControl fullWidth variant="outlined" error={!!errors.credentials?.token}>
+                            <FormControl fullWidth variant="outlined" error={!!errors.credentials?.passwordOrToken}>
                                 <InputLabel>Token / Password</InputLabel>
                                 <OutlinedInput
                                     {...field}
@@ -313,8 +336,10 @@ const EnvironmentForm = ({
                                     }
                                     label="Token / Password"
                                 />
-                                {errors.credentials?.token && (
-                                    <FormHelperText>{errors.credentials?.token?.message}</FormHelperText>
+                                {errors.credentials?.passwordOrToken ? (
+                                    <FormHelperText>{errors.credentials?.passwordOrToken?.message}</FormHelperText>
+                                ) : (
+                                    <FormHelperText>Leave blank to keep the existing password.</FormHelperText>
                                 )}
                             </FormControl>
                         )}
@@ -322,15 +347,15 @@ const EnvironmentForm = ({
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                     <Controller
-                        name="credentials.executionInstance"
+                        name="credentials.executionInstanceId"
                         control={control}
                         render={({ field }) => (
                             <TextField
                                 {...field}
                                 label="Execution Instance (Atom/Molecule)"
                                 fullWidth
-                                error={!!errors.credentials?.executionInstance}
-                                helperText={errors.credentials?.executionInstance?.message}
+                                error={!!errors.credentials?.executionInstanceId}
+                                helperText={errors.credentials?.executionInstanceId?.message}
                                 disabled={isViewing}
                             />
                         )}
@@ -356,7 +381,17 @@ const EnvironmentForm = ({
                                     >
                                         Clear
                                     </Button>
+
                                 ) : <Box />}
+
+                                <ConfirmDialog
+                                    open={confirmPasswordUpdate}
+                                    onCancel={handleCancelUpdate}
+                                    title="Update Credentials?"
+                                    content="You have entered a new password/token. This will overwrite the existing stored credentials. Are you sure you want to proceed?"
+                                    onConfirm={handleConfirmUpdate}
+                                    confirmLabel="Yes, Update Credentials"
+                                />
 
                                 <Box display="flex" gap={2}>
                                     <Button variant="outlined" color="primary" onClick={onCancel} disabled={isLoading}>
@@ -368,7 +403,7 @@ const EnvironmentForm = ({
                                         color="primary"
                                         disabled={isSubmitDisabled}
                                     >
-                                        {isEditing ? 'Update Profile' : 'Create Profile'}
+                                        {isEditing ? 'Update Environment' : 'Create Environment'}
                                     </Button>
                                 </Box>
                             </Box>

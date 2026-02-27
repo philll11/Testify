@@ -43,12 +43,7 @@ const EnvironmentEditPage = () => {
         <MainCard title={`Edit Environment: ${environment.name}`}>
             <EnvironmentForm
                 mode="edit"
-                initialValues={environment as any} // Cast because backend entity differs slightly from form schema (e.g. credentials hidden)
-                // Actually EnvironmentForm handles fetching profile details? No, it expects initialValues.
-                // Wait, EnvironmentForm expects initialValues of type Partial<PlatformEnvironmentFormData>.
-                // The environment object from API might not have credentials exposed.
-                // If credentials are not returned, the form fields will be empty.
-                // The user re-enters credentials if they want to update them.
+                environment={environment}
                 onSubmit={handleSubmit}
                 isLoading={isUpdating}
                 onCancel={() => goBack()}
