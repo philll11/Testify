@@ -21,6 +21,7 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
 import { usePlatformEnvironments } from 'hooks/platform/usePlatform';
 import { getNodeIcon } from './ComponentTreePane';
+import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
 export const ManifestPane = () => {
   const { manifestList, setManifestList, toggleNodeSelection, profileId } = useTestSuiteBuilderContext();
@@ -112,14 +113,16 @@ export const ManifestPane = () => {
                       {item.name}
                       {item.nodeType === 'component' && item.data?.type && (
                         <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
-                          [{item.data.type}]
+                          ({BOOMI_COMPONENT_LABELS[item.data.type] || item.data.type})
                         </Typography>
                       )}
                     </Box>
                   }
                   secondary={item.id}
-                  primaryTypographyProps={{ variant: 'body2' }}
-                  secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                  slotProps={{
+                    primary: { variant: 'body2' },
+                    secondary: { variant: 'caption', noWrap: true }
+                  }}
                 />
               </ListItem>
             ))}
