@@ -181,18 +181,18 @@ const ProfileList = () => {
             minWidth: 200,
         },
         {
+            field: 'accountId',
+            headerName: 'Account ID',
+            flex: 1,
+            minWidth: 150,
+            valueGetter: (params: any, row: PlatformProfile) => row.accountId || 'N/A'
+        },
+        {
             field: 'platformType',
             headerName: 'Platform',
             flex: 1,
             minWidth: 150,
             valueGetter: (params: any, row: PlatformProfile) => startCase(toLower(row.platformType))
-        },
-        {
-            field: 'config.pollInterval',
-            headerName: 'Poll Interval',
-            flex: 1,
-            minWidth: 150,
-            valueGetter: (params: any, row: PlatformProfile) => `${row.config.pollInterval} ms`
         },
         {
             field: 'actions',

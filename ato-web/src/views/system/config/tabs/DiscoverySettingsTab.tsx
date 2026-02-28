@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Stack, Typography, Divider, TextField,
-    MenuItem, Select, FormControl, InputLabel, FormHelperText,
-    Button, Chip, OutlinedInput, Autocomplete
+    Button, Chip, Autocomplete
 } from '@mui/material';
 import SubCard from 'ui-component/cards/SubCard';
 import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useConfig';
@@ -10,7 +9,7 @@ import { DiscoveryConfig, SystemConfigKeys } from 'api/system/config';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';
 import { usePlatformEnvironments } from 'hooks/platform/useEnvironments';
-import { BOOMI_COMPONENT_TYPES } from 'constants/boomi';
+import { BOOMI_COMPONENT_TYPES, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
 const SCHEDULE_OPTIONS = [
     { label: 'Every 15 minutes', value: '*/15 * * * *' },
@@ -82,6 +81,7 @@ const DiscoverySettingsTab = () => {
                         multiple
                         id="component-types-autocomplete"
                         options={BOOMI_COMPONENT_TYPES}
+                        getOptionLabel={(option) => BOOMI_COMPONENT_LABELS[option] || option}
                         disableCloseOnSelect
                         value={localDiscoveryConfig.componentTypes}
                         onChange={(_, newValue) => handleDiscoveryConfigChange('componentTypes', newValue)}
@@ -97,7 +97,7 @@ const DiscoverySettingsTab = () => {
                             value.map((option, index) => {
                                 const { key, ...tagProps } = getTagProps({ index });
                                 return (
-                                    <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />
+                                    <Chip key={key} variant="outlined" label={BOOMI_COMPONENT_LABELS[option] || option} size="small" {...tagProps} />
                                 );
                             })
                         }

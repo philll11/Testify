@@ -6,4 +6,35 @@ export const BOOMI_COMPONENT_TYPES = [
     'tradingpartner', 'tpgroup', 'tporganization', 'tpcommoptions',
     'webservice', 'webservice.external', 'processroute', 'customlibrary',
     'flowservice', 'script.processing', 'script.mapping', 'xslt'
-];
+] as const;
+
+export const BOOMI_COMPONENT_LABELS: Record<string, string> = {
+    'certificate': 'Certificate',
+    'certificate.pgp': 'Certificate PGP',
+    'connector-action': 'Connector Action',
+    'connector-settings': 'Connector Settings',
+    'crossref': 'Cross Reference Table',
+    'documentcache': 'Document Cache',
+    'transform.map': 'Map',
+    'transform.function': 'Map Function',
+    'process': 'Process',
+    'processproperty': 'Process Property',
+    'profile.db': 'Database Profile',
+    'profile.edi': 'EDI Profile',
+    'profile.flatfile': 'Flat File Profile',
+    'profile.xml': 'XML Profile',
+    'profile.json': 'JSON Profile',
+    'queue': 'Message Queue',
+    'tradingpartner': 'Trading Partner',
+    'tpgroup': 'Trading Partner Group',
+    'tporganization': 'Trading Partner Organization',
+    'tpcommoptions': 'Trading Partner Comm Options',
+    'webservice': 'Web Service',
+    'webservice.external': 'External Web Service',
+    'processroute': 'Process Route',
+    'customlibrary': 'Custom Library',
+    'flowservice': 'Flow Service',
+    'script.processing': 'Processing Script',
+    'script.mapping': 'Mapping Script',
+    'xslt': 'XSLT Style Sheet'
+};
