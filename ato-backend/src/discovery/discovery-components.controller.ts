@@ -1,6 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, ParseBoolPipe, DefaultValuePipe } from '@nestjs/common';
 import { DiscoveryService } from './discovery.service';
-import { GetDiscoveryComponentsDto } from './dto/get-discovery-components.dto';
 import { ComponentTreeNode } from './interfaces/component-tree-node.interface';
 import { RequirePermission } from '../common/decorators/permissions.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constants';
@@ -11,8 +10,12 @@ export class DiscoveryComponentsController {
 
     @Get()
     @RequirePermission(PERMISSIONS.DISCOVERY_VIEW)
-    async getComponentsTree(@Query() queryDto: GetDiscoveryComponentsDto): Promise<{ data: ComponentTreeNode[] }> {
-        const tree = await this.discoveryService.getComponentsTree(queryDto);
+    async getComponentsTree(
+        @Query('profileId') profileId: string,
+        @Query('isTest', new DefaultValuePipe(undefined), ParseBoolPipe) isTest?: boolean,
+        @Query('search') search?: string,
+    ): Promise<{ data: ComponentTreeNode[] }> {
+        const tree = await this.discoveryService.getComponentsTree({ profileId, isTest, search });
         return { data: tree };
     }
 }

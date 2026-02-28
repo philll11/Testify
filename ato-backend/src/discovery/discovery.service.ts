@@ -7,7 +7,7 @@ import { SystemConfigService } from '../system/config/system-config.service';
 import { SystemConfigKeys } from '../common/constants/system-config.constants';
 import { UpdateDiscoveryConfigDto } from '../system/config/dto/update-discovery-config.dto';
 import { PlatformEnvironmentService } from '../integration/platform-environment/platform-environment.service';
-import { GetDiscoveryComponentsDto } from './dto/get-discovery-components.dto';
+import { QueryDiscoveryComponentParameters } from './interfaces/query-discovery-component-parameters.interface';
 import { ComponentTreeNode } from './interfaces/component-tree-node.interface';
 
 @Injectable()
@@ -165,9 +165,7 @@ export class DiscoveryService {
             throw error;
         }
     }
-
-    async getComponentsTree(queryDto: GetDiscoveryComponentsDto): Promise<ComponentTreeNode[]> {
-        const { profileId, isTest, search } = queryDto;
+    async getComponentsTree({ profileId, isTest, search }: QueryDiscoveryComponentParameters): Promise<ComponentTreeNode[]> {
 
         const query = this.discoveredComponentRepository.createQueryBuilder('comp')
             .where('comp.profileId = :profileId', { profileId })
