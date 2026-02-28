@@ -35,11 +35,11 @@ describe('IntegrationService', () => {
 
   beforeEach(async () => {
     environmentService = {
-      findByName: jest.fn(),
+      findEntityById: jest.fn(),
       getDecryptedCredentials: jest.fn(),
     };
 
-    profileService = {}; // Not used directly in getService anymore if we rely on env.profile
+    profileService = {}; // Not used directly in getServiceById anymore if we rely on env.profile
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,38 +56,38 @@ describe('IntegrationService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getService', () => {
+  describe('getServiceById', () => {
     it('should return a BoomiService instance when platform is BOOMI', async () => {
-      (environmentService.findByName as jest.Mock).mockResolvedValue(mockEnv);
+      (environmentService.findEntityById as jest.Mock).mockResolvedValue(mockEnv);
       (
         environmentService.getDecryptedCredentials as jest.Mock
       ).mockResolvedValue(mockCreds);
 
-      const result = await service.getService('unused', 'env-prod');
+      const result = await service.getServiceById('unused', 'env-1');
 
       expect(result).toBeInstanceOf(BoomiService);
-      expect(environmentService.findByName).toHaveBeenCalledWith('env-prod');
+      expect(environmentService.findEntityById).toHaveBeenCalledWith('env-1');
       expect(environmentService.getDecryptedCredentials).toHaveBeenCalledWith(
         'env-1',
       );
     });
 
     it('should throw NotFoundException if environment not found', async () => {
-      (environmentService.findByName as jest.Mock).mockResolvedValue(null);
+      (environmentService.findEntityById as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getService('unused', 'bad-env')).rejects.toThrow(
+      await expect(service.getServiceById('unused', 'bad-env')).rejects.toThrow(
         NotFoundException,
       );
     });
 
     it('should throw Error if environment has no profile', async () => {
       const badEnv = { ...mockEnv, profile: null };
-      (environmentService.findByName as jest.Mock).mockResolvedValue(badEnv);
+      (environmentService.findEntityById as jest.Mock).mockResolvedValue(badEnv);
       (
         environmentService.getDecryptedCredentials as jest.Mock
       ).mockResolvedValue(mockCreds);
 
-      await expect(service.getService('unused', 'env-prod')).rejects.toThrow(
+      await expect(service.getServiceById('unused', 'env-1')).rejects.toThrow(
         /no linked profile/,
       );
     });

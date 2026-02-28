@@ -52,6 +52,7 @@ async function bootstrap() {
           testDirectoryFolderName: null,
           defaultSyncEnvironmentId: null,
           syncScheduleCron: '0 */4 * * *',
+          isSyncActive: false,
         },
         description: 'Discovery and Synchronization Engine Settings',
       },

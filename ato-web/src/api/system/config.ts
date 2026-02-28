@@ -26,6 +26,7 @@ export interface DiscoveryConfig {
   testDirectoryFolderName: string | null;
   defaultSyncEnvironmentId: string | null;
   syncScheduleCron: string;
+  isSyncActive?: boolean;
 }
 
 export const SystemConfigKeys = {

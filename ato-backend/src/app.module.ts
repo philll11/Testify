@@ -1,5 +1,7 @@
 // backend/src/app.module.ts
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,11 +20,15 @@ import { AuditsModule } from './system/audits/audits.module';
 import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
 import { IntegrationModule } from './integration/integration.module';
+import { DiscoveryModule } from './discovery/discovery.module';
 
 @Module({
   imports: [
     CommonModule,
     IntegrationModule,
+    DiscoveryModule,
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile:
@@ -98,4 +104,4 @@ import { IntegrationModule } from './integration/integration.module';
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

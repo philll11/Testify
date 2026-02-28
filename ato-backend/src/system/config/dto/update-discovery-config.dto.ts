@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, IsUUID, IsBoolean } from 'class-validator';
 import { BoomiComponentType } from '../../../integration/boomi/constants/boomi-component-type.enum';
 
 export class UpdateDiscoveryConfigDto {
@@ -16,4 +16,8 @@ export class UpdateDiscoveryConfigDto {
 
   @IsString()
   syncScheduleCron: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSyncActive?: boolean;
 }

@@ -193,7 +193,7 @@ describe('BoomiService', () => {
       // mockAxiosInstance.post is used in `executeTestProcess` initial call
       mockAxiosInstance.post.mockRejectedValue(error503);
 
-      // Using executeTestProcess because testConnection suppresses errors (returns false)
+      // using executeTestProcess because testConnection suppresses errors (returns false)
       // executeTestProcess relies on POST /ExecutionRequest
       // But executeTestProcess catches errors and returns a FAILURE result, so we expect a resolved promise
       const result = await service.executeTestProcess('id');
@@ -201,6 +201,102 @@ describe('BoomiService', () => {
       expect(result.status).toBe('FAILURE');
       // configured maxRetries=3 is treated as maxAttempts in implementation
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('resolveFolderPath', () => {
+    it('should resolve folder path using cached value if present', async () => {
+      // First call to populate cache
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          id: 'folder-1',
+          name: 'MyFolder',
+          parentFolderId: undefined,
+        },
+      });
+
+      const path1 = await service.resolveFolderPath('folder-1');
+      expect(path1).toBe('/MyFolder');
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+
+      // Second call, should hit cache
+      const path2 = await service.resolveFolderPath('folder-1');
+      expect(path2).toBe('/MyFolder');
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1); // Still 1
+    });
+
+    it('should resolve nested folder path recursively', async () => {
+      // Root folder mock
+      mockAxiosInstance.get.mockImplementation((url: string) => {
+        if (url === '/Folder/folder-child') {
+          return Promise.resolve({
+            data: { id: 'folder-child', name: 'Child', parentFolderId: 'folder-parent' },
+          });
+        }
+        if (url === '/Folder/folder-parent') {
+          return Promise.resolve({
+            data: { id: 'folder-parent', name: 'Parent', parentFolderId: undefined },
+          });
+        }
+        return Promise.reject(new Error('not found'));
+      });
+
+      const path = await service.resolveFolderPath('folder-child');
+      expect(path).toBe('/Parent/Child');
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+
+      // Should be cached now
+      const pathAgain = await service.resolveFolderPath('folder-child');
+      expect(pathAgain).toBe('/Parent/Child');
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('getComponentInfoAndDependencies', () => {
+    it('should use pagination to fetch dependencies', async () => {
+      // Mock getComponentMetadata
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          componentId: 'root-id',
+          name: 'Root',
+          version: 1,
+          type: 'process',
+        },
+      });
+
+      // Mock first page of ComponentReference
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          numberOfResults: 2,
+          queryToken: 'token-page-2',
+          result: [
+            {
+              references: [{ componentId: 'dep-1' }, { componentId: 'dep-2' }],
+            },
+          ],
+        },
+      });
+
+      // Mock second page
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          numberOfResults: 1,
+          result: [
+            {
+              references: [{ componentId: 'dep-3' }],
+            },
+          ],
+        },
+      });
+
+      const info = await service.getComponentInfoAndDependencies('root-id');
+
+      expect(info?.id).toBe('root-id');
+      expect(info?.name).toBe('Root');
+      expect(info?.dependencyIds).toEqual(['dep-1', 'dep-2', 'dep-3']);
+      // 1 for first page, 1 for queryMore
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
     });
   });
 });

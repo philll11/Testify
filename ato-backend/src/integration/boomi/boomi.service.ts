@@ -39,6 +39,12 @@ interface ComponentReferenceQueryResponse {
   result?: ComponentReferenceResult[];
 }
 
+interface BoomiFolderResponse {
+  id: string;
+  name: string;
+  parentFolderId?: string;
+}
+
 interface BoomiTestResultPayload {
   status: 'SUCCESS' | 'FAILURE';
   message: string;
@@ -60,6 +66,7 @@ export class BoomiService implements IIntegrationPlatformService {
   private readonly maxRetries: number;
   private readonly initialDelay: number;
   private readonly logger = new Logger(BoomiService.name);
+  private folderCache = new Map<string, string>();
 
   constructor(
     credentials: {
@@ -158,10 +165,37 @@ export class BoomiService implements IIntegrationPlatformService {
     }
   }
 
-  private async _queryWithPagination<T>(
-    endpoint: string,
-    initialPayload: any,
-  ): Promise<T[]> {
+  public async resolveFolderPath(folderId: string): Promise<string> {
+    if (this.folderCache.has(folderId)) {
+      return this.folderCache.get(folderId)!;
+    }
+
+    try {
+      return await this._requestWithRetry(async () => {
+        const response = await this.apiClient.get<BoomiFolderResponse>(
+          `/Folder/${folderId}`,
+        );
+
+        let path = '';
+        if (response.data.parentFolderId) {
+          const parentPath = await this.resolveFolderPath(response.data.parentFolderId);
+          path = `${parentPath}/${response.data.name}`;
+        } else {
+          path = `/${response.data.name}`;
+        }
+
+        this.folderCache.set(folderId, path);
+        return path;
+      });
+    } catch (error) {
+      this.logger.error(`Failed to resolve folder path for ${folderId}`, error);
+      throw new IntegrationPlatformException(
+        `Failed to resolve folder path for ${folderId}`,
+      );
+    }
+  }
+
+  private async _queryWithPagination<T>(endpoint: string, initialPayload: any): Promise<T[]> {
     let allResults: T[] = [];
     let queryToken: string | undefined = undefined;
 
@@ -198,9 +232,7 @@ export class BoomiService implements IIntegrationPlatformService {
     return allResults;
   }
 
-  public async searchComponents(
-    criteria: ComponentSearchCriteria,
-  ): Promise<ComponentInfo[]> {
+  public async searchComponents(criteria: ComponentSearchCriteria): Promise<ComponentInfo[]> {
     const globalFilters: any[] = [];
 
     // 1. Global Filters (AND)
@@ -290,9 +322,7 @@ export class BoomiService implements IIntegrationPlatformService {
     }));
   }
 
-  private async getComponentMetadata(
-    componentId: string,
-  ): Promise<ComponentMetadataResponse | null> {
+  private async getComponentMetadata(componentId: string): Promise<ComponentMetadataResponse | null> {
     // console.log(`[ADAPTER] getComponentVersion called for component: ${componentId}`);
 
     try {
@@ -327,9 +357,7 @@ export class BoomiService implements IIntegrationPlatformService {
     }
   }
 
-  public async getComponentInfo(
-    componentId: string,
-  ): Promise<ComponentInfo | null> {
+  public async getComponentInfo(componentId: string): Promise<ComponentInfo | null> {
     const metadata = await this.getComponentMetadata(componentId);
     if (metadata === null) return null;
 
@@ -341,56 +369,46 @@ export class BoomiService implements IIntegrationPlatformService {
     };
   }
 
-  public async getComponentInfoAndDependencies(
-    componentId: string,
-  ): Promise<ComponentInfo | null> {
+  public async getComponentInfoAndDependencies(componentId: string): Promise<ComponentInfo | null> {
     const metadata = await this.getComponentMetadata(componentId);
     if (metadata === null) return null; // Component not found, return null
 
     try {
-      return await this._requestWithRetry(async () => {
-        // console.log(`[ADAPTER] Fetching dependencies for component: ${componentId}`);
-        const response =
-          await this.apiClient.post<ComponentReferenceQueryResponse>(
-            '/ComponentReference/query',
-            {
-              QueryFilter: {
-                expression: {
-                  operator: 'and',
-                  nestedExpression: [
-                    {
-                      operator: 'EQUALS',
-                      property: 'parentComponentId',
-                      argument: [componentId],
-                    },
-                    {
-                      operator: 'EQUALS',
-                      property: 'parentVersion',
-                      argument: [metadata.version],
-                    },
-                  ],
+      // Fetch dependencies for component: ${componentId}
+      const results = await this._queryWithPagination<ComponentReferenceResult>(
+        '/ComponentReference',
+        {
+          QueryFilter: {
+            expression: {
+              operator: 'and',
+              nestedExpression: [
+                {
+                  operator: 'EQUALS',
+                  property: 'parentComponentId',
+                  argument: [componentId],
                 },
-              },
+                {
+                  operator: 'EQUALS',
+                  property: 'parentVersion',
+                  argument: [metadata.version],
+                },
+              ],
             },
-          );
+          },
+        },
+      );
 
-        const dependencyIds =
-          response.data.numberOfResults === 0 || !response.data.result
-            ? []
-            : response.data.result.flatMap((resultItem) =>
-                resultItem.references
-                  ? resultItem.references.map((ref) => ref.componentId)
-                  : [],
-              );
+      const dependencyIds = results.length === 0 ? [] : results.flatMap(
+        (resultItem) => resultItem.references ? resultItem.references.map((ref) => ref.componentId) : [],
+      );
 
-        // Return the combined object
-        return {
-          id: componentId,
-          name: metadata.name,
-          type: metadata.type,
-          dependencyIds: dependencyIds,
-        };
-      });
+      // Return the combined object
+      return {
+        id: componentId,
+        name: metadata.name,
+        type: metadata.type,
+        dependencyIds: dependencyIds,
+      };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'An unknown error occurred';
@@ -427,9 +445,7 @@ export class BoomiService implements IIntegrationPlatformService {
     }
   }
 
-  public async executeTestProcess(
-    componentId: string,
-  ): Promise<PlatformExecutionResult> {
+  public async executeTestProcess(componentId: string): Promise<PlatformExecutionResult> {
     try {
       const initResponse = await this._requestWithRetry(async () => {
         const executionRequest = {

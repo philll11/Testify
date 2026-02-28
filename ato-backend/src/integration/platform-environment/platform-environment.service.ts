@@ -119,7 +119,7 @@ export class PlatformEnvironmentService {
     return PlatformEnvironmentResponseDto.fromEntity(environment, credentials);
   }
 
-  private async findEntityById(id: string): Promise<PlatformEnvironment> {
+  public async findEntityById(id: string): Promise<PlatformEnvironment> {
     const environment = await this.environmentRepository.findOne({
       where: { id },
       relations: ['profile'],

@@ -1,6 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PlatformEnvironmentService } from './platform-environment/platform-environment.service';
-import { PlatformProfileService } from './platform-profile/platform-profile.service';
 import { IntegrationPlatform } from './constants/integration-platform.enum';
 import {
   IIntegrationPlatformService,
@@ -14,44 +13,30 @@ export class IntegrationService {
 
   constructor(
     private readonly environmentService: PlatformEnvironmentService,
-    private readonly profileService: PlatformProfileService,
-  ) {}
+  ) { }
 
-  async getService(
-    _userId: string,
-    environmentName: string,
-  ): Promise<IIntegrationPlatformService> {
-    // 1. Find Environment by Name
-    const env = await this.environmentService.findByName(environmentName);
+  async getServiceById(_userId: string, environmentId: string): Promise<IIntegrationPlatformService> {
+    // 1. Find Environment by ID
+    const env = await this.environmentService.findEntityById(environmentId);
     if (!env) {
-      throw new NotFoundException(
-        `Platform Environment "${environmentName}" not found.`,
-      );
+      throw new NotFoundException(`Platform Environment with ID "${environmentId}" not found.`);
     }
 
     // 2. Decrypt Credentials
-    const credentials = await this.environmentService.getDecryptedCredentials(
-      env.id,
-    );
+    const credentials = await this.environmentService.getDecryptedCredentials(env.id);
 
     // 3. Get Profile Configuration from loaded relation
     // We assume profile is fully loaded (relations: ['profile'])
     const profile = env.profile;
     if (!profile) {
-      throw new Error(
-        `Environment "${environmentName}" has no linked profile.`,
-      );
+      throw new Error(`Environment with ID "${environmentId}" has no linked profile.`);
     }
 
     const config = profile.config || {};
     const platformConfig: PlatformConfig = {
-      pollInterval: config.pollInterval
-        ? Number(config.pollInterval)
-        : undefined,
+      pollInterval: config.pollInterval ? Number(config.pollInterval) : undefined,
       maxPolls: config.maxPolls ? Number(config.maxPolls) : undefined,
-      initialDelay: config.initialDelay
-        ? Number(config.initialDelay)
-        : undefined,
+      initialDelay: config.initialDelay ? Number(config.initialDelay) : undefined,
       maxRetries: config.maxRetries ? Number(config.maxRetries) : undefined,
     };
 
@@ -69,9 +54,7 @@ export class IntegrationService {
         );
 
       default:
-        throw new Error(
-          `Unsupported integration platform: ${env.platformType}`,
-        );
+        throw new Error(`Unsupported integration platform: ${env.platformType}`);
     }
   }
 }

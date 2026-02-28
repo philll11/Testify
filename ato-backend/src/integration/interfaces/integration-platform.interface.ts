@@ -10,6 +10,7 @@ export interface ComponentInfo {
   type: string;
   folderId?: string; // Often null/undefined for root components
   folderName?: string;
+  folderPath?: string; // Fully resolved path (e.g., /Root/Salesforce/test)
   dependencyIds: string[]; // Flat list of direct dependency IDs
 }
 
@@ -22,6 +23,12 @@ export interface ComponentSearchCriteria {
 }
 
 export interface IIntegrationPlatformService {
+  /**
+   * Resolves the full folder path given a folder ID.
+   * @param folderId The ID of the folder to resolve.
+   */
+  resolveFolderPath(folderId: string): Promise<string>;
+
   /**
    * Retrieves metadata for a single component, without its dependencies.
    * @param componentId The ID of the component to look up.

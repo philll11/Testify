@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Stack, Typography, Divider, TextField,
-    Button, Chip, Autocomplete
+    Button, Chip, Autocomplete, FormControlLabel, Switch
 } from '@mui/material';
 import SubCard from 'ui-component/cards/SubCard';
 import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useConfig';
@@ -33,7 +33,8 @@ const DiscoverySettingsTab = () => {
         componentTypes: [],
         testDirectoryFolderName: '',
         defaultSyncEnvironmentId: '',
-        syncScheduleCron: ''
+        syncScheduleCron: '',
+        isSyncActive: false
     });
 
     useEffect(() => {
@@ -42,7 +43,8 @@ const DiscoverySettingsTab = () => {
                 componentTypes: discoveryConfig.value.componentTypes || [],
                 testDirectoryFolderName: discoveryConfig.value.testDirectoryFolderName || '',
                 defaultSyncEnvironmentId: discoveryConfig.value.defaultSyncEnvironmentId || '',
-                syncScheduleCron: discoveryConfig.value.syncScheduleCron || ''
+                syncScheduleCron: discoveryConfig.value.syncScheduleCron || '',
+                isSyncActive: discoveryConfig.value.isSyncActive || false
             });
         }
     }, [discoveryConfig]);
@@ -77,6 +79,18 @@ const DiscoverySettingsTab = () => {
 
             <SubCard title="Engine Configuration">
                 <Stack spacing={3}>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={localDiscoveryConfig.isSyncActive || false}
+                                onChange={(e) => handleDiscoveryConfigChange('isSyncActive', e.target.checked)}
+                                disabled={!canEdit || isUpdating || isDiscoveryLoading}
+                                color="primary"
+                            />
+                        }
+                        label="Enable Background Sync"
+                    />
+
                     <Autocomplete
                         multiple
                         id="component-types-autocomplete"

@@ -7,6 +7,7 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SystemConfigService } from './system-config.service';
 import { JwtAuthGuard } from '../../iam/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -24,8 +25,7 @@ import { PlatformEnvironmentService } from '../../integration/platform-environme
 export class SystemConfigController {
   constructor(
     private readonly systemConfigService: SystemConfigService,
-    private readonly platformEnvironmentService: PlatformEnvironmentService,
-  ) { }
+    private readonly platformEnvironmentService: PlatformEnvironmentService, private readonly eventEmitter: EventEmitter2,) { }
 
   @Get()
   @RequirePermission(PERMISSIONS.SYSTEM_CONFIG_VIEW)
@@ -61,6 +61,11 @@ export class SystemConfigController {
     }
 
     await this.systemConfigService.set(key, updateSystemConfigDto.value);
+
+    if (key === SystemConfigKeys.DISCOVERY.CONFIG) {
+      this.eventEmitter.emit('discovery.config.updated');
+    }
+
     return { success: true };
   }
 }
