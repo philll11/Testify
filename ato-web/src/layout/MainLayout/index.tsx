@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -13,7 +13,6 @@ import Footer from './Footer';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import MainContentStyled from './MainContentStyled';
-import Loader from 'ui-component/Loader';
 import Breadcrumbs from 'ui-component/extended/Breadcrumbs';
 
 import useConfig from 'hooks/useConfig';
@@ -24,6 +23,9 @@ import { useMenu } from 'contexts/MenuContext';
 export default function MainLayout() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
+  const location = useLocation();
+
+  const isTestSuiteBuilder = location.pathname.includes('/test-suite-builder');
 
   const {
     state: { borderRadius, miniDrawer }
@@ -65,9 +67,9 @@ export default function MainLayout() {
       <MainContentStyled {...{ borderRadius, open: drawerOpen }}>
         <Box sx={{ ...{ px: { xs: 0 } }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
           {/* breadcrumb */}
-          <Breadcrumbs />
+          {!isTestSuiteBuilder && <Breadcrumbs />}
           <Outlet />
-          <Footer />
+          {!isTestSuiteBuilder && <Footer />}
         </Box>
       </MainContentStyled>
     </Box>

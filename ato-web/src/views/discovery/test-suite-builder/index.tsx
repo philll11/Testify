@@ -7,10 +7,14 @@ import { ManifestPane } from './components/ManifestPane';
 const TestSuiteBuilderPage = () => {
   return (
     <TestSuiteBuilderProvider>
-      <MainCard title="Test Suite Builder">
-        <Grid container spacing={2}>
+      <MainCard
+        title="Test Suite Builder"
+        sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, height: 'calc(100vh - 130px)' }}
+        contentSX={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}
+      >
+        <Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0, height: '100%', mb: 0 }}>
           {/* Left Pane: Filter and Tree View */}
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <ComponentTreePane />
           </Grid>
 
@@ -20,7 +24,7 @@ const TestSuiteBuilderPage = () => {
           </Grid>
 
           {/* Right Pane: Manifest Selection List */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <ManifestPane />
           </Grid>
         </Grid>

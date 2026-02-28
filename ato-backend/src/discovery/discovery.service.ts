@@ -165,6 +165,17 @@ export class DiscoveryService {
             throw error;
         }
     }
+    async getLastSyncStatus(): Promise<{ lastSyncDate: Date | null }> {
+        const result = await this.discoveredComponentRepository
+            .createQueryBuilder('comp')
+            .select('MAX(comp.updatedAt)', 'maxDate')
+            .getRawOne();
+
+        return {
+            lastSyncDate: result.maxDate ? new Date(result.maxDate) : null
+        };
+    }
+
     async getComponentsTree({ profileId, isTest, search }: QueryDiscoveryComponentParameters): Promise<ComponentTreeNode[]> {
 
         const query = this.discoveredComponentRepository.createQueryBuilder('comp')

@@ -1,3 +1,20 @@
+import SettingsIcon from '@mui/icons-material/Settings';
+import SyncAltIcon from '@mui/icons-material/SyncAlt';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import DescriptionIcon from '@mui/icons-material/Description';
+import StorageIcon from '@mui/icons-material/Storage';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import ApiIcon from '@mui/icons-material/Api';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import FunctionsIcon from '@mui/icons-material/Functions';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import CodeIcon from '@mui/icons-material/Code';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+
 export const BOOMI_COMPONENT_TYPES = [
   'certificate',
   'certificate.pgp',
@@ -58,4 +75,36 @@ export const BOOMI_COMPONENT_LABELS: Record<string, string> = {
   'script.processing': 'Processing Script',
   'script.mapping': 'Mapping Script',
   xslt: 'XSLT Style Sheet'
+};
+
+// Map each component type to an appropriate MUI icon
+export const BOOMI_COMPONENT_ICONS: Record<string, React.ElementType> = {
+  certificate: VpnKeyIcon,
+  'certificate.pgp': VpnKeyIcon,
+  'connector-action': ApiIcon,
+  'connector-settings': SettingsIcon,
+  crossref: SwapHorizIcon,
+  documentcache: StorageIcon,
+  'transform.map': SyncAltIcon,
+  'transform.function': FunctionsIcon,
+  process: SettingsIcon, // Process usually uses Settings or AccountTree
+  processproperty: ListAltIcon,
+  'profile.db': StorageIcon,
+  'profile.edi': DescriptionIcon,
+  'profile.flatfile': DescriptionIcon,
+  'profile.xml': CodeIcon,
+  'profile.json': DataObjectIcon,
+  queue: StorageIcon,
+  tradingpartner: HandshakeIcon,
+  tpgroup: HandshakeIcon,
+  tporganization: AccountBoxIcon,
+  tpcommoptions: SettingsIcon,
+  webservice: ApiIcon,
+  'webservice.external': ApiIcon,
+  processroute: AccountTreeIcon,
+  customlibrary: LibraryBooksIcon,
+  flowservice: AccountTreeIcon,
+  'script.processing': CodeIcon,
+  'script.mapping': CodeIcon,
+  xslt: CodeIcon
 };

@@ -221,6 +221,7 @@ async function bootstrap() {
 
         if (discConfig && discConfig.value && !discConfig.value.defaultSyncEnvironmentId) {
           discConfig.value.defaultSyncEnvironmentId = devEnv.id;
+          discConfig.value.testDirectoryFolderName = '70 - Test Processes';
           await systemConfigRepo.save(discConfig);
           console.log('Updated Discovery Config with Default Environment ID.');
         }

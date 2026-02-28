@@ -10,6 +10,11 @@ export const getDiscoveryComponents = async (params?: GetDiscoveryComponentsDto)
   return response.data.data;
 };
 
+export const getSyncStatus = async (): Promise<{ lastSyncDate: string | null }> => {
+  const response = await axiosServices.get<{ lastSyncDate: string | null }>('/system/sync');
+  return response.data;
+};
+
 export const triggerSync = async (): Promise<any> => {
   const response = await axiosServices.post('/system/sync');
   return response.data;

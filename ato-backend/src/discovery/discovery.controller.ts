@@ -1,4 +1,4 @@
-import { Controller, Post, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { DiscoveryService } from './discovery.service';
 import { RequirePermission } from '../common/decorators/permissions.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constants';
@@ -19,5 +19,11 @@ export class DiscoveryController {
             message: 'Synchronization successful',
             data: result,
         };
+    }
+
+    @Get()
+    @RequirePermission(PERMISSIONS.DISCOVERY_VIEW)
+    async getSyncStatus() {
+        return this.discoveryService.getLastSyncStatus();
     }
 }

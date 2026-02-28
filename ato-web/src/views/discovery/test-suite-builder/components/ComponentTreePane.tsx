@@ -18,14 +18,37 @@ import {
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import FolderIcon from '@mui/icons-material/Folder';
-// import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ScienceIcon from '@mui/icons-material/Science';
 
 import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
 import { usePlatformProfiles } from 'hooks/platform/usePlatform';
-import { useDiscoveryComponents, useTriggerSync } from 'hooks/discovery/useDiscovery';
+import { useDiscoveryComponents, useTriggerSync, useSyncStatus } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
+import { BOOMI_COMPONENT_ICONS } from 'constants/boomi';
+
+export const getNodeIcon = (node: ComponentTreeNode) => {
+  if (node.nodeType === 'folder') {
+    return <FolderIcon color="primary" fontSize="small" />;
+  }
+
+  const data = node.data;
+  if (!data) return <InsertDriveFileIcon color="action" fontSize="small" />;
+
+  // Test Process 🧪
+  if (data.isTest) {
+    return <ScienceIcon color="secondary" fontSize="small" />;
+  }
+
+  // Regular components by type mapped from boomi constants
+  const ComponentTypeIcon = BOOMI_COMPONENT_ICONS[data.type];
+  if (ComponentTypeIcon) {
+    return <ComponentTypeIcon color="action" fontSize="small" />;
+  }
+
+  return <InsertDriveFileIcon color="action" fontSize="small" />;
+};
 
 const RecursiveTreeItem = ({
   node,
@@ -37,7 +60,6 @@ const RecursiveTreeItem = ({
   onToggle: (id: string, isSelected: boolean, nodeDetail: ComponentTreeNode) => void;
 }) => {
   // Determine if it's a folder or leaf
-  const isFolder = node.nodeType === 'folder';
   const isSelected = selectedNodeIds.includes(node.id);
 
   return (
@@ -51,7 +73,7 @@ const RecursiveTreeItem = ({
             onChange={(e) => onToggle(node.id, e.target.checked, node)}
             onClick={(e) => e.stopPropagation()}
           />
-          {isFolder ? <FolderIcon color="primary" fontSize="small" /> : <InsertDriveFileIcon color="action" fontSize="small" />}
+          {getNodeIcon(node)}
           <Typography variant="body2">{node.name}</Typography>
         </Stack>
       }
@@ -120,6 +142,7 @@ export const ComponentTreePane = () => {
   });
 
   const { mutate: handleSync, isPending: isSyncing } = useTriggerSync();
+  const { data: syncStatus } = useSyncStatus();
 
   // When toggling a node, we apply cascading selection behavior
   const handleToggle = (_id: string, isSelected: boolean, nodeDetail: ComponentTreeNode) => {
@@ -150,12 +173,12 @@ export const ComponentTreePane = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={3}>
+    <Box display="flex" flexDirection="column" gap={3} height="100%">
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="h4">Component Explorer</Typography>
         <Stack direction="row" alignItems="center" spacing={2}>
           <Typography variant="caption" color="textSecondary">
-            Last Synced: Unknown
+            Last Synced: {syncStatus?.lastSyncDate ? new Date(syncStatus.lastSyncDate).toLocaleString() : 'Unknown'}
           </Typography>
           <Button
             variant="outlined"
@@ -207,8 +230,7 @@ export const ComponentTreePane = () => {
       <Box
         sx={{
           flexGrow: 1,
-          minHeight: 400,
-          maxHeight: 600,
+          minHeight: 0,
           overflowY: 'auto',
           border: '1px solid',
           borderColor: 'divider',

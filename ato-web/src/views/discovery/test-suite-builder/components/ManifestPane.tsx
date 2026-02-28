@@ -4,6 +4,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
   IconButton,
   FormControl,
@@ -19,6 +20,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
 import { usePlatformEnvironments } from 'hooks/platform/usePlatform';
+import { getNodeIcon } from './ComponentTreePane';
 
 export const ManifestPane = () => {
   const { manifestList, setManifestList, toggleNodeSelection, profileId } = useTestSuiteBuilderContext();
@@ -85,8 +87,7 @@ export const ManifestPane = () => {
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 1,
-          minHeight: 250,
-          maxHeight: 400
+          minHeight: 0
         }}
       >
         {manifestList.length === 0 ? (
@@ -104,6 +105,7 @@ export const ManifestPane = () => {
                   </IconButton>
                 }
               >
+                <ListItemIcon sx={{ minWidth: 36 }}>{getNodeIcon(item)}</ListItemIcon>
                 <ListItemText
                   primary={item.name}
                   secondary={item.id}
