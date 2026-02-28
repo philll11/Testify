@@ -125,11 +125,13 @@ describe('Discovery Module E2E', () => {
     it('should successfully sync components and persist them locally (POST /system/sync)', async () => {
         // 1. Mock the IntegrationPlatformService adapter
         const mockPlatformService: Partial<IIntegrationPlatformService> = {
-            searchComponents: jest.fn().mockResolvedValue([
-                { id: 'comp-1', name: 'Test Process 1', type: 'process', folderId: 'folder-1' },
-                { id: 'comp-2', name: 'Standard Map', type: 'transform.map', folderId: 'folder-2' },
-                { id: 'comp-3', name: 'Prod Process', type: 'process', folderId: 'folder-2' },
-            ]),
+            searchComponents: jest.fn().mockImplementation(async function* () {
+                yield [
+                    { id: 'comp-1', name: 'Test Process 1', type: 'process', folderId: 'folder-1' },
+                    { id: 'comp-2', name: 'Standard Map', type: 'transform.map', folderId: 'folder-2' },
+                    { id: 'comp-3', name: 'Prod Process', type: 'process', folderId: 'folder-2' },
+                ];
+            }),
             resolveFolderPath: jest.fn().mockImplementation((folderId: string) => {
                 if (folderId === 'folder-1') return Promise.resolve('/Root/Test_Folder');
                 if (folderId === 'folder-2') return Promise.resolve('/Root/Production');
@@ -168,9 +170,11 @@ describe('Discovery Module E2E', () => {
     it('should prune localized components that are removed from the external platform', async () => {
         // 1. Mock the adapter returning ONLY one component (comp-1) this time
         const mockPlatformService: Partial<IIntegrationPlatformService> = {
-            searchComponents: jest.fn().mockResolvedValue([
-                { id: 'comp-1', name: 'Test Process 1 Renamed', type: 'process', folderId: 'folder-1' },
-            ]),
+            searchComponents: jest.fn().mockImplementation(async function* () {
+                yield [
+                    { id: 'comp-1', name: 'Test Process 1 Renamed', type: 'process', folderId: 'folder-1' },
+                ];
+            }),
             resolveFolderPath: jest.fn().mockResolvedValue('/Root/Test_Folder'),
         };
 
@@ -236,9 +240,11 @@ describe('Discovery Module E2E', () => {
         });
 
         const mockPlatformService: Partial<IIntegrationPlatformService> = {
-            searchComponents: jest.fn().mockResolvedValue([
-                { id: 'comp-1', name: 'Test Process 1', type: 'process', folderId: 'folder-1' },
-            ]),
+            searchComponents: jest.fn().mockImplementation(async function* () {
+                yield [
+                    { id: 'comp-1', name: 'Test Process 1', type: 'process', folderId: 'folder-1' },
+                ];
+            }),
             resolveFolderPath: jest.fn().mockResolvedValue('/Root/Test_Folder'),
         };
 

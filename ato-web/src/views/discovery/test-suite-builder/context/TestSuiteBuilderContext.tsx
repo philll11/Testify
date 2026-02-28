@@ -1,4 +1,4 @@
-import { FC, createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import { FC, createContext, useContext, useState, useMemo, useEffect, ReactNode } from 'react';
 import { ComponentTreeNode } from 'types/discovery/discovery';
 
 export interface TestSuiteBuilderState {
@@ -25,12 +25,28 @@ export interface TestSuiteBuilderState {
 
 const TestSuiteBuilderContext = createContext<TestSuiteBuilderState | undefined>(undefined);
 
+const PROFILE_ID_CACHE_KEY = 'ato-test-suite-builder-profile-id';
+
 export const TestSuiteBuilderProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [profileId, setProfileId] = useState<string | undefined>(undefined);
-  const [isTestMode, setIsTestMode] = useState<boolean>(true);
+  const [profileId, setProfileId] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(PROFILE_ID_CACHE_KEY) || undefined;
+    }
+    return undefined;
+  });
+  const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [manifestList, setManifestList] = useState<ComponentTreeNode[]>([]);
+
+  // Persist selected profile ID across sessions
+  useEffect(() => {
+    if (profileId) {
+      localStorage.setItem(PROFILE_ID_CACHE_KEY, profileId);
+    } else {
+      localStorage.removeItem(PROFILE_ID_CACHE_KEY);
+    }
+  }, [profileId]);
 
   const toggleNodeSelection = (id: string, isSelected: boolean) => {
     setSelectedNodeIds((prev) => (isSelected ? [...prev, id] : prev.filter((existingId) => existingId !== id)));

@@ -13,7 +13,8 @@ export const discoveryKeys = {
 export function useDiscoveryComponents(params?: GetDiscoveryComponentsDto) {
   return useQuery({
     queryKey: discoveryKeys.componentsList(params),
-    queryFn: () => getDiscoveryComponents(params)
+    queryFn: () => getDiscoveryComponents(params),
+    enabled: !!params?.profileId
     // By relying on the built-in React Query error handling and staleTime, we avoid rapid re-fetches
     // You can customize staleTime here depending on how frequently components change.
   });

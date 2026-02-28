@@ -48,16 +48,16 @@ export class DiscoveryService {
             // Using 'system' as user ID for backgrounds tasks
             const environment = await this.platformEnvironmentService.findEntityById(config.defaultSyncEnvironmentId);
             if (!environment || !environment.profile) {
+                this.logger.error(`Failed to start sync: Environment or linked profile not found for config ID: ${config.defaultSyncEnvironmentId}`);
                 throw new Error('Environment or linked profile not found');
             }
             const profileId = environment.profile.id;
 
             const service = await this.integrationService.getServiceById('system', config.defaultSyncEnvironmentId);
 
-            // 3. Fetch Metadata
+            // 3. Fetch Metadata and Resolve Paths concurrently per page
             this.logger.log(`Fetching components of types: ${config.componentTypes.join(', ')}`);
-            const components = await service.searchComponents({ types: config.componentTypes });
-            this.logger.log(`Fetched ${components.length} components from platform.`);
+            const componentStream = service.searchComponents({ types: config.componentTypes });
 
             // 4. Resolve Folder Paths and Evaluate Rules
             const upsertCandidates: any[] = [];
@@ -65,29 +65,50 @@ export class DiscoveryService {
 
             const testDir = config.testDirectoryFolderName ? config.testDirectoryFolderName.toLowerCase() : null;
 
-            for (const comp of components) {
-                let folderPath = '';
-                if (comp.folderId) {
-                    folderPath = await service.resolveFolderPath(comp.folderId);
+            this.logger.log(`Starting fetching and folder path resolution stream...`);
+            let count = 0;
+
+            for await (const componentsPage of componentStream) {
+                this.logger.debug(`Received page of ${componentsPage.length} components. Resolving folder paths...`);
+
+                // Concurrently resolve folder paths for the current page
+                const resolvedComponents = await Promise.all(componentsPage.map(async (comp) => {
+                    let folderPath = '';
+                    if (comp.folderId) {
+                        try {
+                            folderPath = await service.resolveFolderPath(comp.folderId);
+                        } catch (error) {
+                            this.logger.warn(`Failed to resolve folder path for component ${comp.id} with folderId ${comp.folderId}`);
+                            this.logger.debug(error);
+                        }
+                    }
+
+                    let isTest = false;
+                    if (comp.type === 'process' && testDir && folderPath.toLowerCase().includes(testDir)) {
+                        isTest = true;
+                    }
+
+                    return {
+                        profileId,
+                        componentId: comp.id,
+                        name: comp.name,
+                        type: comp.type,
+                        folderId: comp.folderId || null,
+                        folderPath: folderPath || null,
+                        isTest
+                    };
+                }));
+
+                for (const comp of resolvedComponents) {
+                    upsertCandidates.push(comp);
+                    incomingComponentIds.add(comp.componentId);
                 }
 
-                let isTest = false;
-                if (comp.type === 'process' && testDir && folderPath.toLowerCase().includes(testDir)) {
-                    isTest = true;
-                }
-
-                upsertCandidates.push({
-                    profileId,
-                    componentId: comp.id,
-                    name: comp.name,
-                    type: comp.type,
-                    folderId: comp.folderId || null,
-                    folderPath: folderPath || null,
-                    isTest
-                });
-
-                incomingComponentIds.add(comp.id);
+                count += componentsPage.length;
+                this.logger.debug(`Processed ${count} components so far.`);
             }
+
+            this.logger.log(`Folder path resolution complete. Total components processed: ${count}`);
 
             // 5. Reconcile Database (Upsert & Prune)
             let upsertedCount = 0;
@@ -96,6 +117,7 @@ export class DiscoveryService {
             if (upsertCandidates.length > 0) {
                 // Chunk upserts if large
                 const chunkSize = 1000;
+                this.logger.log(`Starting batched cache upsert of ${upsertCandidates.length} potential records...`);
                 for (let i = 0; i < upsertCandidates.length; i += chunkSize) {
                     const chunk = upsertCandidates.slice(i, i + chunkSize);
                     await this.discoveredComponentRepository
@@ -106,22 +128,34 @@ export class DiscoveryService {
                         .orUpdate(['name', 'type', 'folderId', 'folderPath', 'isTest', 'updatedAt'], ['profileId', 'componentId'])
                         .execute();
                     upsertedCount += chunk.length;
+                    this.logger.debug(`Upserted batch [${Math.min(i + chunkSize, upsertCandidates.length)} / ${upsertCandidates.length}]`);
                 }
+                this.logger.log('Batched cache upsert fully completed.');
             }
 
-            // Prune components in this profile that were not in the payload
+            // 6. Prune Stale and Deselected Components
             const incomingArray = Array.from(incomingComponentIds);
-            let pruneQuery = this.discoveredComponentRepository.createQueryBuilder()
+
+            // 6a. Purge Removed Types: Delete components whose type is no longer in the system sync settings
+            const purgeRemovedTypesResult = await this.discoveredComponentRepository.createQueryBuilder()
                 .delete()
                 .from(DiscoveredComponent)
-                .where('profileId = :profileId', { profileId });
+                .where('profileId = :profileId', { profileId })
+                .andWhere('type NOT IN (:...configuredTypes)', { configuredTypes: config.componentTypes })
+                .execute();
+            deletedCount += purgeRemovedTypesResult.affected || 0;
 
+            // 6b. Prune Deleted Components: Delete components that were deleted in Boomi (only for the types we just fetched)
             if (incomingArray.length > 0) {
-                pruneQuery = pruneQuery.andWhere('componentId NOT IN (:...incomingArray)', { incomingArray });
+                const pruneDeletedResult = await this.discoveredComponentRepository.createQueryBuilder()
+                    .delete()
+                    .from(DiscoveredComponent)
+                    .where('profileId = :profileId', { profileId })
+                    .andWhere('type IN (:...configuredTypes)', { configuredTypes: config.componentTypes })
+                    .andWhere('componentId NOT IN (:...incomingArray)', { incomingArray })
+                    .execute();
+                deletedCount += pruneDeletedResult.affected || 0;
             }
-
-            const deleteResult = await pruneQuery.execute();
-            deletedCount = deleteResult.affected || 0;
 
             this.logger.log(`Synchronization complete. Upserted: ${upsertedCount}, Deleted: ${deletedCount}`);
 

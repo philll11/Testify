@@ -4,10 +4,10 @@ import { ComponentTreeNode, GetDiscoveryComponentsDto } from 'types/discovery/di
 const DISCOVERY_URL = '/discovery';
 
 export const getDiscoveryComponents = async (params?: GetDiscoveryComponentsDto): Promise<ComponentTreeNode[]> => {
-  const response = await axiosServices.get<ComponentTreeNode[]>(`${DISCOVERY_URL}/components`, {
+  const response = await axiosServices.get<{ data: ComponentTreeNode[] }>(`${DISCOVERY_URL}/components`, {
     params
   });
-  return response.data;
+  return response.data.data;
 };
 
 export const triggerSync = async (): Promise<any> => {

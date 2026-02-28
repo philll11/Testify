@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Stack, Typography, Divider, TextField, Button, Chip, Autocomplete, FormControlLabel, Switch } from '@mui/material';
 import SubCard from 'ui-component/cards/SubCard';
-import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useConfig';
+import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useSystemConfig';
 import { DiscoveryConfig, SystemConfigKeys } from 'api/system/config';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';

@@ -1,6 +1,6 @@
 import { Box, Stack, Typography, Switch, FormControlLabel, Divider } from '@mui/material';
 import SubCard from 'ui-component/cards/SubCard';
-import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useConfig';
+import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useSystemConfig';
 import { AuditConfig, SystemConfigKeys } from 'api/system/config';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';

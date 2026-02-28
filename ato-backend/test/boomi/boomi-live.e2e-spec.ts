@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import { BoomiService } from '../../src/integration/boomi/boomi.service';
+import { ComponentInfo } from '../../src/integration/interfaces/integration-platform.interface';
 
 dotenv.config();
 
@@ -51,7 +52,11 @@ describe('BoomiService - Live API Verification (e2e)', () => {
     });
 
     runIfConfigured('2. should hit /ComponentMetadata/query and map data successfully', async () => {
-        const results = await boomiService.searchComponents({ types: ['process'] });
+        const stream = boomiService.searchComponents({ types: ['crossref'] });
+        const results: ComponentInfo[] = [];
+        for await (const page of stream) {
+            results.push(...page);
+        }
 
         expect(Array.isArray(results)).toBe(true);
 
@@ -67,9 +72,13 @@ describe('BoomiService - Live API Verification (e2e)', () => {
         }
     });
 
-    runIfConfigured.skip('3. should hit /ComponentReference/query and parse dependencies correctly', async () => {
+    runIfConfigured('3. should hit /ComponentReference/query and parse dependencies correctly', async () => {
         // We need a known component. Let's query one first.
-        const components = await boomiService.searchComponents({ types: ['process'] });
+        const stream = boomiService.searchComponents({ types: ['process'] });
+        const components: any[] = [];
+        for await (const page of stream) {
+            components.push(...page);
+        }
 
         if (components.length > 0) {
             const target = components[0];
@@ -84,9 +93,13 @@ describe('BoomiService - Live API Verification (e2e)', () => {
         }
     });
 
-    runIfConfigured.skip('4. should hit /Folder/:id and capture fullPath without recursing blindly', async () => {
+    runIfConfigured('4. should hit /Folder/:id and capture fullPath without recursing blindly', async () => {
         // Find a component that belongs to a folder
-        const components = await boomiService.searchComponents({});
+        const stream = boomiService.searchComponents({});
+        const components: any[] = [];
+        for await (const page of stream) {
+            components.push(...page);
+        }
         const componentWithFolder = components.find(c => Boolean(c.folderId));
 
         if (componentWithFolder && componentWithFolder.folderId) {

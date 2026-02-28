@@ -107,18 +107,12 @@ export class BoomiService implements IIntegrationPlatformService {
             // Rate Limit Exceeded or Gateway Timeout
             if (attempt === this.maxRetries) {
               // If it's the last attempt, give up and throw
-              this.logger.error(
-                `API request failed after ${this.maxRetries} attempts with status ${status}.`,
-              );
+              this.logger.error(`API request failed after ${this.maxRetries} attempts with status ${status}.`);
               throw error;
             }
             // Calculate exponential backoff with jitter
-            const delayMs =
-              this.initialDelay * Math.pow(2, attempt - 1) +
-              Math.random() * 1000;
-            this.logger.warn(
-              `API returned status ${status}. Retrying in ${Math.round(delayMs / 1000)}s... (Attempt ${attempt}/${this.maxRetries})`,
-            );
+            const delayMs = this.initialDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+            this.logger.warn(`API returned status ${status}. Retrying in ${Math.round(delayMs / 1000)}s... (Attempt ${attempt}/${this.maxRetries})`);
             await delay(delayMs);
             continue;
           }
@@ -154,10 +148,7 @@ export class BoomiService implements IIntegrationPlatformService {
       return true;
     } catch (error) {
       this.logger.error('Test Connection Failed', error);
-      if (
-        axios.isAxiosError(error) &&
-        (error.response?.status === 401 || error.response?.status === 403)
-      ) {
+      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
         return false;
       }
       // Other errors (network, etc) might still mean connection failure
@@ -167,14 +158,13 @@ export class BoomiService implements IIntegrationPlatformService {
 
   public async resolveFolderPath(folderId: string): Promise<string> {
     if (this.folderCache.has(folderId)) {
+      this.logger.verbose(`Cache hit for folder path resolution: ${folderId}`);
       return this.folderCache.get(folderId)!;
     }
 
     try {
       return await this._requestWithRetry(async () => {
-        const response = await this.apiClient.get<BoomiFolderResponse>(
-          `/Folder/${folderId}`,
-        );
+        const response = await this.apiClient.get<BoomiFolderResponse>(`/Folder/${folderId}`);
 
         let path = '';
         if (response.data.fullPath) {
@@ -188,50 +178,41 @@ export class BoomiService implements IIntegrationPlatformService {
       });
     } catch (error) {
       this.logger.error(`Failed to resolve folder path for ${folderId}`, error);
-      throw new IntegrationPlatformException(
-        `Failed to resolve folder path for ${folderId}`,
-      );
+      throw new IntegrationPlatformException(`Failed to resolve folder path for ${folderId}`);
     }
   }
 
-  private async _queryWithPagination<T>(endpoint: string, initialPayload: any): Promise<T[]> {
-    let allResults: T[] = [];
+  private async *_queryWithPagination<T>(endpoint: string, initialPayload: any): AsyncGenerator<T[], void, unknown> {
     let queryToken: string | undefined = undefined;
 
     // Initial Query
     const initialResponse = await this._requestWithRetry(async () => {
-      return await this.apiClient.post<BoomiQueryResponse<T>>(
-        `${endpoint}/query`,
-        initialPayload,
-      );
+      return await this.apiClient.post<BoomiQueryResponse<T>>(`${endpoint}/query`, initialPayload);
     });
 
-    if (initialResponse.data.result) {
-      allResults = allResults.concat(initialResponse.data.result);
+    if (initialResponse.data.result && initialResponse.data.result.length > 0) {
+      yield initialResponse.data.result;
     }
     queryToken = initialResponse.data.queryToken;
+    this.logger.debug(`Initial query returned ${initialResponse.data.result?.length || 0} results. Pagination token ${queryToken ? 'received' : 'not required'}.`);
 
     // Paging Loop
     while (queryToken) {
       const token = queryToken;
       const moreResponse = await this._requestWithRetry(async () => {
         // Boomi queryMore expects the raw token string in the body
-        return await this.apiClient.post<BoomiQueryResponse<T>>(
-          `${endpoint}/queryMore`,
-          token,
-        );
+        return await this.apiClient.post<BoomiQueryResponse<T>>(`${endpoint}/queryMore`, token);
       });
 
-      if (moreResponse.data.result) {
-        allResults = allResults.concat(moreResponse.data.result);
+      if (moreResponse.data.result && moreResponse.data.result.length > 0) {
+        yield moreResponse.data.result;
       }
       queryToken = moreResponse.data.queryToken;
+      this.logger.debug(`Fetched next page with token. yielded ${moreResponse.data.result?.length || 0} records.`);
     }
-
-    return allResults;
   }
 
-  public async searchComponents(criteria: ComponentSearchCriteria): Promise<ComponentInfo[]> {
+  public async *searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<ComponentInfo[], void, unknown> {
     const globalFilters: any[] = [];
 
     // 1. Global Filters (AND)
@@ -248,11 +229,20 @@ export class BoomiService implements IIntegrationPlatformService {
     });
 
     if (criteria.types && criteria.types.length > 0) {
-      globalFilters.push({
+      const typeOrFilters = criteria.types.map((type) => ({
         operator: 'EQUALS',
         property: 'type',
-        argument: criteria.types,
-      });
+        argument: [type],
+      }));
+
+      if (typeOrFilters.length === 1) {
+        globalFilters.push(typeOrFilters[0]);
+      } else {
+        globalFilters.push({
+          operator: 'or',
+          nestedExpression: typeOrFilters,
+        });
+      }
     }
 
     // 2. Search Criteria (OR) combined into one block
@@ -306,19 +296,20 @@ export class BoomiService implements IIntegrationPlatformService {
       },
     };
 
-    const results = await this._queryWithPagination<ComponentMetadataResponse>(
-      '/ComponentMetadata',
-      payload,
-    );
+    this.logger.debug(`Executing searchComponents with finalized payload: ${JSON.stringify(payload, null, 2)}`);
 
-    return results.map((r) => ({
-      id: r.componentId!,
-      name: r.name,
-      type: r.type,
-      folderId: r.folderId,
-      folderName: r.folderName,
-      dependencyIds: [],
-    }));
+    const resultsGenerator = this._queryWithPagination<ComponentMetadataResponse>('/ComponentMetadata', payload);
+
+    for await (const page of resultsGenerator) {
+      yield page.map((r) => ({
+        id: r.componentId!,
+        name: r.name,
+        type: r.type,
+        folderId: r.folderId,
+        folderName: r.folderName,
+        dependencyIds: [],
+      }));
+    }
   }
 
   private async getComponentMetadata(componentId: string): Promise<ComponentMetadataResponse | null> {
@@ -374,28 +365,30 @@ export class BoomiService implements IIntegrationPlatformService {
 
     try {
       // Fetch dependencies for component: ${componentId}
-      const results = await this._queryWithPagination<ComponentReferenceResult>(
-        '/ComponentReference',
-        {
-          QueryFilter: {
-            expression: {
-              operator: 'and',
-              nestedExpression: [
-                {
-                  operator: 'EQUALS',
-                  property: 'parentComponentId',
-                  argument: [componentId],
-                },
-                {
-                  operator: 'EQUALS',
-                  property: 'parentVersion',
-                  argument: [metadata.version],
-                },
-              ],
-            },
+      const resultsGenerator = this._queryWithPagination<ComponentReferenceResult>('/ComponentReference', {
+        QueryFilter: {
+          expression: {
+            operator: 'and',
+            nestedExpression: [
+              {
+                operator: 'EQUALS',
+                property: 'parentComponentId',
+                argument: [componentId],
+              },
+              {
+                operator: 'EQUALS',
+                property: 'parentVersion',
+                argument: [metadata.version],
+              },
+            ],
           },
         },
-      );
+      });
+
+      const results: ComponentReferenceResult[] = [];
+      for await (const page of resultsGenerator) {
+        results.push(...page);
+      }
 
       const dependencyIds = results.length === 0 ? [] : results.flatMap(
         (resultItem) => resultItem.references ? resultItem.references.map((ref) => ref.componentId) : [],
@@ -524,9 +517,7 @@ export class BoomiService implements IIntegrationPlatformService {
         return { status: 'FAILURE', message: error.message };
       }
       const message =
-        error instanceof Error
-          ? error.message
-          : 'An unknown error occurred during execution.';
+        error instanceof Error ? error.message : 'An unknown error occurred during execution.';
       return { status: 'FAILURE', message };
     }
   }

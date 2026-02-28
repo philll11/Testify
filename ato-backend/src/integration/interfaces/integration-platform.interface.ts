@@ -53,7 +53,7 @@ export interface IIntegrationPlatformService {
    * Searches for components matching the criteria.
    * Automatically handles pagination to return all matching results.
    */
-  searchComponents(criteria: ComponentSearchCriteria): Promise<ComponentInfo[]>;
+  searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<ComponentInfo[], void, unknown>;
 
   /**
    * Tests the connection to the platform using the stored credentials.
