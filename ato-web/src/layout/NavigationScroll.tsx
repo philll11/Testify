@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 interface NavigationScrollProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 export default function NavigationScroll({ children }: NavigationScrollProps) {

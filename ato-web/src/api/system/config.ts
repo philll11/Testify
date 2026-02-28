@@ -33,7 +33,7 @@ export const SystemConfigKeys = {
   AUDIT: 'audit',
   BOOMI_POLL_INTERVAL: 'boomi.pollInterval',
   BOOMI_MAX_POLLS: 'boomi.maxPolls',
-  DISCOVERY: 'discovery',
+  DISCOVERY: 'discovery'
 };
 
 // API Functions

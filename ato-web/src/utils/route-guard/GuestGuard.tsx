@@ -10,27 +10,27 @@ import { useAuth } from 'contexts/AuthContext';
  * @param {PropTypes.node} children children element/node
  */
 const GuestGuard = ({ children }: { children: any }) => {
-    const { isAuthenticated } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    useEffect(() => {
-        if (isAuthenticated) {
-            // Check for returnTo param in URL (standard behavior from useContextualNavigation)
-            const params = new URLSearchParams(location.search);
-            const returnTo = params.get('returnTo');
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Check for returnTo param in URL (standard behavior from useContextualNavigation)
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo');
 
-            if (returnTo) {
-                 navigate(decodeURIComponent(returnTo), { replace: true });
-            } else {
-                 navigate('/dashboard', { replace: true });
-            }
-        }
-    }, [isAuthenticated, navigate, location]);
+      if (returnTo) {
+        navigate(decodeURIComponent(returnTo), { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate, location]);
 
-    if (isAuthenticated) return null;
+  if (isAuthenticated) return null;
 
-    return children;
+  return children;
 };
 
 export default GuestGuard;

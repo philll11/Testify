@@ -33,7 +33,7 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
 
   const themeOptions = useMemo(
     () => ({
-      direction: 'ltr' as 'ltr',
+      direction: 'ltr' as const,
       mixins: {
         toolbar: {
           minHeight: '48px',
@@ -47,7 +47,7 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
       palette: themePalette.palette,
       // RE-ADDED: Enable CSS variables to populate theme.vars
       cssVariables: {
-        cssVarPrefix: CSS_VAR_PREFIX,
+        cssVarPrefix: CSS_VAR_PREFIX
       }
     }),
     [themeTypography, themePalette, themeMode]

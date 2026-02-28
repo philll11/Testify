@@ -27,13 +27,16 @@ export function useContextualNavigation(defaultParentPath: string) {
     [location.pathname, location.search, returnTo]
   );
 
-  const goBack = useCallback((defaultRouteOverride?: string) => {
-    if (returnTo) {
-      navigate(decodeURIComponent(returnTo));
-    } else {
-      navigate(defaultRouteOverride || defaultParentPath);
-    }
-  }, [navigate, returnTo, defaultParentPath]);
+  const goBack = useCallback(
+    (defaultRouteOverride?: string) => {
+      if (returnTo) {
+        navigate(decodeURIComponent(returnTo));
+      } else {
+        navigate(defaultRouteOverride || defaultParentPath);
+      }
+    },
+    [navigate, returnTo, defaultParentPath]
+  );
 
   const transitionTo = useCallback(
     (path: string) => {

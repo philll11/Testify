@@ -10,50 +10,49 @@ import { PlatformEnvironmentFormData } from 'types/platform/environments.schema'
 import { UpdatePlatformEnvironmentDto } from 'types/platform/environments';
 
 const EnvironmentEditPage = () => {
-    const { id } = useParams();
-    const { goBack } = useContextualNavigation(`/platform/environments/${id}`);
-    const { data: environment, isLoading, error } = usePlatformEnvironment(id!);
-    const { mutateAsync: updateEnvironment, isPending: isUpdating } = useUpdatePlatformEnvironment();
-    const [isDirty, setIsDirty] = useState(false);
+  const { id } = useParams();
+  const { goBack } = useContextualNavigation(`/platform/environments/${id}`);
+  const { data: environment, isLoading, error } = usePlatformEnvironment(id!);
+  const { mutateAsync: updateEnvironment, isPending: isUpdating } = useUpdatePlatformEnvironment();
+  const [isDirty, setIsDirty] = useState(false);
 
-    const { discardDialogProps } = useDiscardWarning(isDirty);
+  const { discardDialogProps } = useDiscardWarning(isDirty);
 
-    const handleSubmit = async (values: PlatformEnvironmentFormData) => {
-        if (!environment) return;
-        try {
-            const dto: UpdatePlatformEnvironmentDto = {
-                name: values.name,
-                description: values.description,
-                profileId: values.profileId,
-                isDefault: values.isDefault,
-                credentials: values.credentials // We send full credentials object if updated
-            };
-            await updateEnvironment({ id: environment.id, data: dto });
-            setIsDirty(false);
-            setTimeout(() => goBack(), 0);
-        } catch (error) {
-            console.error('Failed to update environment', error);
-        }
-    };
+  const handleSubmit = async (values: PlatformEnvironmentFormData) => {
+    if (!environment) return;
+    try {
+      const dto: UpdatePlatformEnvironmentDto = {
+        name: values.name,
+        description: values.description,
+        profileId: values.profileId,
+        isDefault: values.isDefault,
+        credentials: values.credentials // We send full credentials object if updated
+      };
+      await updateEnvironment({ id: environment.id, data: dto });
+      setIsDirty(false);
+      setTimeout(() => goBack(), 0);
+    } catch (error) {
+      console.error('Failed to update environment', error);
+    }
+  };
 
-    if (isLoading) return <MainCard title="Loading...">Loading...</MainCard>;
-    if (!environment) return <MainCard title="Error">Environment not found</MainCard>;
-    if (error) return <MainCard title="Error">Error loading environment</MainCard>;
+  if (isLoading) return <MainCard title="Loading...">Loading...</MainCard>;
+  if (!environment) return <MainCard title="Error">Environment not found</MainCard>;
+  if (error) return <MainCard title="Error">Error loading environment</MainCard>;
 
-    return (
-        <MainCard title={`Edit Environment: ${environment.name}`}>
-            <EnvironmentForm
-                mode="edit"
-                environment={environment}
-                onSubmit={handleSubmit}
-                isLoading={isUpdating}
-                onCancel={() => goBack()}
-                onDirtyChange={setIsDirty}
-            />
-            <ConfirmDialog {...discardDialogProps} />
-        </MainCard>
-    );
+  return (
+    <MainCard title={`Edit Environment: ${environment.name}`}>
+      <EnvironmentForm
+        mode="edit"
+        environment={environment}
+        onSubmit={handleSubmit}
+        isLoading={isUpdating}
+        onCancel={() => goBack()}
+        onDirtyChange={setIsDirty}
+      />
+      <ConfirmDialog {...discardDialogProps} />
+    </MainCard>
+  );
 };
 
 export default EnvironmentEditPage;
-

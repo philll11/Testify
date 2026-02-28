@@ -103,9 +103,7 @@ function Sidebar() {
         <MiniDrawerStyled variant="permanent" open={drawerOpen}>
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {logo}
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
-              {drawer}
-            </Box>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>{drawer}</Box>
             <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
               <Box sx={{ flexGrow: 1, transition: theme.transitions.create('flex-grow') }} />
               <Avatar

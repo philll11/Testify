@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 
@@ -31,7 +32,7 @@ const SimpleBarStyle = styled(SimpleBar)(({ theme }: { theme: any }) => ({
 // ==============================|| SIMPLE SCROLL BAR  ||============================== //
 
 interface SimpleBarScrollProps extends SimpleBarProps {
-  children: React.ReactNode;
+  children: ReactNode;
   sx?: any;
 }
 
@@ -51,4 +52,3 @@ export default function SimpleBarScroll({ children, sx, ...other }: SimpleBarScr
     </>
   );
 }
-

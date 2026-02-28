@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, Activity, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 // material-ui
@@ -78,7 +78,7 @@ export default function NotificationSection() {
     prevOpen.current = open;
   }, [open]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     event?.target.value && setValue(event?.target.value);
   };
 

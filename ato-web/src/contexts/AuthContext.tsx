@@ -1,58 +1,63 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { ReactNode, createContext, useContext, useCallback } from 'react';
 import { useAuthSession, useLogin, useLogout } from 'hooks/iam/useAuth';
 import { User } from 'types/iam/user.types';
 import Loader from 'ui-component/Loader';
 
 interface AuthContextType {
-    isAuthenticated: boolean;
-    user: User | undefined;
-    login: ReturnType<typeof useLogin>['mutateAsync'];
-    logout: ReturnType<typeof useLogout>['mutateAsync'];
-    can: (permission: string) => boolean;
-    isLoading: boolean;
+  isAuthenticated: boolean;
+  user: User | undefined;
+  login: ReturnType<typeof useLogin>['mutateAsync'];
+  logout: ReturnType<typeof useLogout>['mutateAsync'];
+  can: (permission: string) => boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const usePermission = () => {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('usePermission must be used within AuthProvider');
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('usePermission must be used within AuthProvider');
+  return context;
 };
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('useAuth must be used within AuthProvider');
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user, isAuthenticated, isLoading } = useAuthSession();
-    const { mutateAsync: login } = useLogin();
-    const { mutateAsync: logout } = useLogout();
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, isLoading } = useAuthSession();
+  const { mutateAsync: login } = useLogin();
+  const { mutateAsync: logout } = useLogout();
 
-    const can = useCallback((permission: string) => {
-        // Handle different backend response structures (role object vs roleId object vs roleId string)
-        const userRole = (user as any)?.role || user?.roleId;
+  const can = useCallback(
+    (permission: string) => {
+      // Handle different backend response structures (role object vs roleId object vs roleId string)
+      const userRole = (user as any)?.role || user?.roleId;
 
-        if (!userRole || typeof userRole !== 'object' || !userRole.permissions) return false;
-        return userRole.permissions.includes(permission);
-    }, [user]);
+      if (!userRole || typeof userRole !== 'object' || !userRole.permissions) return false;
+      return userRole.permissions.includes(permission);
+    },
+    [user]
+  );
 
-    if (isLoading) {
-        return <Loader />;
-    }
+  if (isLoading) {
+    return <Loader />;
+  }
 
-    return (
-        <AuthContext.Provider value={{
-            isAuthenticated,
-            user,
-            login,
-            logout,
-            can,
-            isLoading
-        }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        can,
+        isLoading
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

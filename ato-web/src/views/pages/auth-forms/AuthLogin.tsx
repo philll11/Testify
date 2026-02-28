@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { MouseEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,7 +51,7 @@ export default function AuthLogin() {
     setShowPassword(!showPassword);
   };
 
-  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
 
@@ -82,14 +82,7 @@ export default function AuthLogin() {
               <Controller
                 name="username"
                 control={control}
-                render={({ field }) => (
-                  <OutlinedInput
-                    {...field}
-                    id="outlined-adornment-email-login"
-                    type="text"
-                    label="Username"
-                  />
-                )}
+                render={({ field }) => <OutlinedInput {...field} id="outlined-adornment-email-login" type="text" label="Username" />}
               />
               {errors.username && (
                 <FormHelperText error id="standard-weight-helper-text-email-login">
@@ -136,12 +129,7 @@ export default function AuthLogin() {
               <Grid>
                 <FormControlLabel
                   control={
-                    <Checkbox
-                      checked={checked}
-                      onChange={(event) => setChecked(event.target.checked)}
-                      name="checked"
-                      color="primary"
-                    />
+                    <Checkbox checked={checked} onChange={(event) => setChecked(event.target.checked)} name="checked" color="primary" />
                   }
                   label="Keep me logged in"
                 />
@@ -160,15 +148,7 @@ export default function AuthLogin() {
 
             <Box sx={{ mt: 2 }}>
               <AnimateButton>
-                <Button
-                  disableElevation
-                  disabled={isSubmitting}
-                  fullWidth
-                  size="large"
-                  type="submit"
-                  variant="contained"
-                  color="secondary"
-                >
+                <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="secondary">
                   Sign In
                 </Button>
               </AnimateButton>

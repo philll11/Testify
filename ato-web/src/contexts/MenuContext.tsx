@@ -31,7 +31,7 @@ export const MenuProvider = ({ children }: { children: ReactNode }) => {
   const openDashboardDrawer = () => {
     setDashboardDrawerOpened(true);
   };
-  
+
   const closeDashboardDrawer = () => {
     setDashboardDrawerOpened(false);
   };

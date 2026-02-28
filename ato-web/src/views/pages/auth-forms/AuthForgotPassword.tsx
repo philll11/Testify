@@ -49,24 +49,24 @@ export default function AuthForgotPassword() {
 
   if (sent) {
     return (
-        <Box sx={{ mt: 3 }}>
-            <Alert severity="success" sx={{ mb: 3 }}>
-                Check your email for a reset link.
-            </Alert>
-             <AnimateButton>
-                <Button
-                  disableElevation
-                  fullWidth
-                  size="large"
-                  type="button"
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => navigate('/pages/login')}
-                >
-                  Back to Login
-                </Button>
-              </AnimateButton>
-        </Box>
+      <Box sx={{ mt: 3 }}>
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Check your email for a reset link.
+        </Alert>
+        <AnimateButton>
+          <Button
+            disableElevation
+            fullWidth
+            size="large"
+            type="button"
+            variant="outlined"
+            color="secondary"
+            onClick={() => navigate('/pages/login')}
+          >
+            Back to Login
+          </Button>
+        </AnimateButton>
+      </Box>
     );
   }
 
@@ -86,14 +86,7 @@ export default function AuthForgotPassword() {
               <Controller
                 name="email"
                 control={control}
-                render={({ field }) => (
-                  <OutlinedInput
-                    {...field}
-                    id="outlined-adornment-email-forgot"
-                    type="email"
-                    label="Email Address"
-                  />
-                )}
+                render={({ field }) => <OutlinedInput {...field} id="outlined-adornment-email-forgot" type="email" label="Email Address" />}
               />
               {errors.email && (
                 <FormHelperText error id="standard-weight-helper-text-email-forgot">
@@ -104,15 +97,7 @@ export default function AuthForgotPassword() {
 
             <Box sx={{ mt: 2 }}>
               <AnimateButton>
-                <Button
-                  disableElevation
-                  disabled={isSubmitting}
-                  fullWidth
-                  size="large"
-                  type="submit"
-                  variant="contained"
-                  color="secondary"
-                >
+                <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="secondary">
                   Send Reset Link
                 </Button>
               </AnimateButton>

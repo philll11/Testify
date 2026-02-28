@@ -30,8 +30,8 @@ export default function Chip(theme: any) {
 
                 // Adjust for Dark Mode
                 if (isDark) {
-                   textColor = paletteColor.light;
-                   bgColor = withAlpha(paletteColor.main, 0.2); // Translucent Main Color for darker BG
+                  textColor = paletteColor.light;
+                  bgColor = withAlpha(paletteColor.main, 0.2); // Translucent Main Color for darker BG
                 }
 
                 return {

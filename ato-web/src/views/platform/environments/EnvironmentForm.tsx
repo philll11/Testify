@@ -3,22 +3,22 @@ import { debounce } from 'lodash-es';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-    TextField,
-    Button,
-    Grid,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    Select,
-    Box,
-    Typography,
-    FormHelperText,
-    Autocomplete,
-    OutlinedInput,
-    InputAdornment,
-    IconButton,
-    FormControlLabel,
-    Switch
+  TextField,
+  Button,
+  Grid,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Box,
+  Typography,
+  FormHelperText,
+  Autocomplete,
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { IconHistory, IconEye, IconEyeOff } from '@tabler/icons-react';
 
@@ -37,407 +37,380 @@ import { IntegrationPlatform } from 'types/iam/credential.types';
 export type EnvironmentFormMode = 'create' | 'edit' | 'view';
 
 interface EnvironmentFormProps {
-    mode: EnvironmentFormMode;
-    environment?: PlatformEnvironment | null;
-    initialValues?: Partial<PlatformEnvironmentFormData>;
-    onSubmit: (values: any) => void;
-    isLoading: boolean;
-    onCancel: () => void;
-    onDirtyChange?: (isDirty: boolean) => void;
-    onValuesChange?: (values: Partial<PlatformEnvironmentFormData>) => void;
+  mode: EnvironmentFormMode;
+  environment?: PlatformEnvironment | null;
+  initialValues?: Partial<PlatformEnvironmentFormData>;
+  onSubmit: (values: any) => void;
+  isLoading: boolean;
+  onCancel: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
+  onValuesChange?: (values: Partial<PlatformEnvironmentFormData>) => void;
 }
 
 const EnvironmentForm = ({
-    mode,
-    environment,
-    initialValues,
-    onSubmit,
-    isLoading,
-    onCancel,
-    onDirtyChange,
-    onValuesChange
+  mode,
+  environment,
+  initialValues,
+  onSubmit,
+  isLoading,
+  onCancel,
+  onDirtyChange,
+  onValuesChange
 }: EnvironmentFormProps) => {
-    const isEditing = mode === 'edit';
-    const isCreating = mode === 'create';
-    const isViewing = mode === 'view';
+  const isEditing = mode === 'edit';
+  const isCreating = mode === 'create';
+  const isViewing = mode === 'view';
 
-    const { can } = usePermission();
+  const { can } = usePermission();
 
-    // Fetch profiles for the dropdown
-    const { data: profiles = [] } = usePlatformProfiles();
+  // Fetch profiles for the dropdown
+  const { data: profiles = [] } = usePlatformProfiles();
 
-    // Fetch full environment details (including credentials) if we have an ID
-    const { data: detailEnvironment, isLoading: isDetailLoading } = usePlatformEnvironment(environment?.id || '');
+  // Fetch full environment details (including credentials) if we have an ID
+  const { data: detailEnvironment, isLoading: isDetailLoading } = usePlatformEnvironment(environment?.id || '');
 
-    const [showToken, setShowToken] = useState(false);
-    const [confirmPasswordUpdate, setConfirmPasswordUpdate] = useState(false);
-    const [pendingValues, setPendingValues] = useState<PlatformEnvironmentFormData | null>(null);
+  const [showToken, setShowToken] = useState(false);
+  const [confirmPasswordUpdate, setConfirmPasswordUpdate] = useState(false);
+  const [pendingValues, setPendingValues] = useState<PlatformEnvironmentFormData | null>(null);
 
-    const {
-        control,
-        handleSubmit,
-        reset,
-        watch,
-        setValue,
-        formState: { isDirty, errors },
-    } = useForm<PlatformEnvironmentFormData>({
-        resolver: zodResolver(platformEnvironmentSchema),
-        defaultValues: {
-            name: '',
-            description: '',
-            profileId: '',
-            isDefault: false,
-            credentials: {
-                username: '',
-                passwordOrToken: '',
-                executionInstanceId: ''
-            },
-            ...initialValues,
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { isDirty, errors }
+  } = useForm<PlatformEnvironmentFormData>({
+    resolver: zodResolver(platformEnvironmentSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      profileId: '',
+      isDefault: false,
+      credentials: {
+        username: '',
+        passwordOrToken: '',
+        executionInstanceId: ''
+      },
+      ...initialValues
+    }
+  });
+
+  // Keep a stable ref to the callback to avoid breaking debounce if prop changes referentially
+  const onValuesChangeRef = useRef(onValuesChange);
+  useEffect(() => {
+    onValuesChangeRef.current = onValuesChange;
+  }, [onValuesChange]);
+
+  // Create a debounced version of the change handler
+  const debouncedOnValuesChange = useMemo(
+    () =>
+      debounce((val: Partial<PlatformEnvironmentFormData>) => {
+        if (onValuesChangeRef.current) {
+          onValuesChangeRef.current(val);
         }
+      }, 500),
+    []
+  );
+
+  // Watch for changes and notify parent
+  useEffect(() => {
+    if (!onValuesChange) return;
+    const subscription = watch((value) => {
+      debouncedOnValuesChange(value as Partial<PlatformEnvironmentFormData>);
     });
-
-    // Keep a stable ref to the callback to avoid breaking debounce if prop changes referentially
-    const onValuesChangeRef = useRef(onValuesChange);
-    useEffect(() => {
-        onValuesChangeRef.current = onValuesChange;
-    }, [onValuesChange]);
-
-
-    // Create a debounced version of the change handler
-    const debouncedOnValuesChange = useMemo(
-        () =>
-            debounce((val: Partial<PlatformEnvironmentFormData>) => {
-                if (onValuesChangeRef.current) {
-                    onValuesChangeRef.current(val);
-                }
-            }, 500),
-        []
-    );
-
-    // Watch for changes and notify parent
-    useEffect(() => {
-        if (!onValuesChange) return;
-        const subscription = watch((value) => {
-            debouncedOnValuesChange(value as Partial<PlatformEnvironmentFormData>);
-        });
-        return () => {
-            subscription.unsubscribe();
-            debouncedOnValuesChange.cancel();
-        };
-    }, [watch, debouncedOnValuesChange, onValuesChange]);
-
-    // Notify parent about dirty state
-    useEffect(() => {
-        if (onDirtyChange) {
-            onDirtyChange(isDirty);
-        }
-    }, [isDirty, onDirtyChange]);
-
-
-    // Initialize form with data
-    useEffect(() => {
-        const effectiveEnv = detailEnvironment || environment;
-
-        if (effectiveEnv && (isEditing || isViewing)) {
-            reset({
-                name: effectiveEnv.name,
-                description: effectiveEnv.description || '',
-                profileId: effectiveEnv.profile?.id || effectiveEnv.profileId || '',
-                isDefault: effectiveEnv.isDefault,
-                credentials: {
-                    username: effectiveEnv.credentials?.username || '',
-                    passwordOrToken: effectiveEnv.credentials?.passwordOrToken || '',
-                    executionInstanceId: effectiveEnv.credentials?.executionInstanceId || '',
-                }
-            });
-        } else if (isCreating) {
-            reset({
-                name: initialValues?.name || '',
-                description: initialValues?.description || '',
-                profileId: initialValues?.profileId || '',
-                isDefault: initialValues?.isDefault || false,
-                credentials: {
-                    username: '',
-                    passwordOrToken: '',
-                    executionInstanceId: '',
-                },
-                ...initialValues
-            });
-        }
-    }, [environment, detailEnvironment, mode, isEditing, isViewing, isCreating, reset]);
-
-    const handleFormSubmit = (values: PlatformEnvironmentFormData) => {
-        if (isEditing && values.credentials.passwordOrToken) {
-            // If editing and password field is NOT empty, ask for confirmation
-            setPendingValues(values);
-            setConfirmPasswordUpdate(true);
-        } else {
-            // Create mode or Edit mode with empty password (no change) -> Proceed directly
-            handleFormSubmitAction(values);
-        }
+    return () => {
+      subscription.unsubscribe();
+      debouncedOnValuesChange.cancel();
     };
+  }, [watch, debouncedOnValuesChange, onValuesChange]);
 
-    const handleConfirmUpdate = () => {
-        if (pendingValues) {
-            handleFormSubmitAction(pendingValues);
-            setPendingValues(null);
+  // Notify parent about dirty state
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
+
+  // Initialize form with data
+  useEffect(() => {
+    const effectiveEnv = detailEnvironment || environment;
+
+    if (effectiveEnv && (isEditing || isViewing)) {
+      reset({
+        name: effectiveEnv.name,
+        description: effectiveEnv.description || '',
+        profileId: effectiveEnv.profile?.id || effectiveEnv.profileId || '',
+        isDefault: effectiveEnv.isDefault,
+        credentials: {
+          username: effectiveEnv.credentials?.username || '',
+          passwordOrToken: effectiveEnv.credentials?.passwordOrToken || '',
+          executionInstanceId: effectiveEnv.credentials?.executionInstanceId || ''
         }
-        setConfirmPasswordUpdate(false);
-    };
+      });
+    } else if (isCreating) {
+      reset({
+        name: initialValues?.name || '',
+        description: initialValues?.description || '',
+        profileId: initialValues?.profileId || '',
+        isDefault: initialValues?.isDefault || false,
+        credentials: {
+          username: '',
+          passwordOrToken: '',
+          executionInstanceId: ''
+        },
+        ...initialValues
+      });
+    }
+  }, [environment, detailEnvironment, mode, isEditing, isViewing, isCreating, reset]);
 
-    const handleFormSubmitAction = (values: PlatformEnvironmentFormData) => {
-        onSubmit(values);
-    };
+  const handleFormSubmit = (values: PlatformEnvironmentFormData) => {
+    if (isEditing && values.credentials.passwordOrToken) {
+      // If editing and password field is NOT empty, ask for confirmation
+      setPendingValues(values);
+      setConfirmPasswordUpdate(true);
+    } else {
+      // Create mode or Edit mode with empty password (no change) -> Proceed directly
+      handleFormSubmitAction(values);
+    }
+  };
 
-    const handleCancelUpdate = () => {
-        setConfirmPasswordUpdate(false);
-        setPendingValues(null);
-    };
+  const handleConfirmUpdate = () => {
+    if (pendingValues) {
+      handleFormSubmitAction(pendingValues);
+      setPendingValues(null);
+    }
+    setConfirmPasswordUpdate(false);
+  };
 
-    const handleClear = () => {
-        reset({
-            name: '',
-            description: '',
-            profileId: '',
-            credentials: {
-                username: '',
-                passwordOrToken: '',
-                executionInstanceId: ''
-            },
-        });
-    };
+  const handleFormSubmitAction = (values: PlatformEnvironmentFormData) => {
+    onSubmit(values);
+  };
 
-    const isSubmitDisabled = isLoading || isDetailLoading || (!isDirty && !isCreating) || isViewing;
+  const handleCancelUpdate = () => {
+    setConfirmPasswordUpdate(false);
+    setPendingValues(null);
+  };
 
-    // Define tabs
-    const tabs = useMemo(() => [
-        {
-            label: 'Audit Trail',
-            value: 'audit',
-            icon: <IconHistory size="1.3rem" />,
-            disabled: isCreating,
-            component: (
-                <Box sx={{ mt: 2 }}>
-                    {environment?.id ? (
-                        <ResourceAuditTable
-                            resource="PlatformEnvironment"
-                            resourceId={environment.id}
-                        />
-                    ) : (
-                        <Typography color="textSecondary">Audit trail is only available for existing records.</Typography>
-                    )}
-                </Box>
-            )
-        }
-    ], [isCreating, environment?.id]);
+  const handleClear = () => {
+    reset({
+      name: '',
+      description: '',
+      profileId: '',
+      credentials: {
+        username: '',
+        passwordOrToken: '',
+        executionInstanceId: ''
+      }
+    });
+  };
 
+  const isSubmitDisabled = isLoading || isDetailLoading || (!isDirty && !isCreating) || isViewing;
 
-    return (
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <Grid container spacing={3}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                        name="name"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Environment Name"
-                                fullWidth
-                                error={!!errors.name}
-                                helperText={errors.name?.message}
-                                disabled={isViewing}
-                            />
-                        )}
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                        name="profileId"
-                        control={control}
-                        render={({ field }) => (
-                            <FormControl fullWidth error={!!errors.profileId}>
-                                <InputLabel id="profile-select-label">Profile</InputLabel>
-                                <Select
-                                    {...field}
-                                    labelId="profile-select-label"
-                                    label="Profile"
-                                    disabled={isViewing}
-                                >
-                                    {profiles.map((profile) => (
-                                        <MenuItem key={profile.id} value={profile.id}>
-                                            {profile.name} ({profile.platformType})
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                {errors.profileId && (
-                                    <FormHelperText>{errors.profileId.message}</FormHelperText>
-                                )}
-                            </FormControl>
-                        )}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <Controller
-                        name="description"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Description"
-                                fullWidth
-                                multiline
-                                rows={3}
-                                error={!!errors.description}
-                                helperText={errors.description?.message}
-                                disabled={isViewing}
-                            />
-                        )}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <Controller
-                        name="isDefault"
-                        control={control}
-                        render={({ field: { value, onChange, ...rest } }) => (
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={value}
-                                        onChange={(e) => onChange(e.target.checked)}
-                                        disabled={isViewing}
-                                        {...rest}
-                                    />
-                                }
-                                label="Set as Default Environment"
-                            />
-                        )}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <Typography variant="h4" sx={{ mb: 2 }}>Credentials</Typography>
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                        name="credentials.username"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Username"
-                                fullWidth
-                                error={!!errors.credentials?.username}
-                                helperText={errors.credentials?.username?.message}
-                                disabled={isViewing}
-                            />
-                        )}
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                        name="credentials.passwordOrToken"
-                        control={control}
-                        render={({ field }) => (
-                            <FormControl fullWidth variant="outlined" error={!!errors.credentials?.passwordOrToken}>
-                                <InputLabel>Token / Password</InputLabel>
-                                <OutlinedInput
-                                    {...field}
-                                    type={showToken ? 'text' : 'password'}
-                                    disabled={isViewing}
-                                    endAdornment={
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => setShowToken(!showToken)}
-                                                onMouseDown={(e) => e.preventDefault()}
-                                                edge="end"
-                                            >
-                                                {showToken ? <IconEye /> : <IconEyeOff />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    }
-                                    label="Token / Password"
-                                />
-                                {errors.credentials?.passwordOrToken ? (
-                                    <FormHelperText>{errors.credentials?.passwordOrToken?.message}</FormHelperText>
-                                ) : (
-                                    <FormHelperText>Leave blank to keep the existing password.</FormHelperText>
-                                )}
-                            </FormControl>
-                        )}
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                        name="credentials.executionInstanceId"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                label="Execution Instance (Atom/Molecule)"
-                                fullWidth
-                                error={!!errors.credentials?.executionInstanceId}
-                                helperText={errors.credentials?.executionInstanceId?.message}
-                                disabled={isViewing}
-                            />
-                        )}
-                    />
-                </Grid>
-            </Grid>
-
-            <Box sx={{ mt: 3 }}>
-                <ResourceRelatedTabs tabs={tabs} />
-            </Box>
-
-            {/* Buttons (Hidden in View mode if strictly viewing, or you might want an Edit button) */}
-            {!isViewing && (
-                <Box sx={{ mt: 3, mb: 5 }}>
-                    <Grid container>
-                        <Grid size={12}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                                {isCreating ? (
-                                    <Button
-                                        variant="text"
-                                        color="error"
-                                        onClick={() => handleClear()}
-                                    >
-                                        Clear
-                                    </Button>
-
-                                ) : <Box />}
-
-                                <ConfirmDialog
-                                    open={confirmPasswordUpdate}
-                                    onCancel={handleCancelUpdate}
-                                    title="Update Credentials?"
-                                    content="You have entered a new password/token. This will overwrite the existing stored credentials. Are you sure you want to proceed?"
-                                    onConfirm={handleConfirmUpdate}
-                                    confirmLabel="Yes, Update Credentials"
-                                />
-
-                                <Box display="flex" gap={2}>
-                                    <Button variant="outlined" color="primary" onClick={onCancel} disabled={isLoading}>
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        color="primary"
-                                        disabled={isSubmitDisabled}
-                                    >
-                                        {isEditing ? 'Update Environment' : 'Create Environment'}
-                                    </Button>
-                                </Box>
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </Box>
+  // Define tabs
+  const tabs = useMemo(
+    () => [
+      {
+        label: 'Audit Trail',
+        value: 'audit',
+        icon: <IconHistory size="1.3rem" />,
+        disabled: isCreating,
+        component: (
+          <Box sx={{ mt: 2 }}>
+            {environment?.id ? (
+              <ResourceAuditTable resource="PlatformEnvironment" resourceId={environment.id} />
+            ) : (
+              <Typography color="textSecondary">Audit trail is only available for existing records.</Typography>
             )}
-        </form>
-    );
+          </Box>
+        )
+      }
+    ],
+    [isCreating, environment?.id]
+  );
+
+  return (
+    <form onSubmit={handleSubmit(handleFormSubmit)}>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Environment Name"
+                fullWidth
+                error={!!errors.name}
+                helperText={errors.name?.message}
+                disabled={isViewing}
+              />
+            )}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Controller
+            name="profileId"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.profileId}>
+                <InputLabel id="profile-select-label">Profile</InputLabel>
+                <Select {...field} labelId="profile-select-label" label="Profile" disabled={isViewing}>
+                  {profiles.map((profile) => (
+                    <MenuItem key={profile.id} value={profile.id}>
+                      {profile.name} ({profile.platformType})
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.profileId && <FormHelperText>{errors.profileId.message}</FormHelperText>}
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Description"
+                fullWidth
+                multiline
+                rows={3}
+                error={!!errors.description}
+                helperText={errors.description?.message}
+                disabled={isViewing}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Controller
+            name="isDefault"
+            control={control}
+            render={({ field: { value, onChange, ...rest } }) => (
+              <FormControlLabel
+                control={<Switch checked={value} onChange={(e) => onChange(e.target.checked)} disabled={isViewing} {...rest} />}
+                label="Set as Default Environment"
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>
+            Credentials
+          </Typography>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Controller
+            name="credentials.username"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Username"
+                fullWidth
+                error={!!errors.credentials?.username}
+                helperText={errors.credentials?.username?.message}
+                disabled={isViewing}
+              />
+            )}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Controller
+            name="credentials.passwordOrToken"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth variant="outlined" error={!!errors.credentials?.passwordOrToken}>
+                <InputLabel>Token / Password</InputLabel>
+                <OutlinedInput
+                  {...field}
+                  type={showToken ? 'text' : 'password'}
+                  disabled={isViewing}
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowToken(!showToken)} onMouseDown={(e) => e.preventDefault()} edge="end">
+                        {showToken ? <IconEye /> : <IconEyeOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  }
+                  label="Token / Password"
+                />
+                {errors.credentials?.passwordOrToken ? (
+                  <FormHelperText>{errors.credentials?.passwordOrToken?.message}</FormHelperText>
+                ) : (
+                  <FormHelperText>Leave blank to keep the existing password.</FormHelperText>
+                )}
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Controller
+            name="credentials.executionInstanceId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Execution Instance (Atom/Molecule)"
+                fullWidth
+                error={!!errors.credentials?.executionInstanceId}
+                helperText={errors.credentials?.executionInstanceId?.message}
+                disabled={isViewing}
+              />
+            )}
+          />
+        </Grid>
+      </Grid>
+
+      <Box sx={{ mt: 3 }}>
+        <ResourceRelatedTabs tabs={tabs} />
+      </Box>
+
+      {/* Buttons (Hidden in View mode if strictly viewing, or you might want an Edit button) */}
+      {!isViewing && (
+        <Box sx={{ mt: 3, mb: 5 }}>
+          <Grid container>
+            <Grid size={12}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                {isCreating ? (
+                  <Button variant="text" color="error" onClick={() => handleClear()}>
+                    Clear
+                  </Button>
+                ) : (
+                  <Box />
+                )}
+
+                <ConfirmDialog
+                  open={confirmPasswordUpdate}
+                  onCancel={handleCancelUpdate}
+                  title="Update Credentials?"
+                  content="You have entered a new password/token. This will overwrite the existing stored credentials. Are you sure you want to proceed?"
+                  onConfirm={handleConfirmUpdate}
+                  confirmLabel="Yes, Update Credentials"
+                />
+
+                <Box display="flex" gap={2}>
+                  <Button variant="outlined" color="primary" onClick={onCancel} disabled={isLoading}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="contained" color="primary" disabled={isSubmitDisabled}>
+                    {isEditing ? 'Update Environment' : 'Create Environment'}
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+    </form>
+  );
 };
 
 export default EnvironmentForm;

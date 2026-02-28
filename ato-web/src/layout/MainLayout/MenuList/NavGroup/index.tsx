@@ -74,7 +74,6 @@ export default function NavGroup({ item, lastItem, remItems = [], lastItemId, se
     }
   };
 
-
   // keep selected-menu on page load and use for horizontal menu close on change routes
   useEffect(() => {
     checkSelectedOnload(currentItem);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ElementType, ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -34,7 +34,7 @@ function BTitle({ title }: { title: string }) {
 
 interface BreadcrumbLink {
   to?: string;
-  icon?: React.ElementType;
+  icon?: ElementType;
   title: string;
 }
 
@@ -48,7 +48,7 @@ interface BreadcrumbsProps {
   links?: BreadcrumbLink[];
   maxItems?: number;
   rightAlign?: boolean;
-  separator?: React.ElementType | React.ReactNode;
+  separator?: ElementType | ReactNode;
   title?: boolean;
   titleBottom?: boolean;
   sx?: any;
@@ -91,7 +91,7 @@ export default function Breadcrumbs({
     alignItems: 'center'
   };
 
-  let customLocation = location.pathname;
+  const customLocation = location.pathname;
 
   useEffect(() => {
     // Reset state on location change to avoid stale breadcrumbs matching previous route
@@ -102,7 +102,9 @@ export default function Breadcrumbs({
       if (menu.type && menu.type === 'group') {
         // MATCHING LOGIC: Allow strict equality OR strict prefix (e.g. /clients/1 starts with /clients)
         // Ensure we don't partial match /clients-report against /clients via checking for separator
-        const isMatch = menu.url && (menu.url === customLocation || (customLocation.startsWith(menu.url) && customLocation.charAt(menu.url.length) === '/'));
+        const isMatch =
+          menu.url &&
+          (menu.url === customLocation || (customLocation.startsWith(menu.url) && customLocation.charAt(menu.url.length) === '/'));
 
         if (isMatch) {
           setMain(menu);
@@ -121,13 +123,17 @@ export default function Breadcrumbs({
       menu.children.filter((collapse: NavItemModel) => {
         if (collapse.type && collapse.type === 'collapse') {
           getCollapse(collapse);
-          const isMatch = collapse.url === customLocation || (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
+          const isMatch =
+            collapse.url === customLocation ||
+            (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
           if (isMatch) {
             setMain(collapse);
             setItem(collapse);
           }
         } else if (collapse.type && collapse.type === 'item') {
-          const isMatch = collapse.url === customLocation || (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
+          const isMatch =
+            collapse.url === customLocation ||
+            (collapse.url && customLocation.startsWith(collapse.url) && customLocation.charAt(collapse.url.length) === '/');
           if (isMatch) {
             setMain(menu);
             setItem(collapse);
@@ -139,7 +145,7 @@ export default function Breadcrumbs({
   };
 
   // item separator
-  const SeparatorIcon = separator as React.ElementType;
+  const SeparatorIcon = separator as ElementType;
   const separatorIcon = separator ? <SeparatorIcon stroke={1.5} size="16px" /> : <IconTallymark1 stroke={1.5} size="16px" />;
 
   let mainContent;
@@ -304,10 +310,10 @@ export default function Breadcrumbs({
             card === false
               ? { mb: 3, bgcolor: 'transparent', ...sx }
               : {
-                mb: 3,
-                bgcolor: 'background.default',
-                ...sx
-              }
+                  mb: 3,
+                  bgcolor: 'background.default',
+                  ...sx
+                }
           }
           {...others}
         >
@@ -318,9 +324,9 @@ export default function Breadcrumbs({
               sx={{ justifyContent: rightAlign ? 'space-between' : 'flex-start', alignItems: rightAlign ? 'center' : 'flex-start' }}
               spacing={1}
             >
-              {title && !titleBottom && <BTitle title={custom ? (heading || '') : (item?.title || '')} />}
+              {title && !titleBottom && <BTitle title={custom ? heading || '' : item?.title || ''} />}
               <Grid>{tempContent}</Grid>
-              {title && titleBottom && <BTitle title={custom ? (heading || '') : (item?.title || '')} />}
+              {title && titleBottom && <BTitle title={custom ? heading || '' : item?.title || ''} />}
             </Grid>
           </Box>
           {card === false && divider !== false && <Divider sx={{ mt: 2 }} />}
@@ -331,5 +337,3 @@ export default function Breadcrumbs({
 
   return breadcrumbContent;
 }
-
-

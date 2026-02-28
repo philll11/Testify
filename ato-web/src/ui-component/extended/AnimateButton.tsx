@@ -13,7 +13,13 @@ export interface AnimateButtonProps {
   scale?: number | { hover: number; tap: number };
 }
 
-export default function AnimateButton({ children, type = 'scale', direction = 'right', offset = 10, scale = { hover: 1, tap: 0.9 } }: AnimateButtonProps) {
+export default function AnimateButton({
+  children,
+  type = 'scale',
+  direction = 'right',
+  offset = 10,
+  scale = { hover: 1, tap: 0.9 }
+}: AnimateButtonProps) {
   let offset1;
   let offset2;
   switch (direction) {

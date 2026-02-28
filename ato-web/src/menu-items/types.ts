@@ -1,4 +1,3 @@
-
 // import { TablerIconsProps } from '@tabler/icons-react';
 
 export type LinkTarget = '_blank' | '_self' | '_parent' | '_top';

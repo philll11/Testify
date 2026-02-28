@@ -24,8 +24,12 @@ export default function Logo() {
         fontFamily="'Roboto', sans-serif"
         style={{ letterSpacing: '1px' }}
       >
-        <tspan x="50%" dy="-0.5em">Automated Test</tspan>
-        <tspan x="50%" dy="1.2em">Orchestrator</tspan>
+        <tspan x="50%" dy="-0.5em">
+          Automated Test
+        </tspan>
+        <tspan x="50%" dy="1.2em">
+          Orchestrator
+        </tspan>
       </text>
     </svg>
   );

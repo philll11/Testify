@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { MouseEvent, FocusEvent, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -28,7 +28,6 @@ import { NavItem as NavItemModel } from 'menu-items/types';
 import { IconChevronDown, IconChevronRight, IconChevronUp } from '@tabler/icons-react';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-
 interface NavCollapseProps {
   menu: NavItemModel;
   level: number;
@@ -50,7 +49,7 @@ export default function NavCollapse({ menu, level, parentId }: NavCollapseProps)
   const [selected, setSelected] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | Element>(null);
 
-  const handleClickMini = (event: React.MouseEvent<HTMLDivElement> | React.FocusEvent<HTMLDivElement>) => {
+  const handleClickMini = (event: MouseEvent<HTMLDivElement> | FocusEvent<HTMLDivElement>) => {
     setAnchorEl(null);
     if (drawerOpen) {
       setOpen(!open);
@@ -272,24 +271,24 @@ export default function NavCollapse({ menu, level, parentId }: NavCollapseProps)
       </ListItemButton>
       {drawerOpen && (
         <Collapse in={open} timeout="auto" unmountOnExit>
-            <List
-              disablePadding
-              sx={{
-                position: 'relative',
-                '&:after': {
-                  content: "''",
-                  position: 'absolute',
-                  left: '25px',
-                  top: 0,
-                  height: '100%',
-                  width: '1px',
-                  opacity: 1,
-                  bgcolor: 'primary.light'
-                }
-              }}
-            >
-              {menus}
-            </List>
+          <List
+            disablePadding
+            sx={{
+              position: 'relative',
+              '&:after': {
+                content: "''",
+                position: 'absolute',
+                left: '25px',
+                top: 0,
+                height: '100%',
+                width: '1px',
+                opacity: 1,
+                bgcolor: 'primary.light'
+              }
+            }}
+          >
+            {menus}
+          </List>
         </Collapse>
       )}
     </>

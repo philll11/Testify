@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 // material-ui
 import { useTheme } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
@@ -19,7 +20,7 @@ import { withAlpha } from 'utils/colorUtils';
 import { IconBrandTelegram, IconBuildingStore, IconMailbox, IconPhoto } from '@tabler/icons-react';
 import User1 from 'assets/images/users/user-round.svg';
 
-function ListItemWrapper({ children }: { children: React.ReactNode }) {
+function ListItemWrapper({ children }: { children: ReactNode }) {
   const theme = useTheme();
 
   return (
@@ -38,7 +39,6 @@ function ListItemWrapper({ children }: { children: React.ReactNode }) {
     </Box>
   );
 }
-
 
 // ==============================|| NOTIFICATION LIST ITEM ||============================== //
 
@@ -179,5 +179,3 @@ export default function NotificationList() {
     </List>
   );
 }
-
-

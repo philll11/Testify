@@ -9,35 +9,29 @@ import { RoleFormData } from 'types/iam/role.schema';
 import { CreateRoleDto } from 'types/iam/role.types';
 
 const RoleCreatePage = () => {
-    const { goBack, transitionTo } = useContextualNavigation('/roles');
-    const { mutateAsync: createRole, isPending } = useCreateRole();
-    const [isDirty, setIsDirty] = useState(false);
+  const { goBack, transitionTo } = useContextualNavigation('/roles');
+  const { mutateAsync: createRole, isPending } = useCreateRole();
+  const [isDirty, setIsDirty] = useState(false);
 
-    // Prompt before leaving if dirty
-    const { discardDialogProps } = useDiscardWarning(isDirty);
+  // Prompt before leaving if dirty
+  const { discardDialogProps } = useDiscardWarning(isDirty);
 
-    const handleSubmit = async (values: RoleFormData) => {
-        try {
-            const newRole = await createRole(values as CreateRoleDto);
-            setIsDirty(false);
-            setTimeout(() => transitionTo(`/roles/${newRole.id}`), 0);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+  const handleSubmit = async (values: RoleFormData) => {
+    try {
+      const newRole = await createRole(values as CreateRoleDto);
+      setIsDirty(false);
+      setTimeout(() => transitionTo(`/roles/${newRole.id}`), 0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-    return (
-        <MainCard title="Create Role">
-            <RoleForm
-                mode="create"
-                onSubmit={handleSubmit}
-                isLoading={isPending}
-                onCancel={() => goBack()}
-                onDirtyChange={setIsDirty}
-            />
-            <ConfirmDialog {...discardDialogProps} />
-        </MainCard>
-    );
+  return (
+    <MainCard title="Create Role">
+      <RoleForm mode="create" onSubmit={handleSubmit} isLoading={isPending} onCancel={() => goBack()} onDirtyChange={setIsDirty} />
+      <ConfirmDialog {...discardDialogProps} />
+    </MainCard>
+  );
 };
 
 export default RoleCreatePage;

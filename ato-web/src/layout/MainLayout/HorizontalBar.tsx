@@ -1,4 +1,4 @@
-import { cloneElement } from 'react';
+import { ReactElement, cloneElement } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -12,7 +12,7 @@ import MenuList from './MenuList';
 import useConfig from 'hooks/useConfig';
 
 interface ElevationScrollProps {
-  children: React.ReactElement;
+  children: ReactElement;
   window?: Window;
 }
 
@@ -35,7 +35,6 @@ function ElevationScroll({ children, window }: ElevationScrollProps) {
     elevation: trigger ? 4 : 0
   });
 }
-
 
 // ==============================|| HORIZONTAL MENU LIST ||============================== //
 

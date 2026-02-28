@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { SyntheticEvent, useRef, useState, useEffect } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -37,7 +37,7 @@ export default function ThemeModeSection() {
     setOpen((prev) => !prev);
   };
 
-  const handleClose = (event: Event | React.SyntheticEvent) => {
+  const handleClose = (event: Event | SyntheticEvent) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) {
       return;
     }

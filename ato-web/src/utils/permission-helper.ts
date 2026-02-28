@@ -22,7 +22,7 @@ export const parsePermission = (permission: string): { resource: string; action:
  */
 export const getGroupedPermissions = () => {
   const groups: Record<string, string[]> = {};
-  
+
   Object.values(PERMISSIONS).forEach((perm) => {
     const { resource } = parsePermission(perm);
     if (!groups[resource]) {
@@ -45,7 +45,7 @@ export const permissionsToMatrix = (assignedPermissions: string[] = []): Permiss
   Object.keys(allPermissions).forEach((resource) => {
     matrix[resource] = {};
     const resourcePerms = allPermissions[resource];
-    
+
     resourcePerms.forEach((permString) => {
       const { action } = parsePermission(permString);
       matrix[resource][action] = assignedPermissions.includes(permString);
@@ -85,19 +85,15 @@ export const isResourceAllSelected = (matrix: PermissionMatrixState, resource: s
 /**
  * Helper to toggle all permissions for a resource
  */
-export const toggleResourceAll = (
-  matrix: PermissionMatrixState, 
-  resource: string, 
-  value: boolean
-): PermissionMatrixState => {
+export const toggleResourceAll = (matrix: PermissionMatrixState, resource: string, value: boolean): PermissionMatrixState => {
   const newMatrix = { ...matrix };
   const actions = newMatrix[resource];
-  
+
   if (actions) {
     Object.keys(actions).forEach((action) => {
       actions[action] = value;
     });
   }
-  
+
   return newMatrix;
 };

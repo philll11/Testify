@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
-  content: string | React.ReactNode;
+  content: string | ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
   confirmLabel?: string;
   cancelLabel?: string;
-  confirmColor?: 'primary' | 'secondary' | 'error' |'error' | 'info' | 'success' | 'warning';
+  confirmColor?: 'primary' | 'secondary' | 'error' | 'error' | 'info' | 'success' | 'warning';
 }
 
 const ConfirmDialog = ({
@@ -23,17 +23,10 @@ const ConfirmDialog = ({
   confirmColor = 'primary'
 }: ConfirmDialogProps) => {
   return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
+    <Dialog open={open} onClose={onCancel} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
       <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
       <DialogContent>
-        <DialogContentText id="alert-dialog-description">
-          {content}
-        </DialogContentText>
+        <DialogContentText id="alert-dialog-description">{content}</DialogContentText>
       </DialogContent>
       <DialogActions sx={{ pr: 2.5, pb: 2.5 }}>
         <Button onClick={onCancel} color="secondary">

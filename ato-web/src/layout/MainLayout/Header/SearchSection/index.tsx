@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, Ref, useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -20,8 +20,8 @@ import Transitions from 'ui-component/extended/Transitions';
 import { IconAdjustmentsHorizontal, IconSearch, IconX } from '@tabler/icons-react';
 
 interface HeaderAvatarProps {
-  children?: React.ReactNode;
-  ref?: React.Ref<HTMLDivElement>;
+  children?: ReactNode;
+  ref?: Ref<HTMLDivElement>;
   [key: string]: any;
 }
 

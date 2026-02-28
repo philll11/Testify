@@ -1,3 +1,3 @@
 export enum IntegrationPlatform {
-    BOOMI = 'Boomi',
+  BOOMI = 'Boomi'
 }

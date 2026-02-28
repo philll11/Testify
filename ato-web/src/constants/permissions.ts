@@ -36,13 +36,13 @@ export const PERMISSIONS = {
   DISCOVERY_SYNC: 'Discovery:Sync',
 
   // --- Global ---
-  VIEW_DELETED: 'Global:ViewDeleted',
+  VIEW_DELETED: 'Global:ViewDeleted'
 };
 
 export const DOMAIN_MAPPING: Record<string, string[]> = {
   'Identity & Access': ['User', 'Role'],
-  'System': ['SystemConfig', 'Counters', 'Audit', 'Global'],
-  'Integration Tools': ['PlatformProfile', 'PlatformEnvironment', 'Discovery'],
+  System: ['SystemConfig', 'Counters', 'Audit', 'Global'],
+  'Integration Tools': ['PlatformProfile', 'PlatformEnvironment', 'Discovery']
 };
 
 export enum Resource {
@@ -53,5 +53,5 @@ export enum Resource {
   PLATFORM_PROFILE = 'PlatformProfile',
   PLATFORM_ENVIRONMENT = 'PlatformEnvironment',
   DISCOVERY = 'Discovery',
-  GLOBAL = 'Global',
+  GLOBAL = 'Global'
 }

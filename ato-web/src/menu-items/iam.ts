@@ -34,8 +34,7 @@ const iam: NavItem = {
       icon: icons.IconSettings2,
       breadcrumbs: true,
       permission: PERMISSIONS.ROLE_VIEW
-    },
-
+    }
   ]
 };
 

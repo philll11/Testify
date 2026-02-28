@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -32,7 +32,7 @@ interface TotalOrderLineChartCardProps {
 export default function TotalOrderLineChartCard({ isLoading }: TotalOrderLineChartCardProps) {
   const theme: any = useTheme();
 
-  const [timeValue, setTimeValue] = React.useState(false);
+  const [timeValue, setTimeValue] = useState(false);
   const [series, setSeries] = useState(yearlyData);
 
   const handleChangeTime = (_event: any, newValue: boolean) => {
@@ -162,5 +162,3 @@ export default function TotalOrderLineChartCard({ isLoading }: TotalOrderLineCha
     </>
   );
 }
-
-

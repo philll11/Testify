@@ -61,12 +61,12 @@ export function useDiscardWarning(when: boolean, message: string = 'You have uns
       onConfirm: confirmAction,
       confirmLabel: 'Discard Changes',
       cancelLabel: 'Keep Editing',
-      confirmColor: 'error' as const,
+      confirmColor: 'error' as const
     },
     /**
      * Wrap your manual close/cancel handlers with this function.
      * @example handleClose = () => trigger(() => setOpen(false));
      */
-    trigger,
+    trigger
   };
 }

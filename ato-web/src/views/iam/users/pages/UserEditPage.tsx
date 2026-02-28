@@ -9,42 +9,42 @@ import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
 import { UserFormData } from 'types/iam/user.schema';
 
 const UserEditPage = () => {
-    const { id } = useParams();
-    const { goBack } = useContextualNavigation(`/users/${id}`);
-    const { data: user, isLoading, error } = useGetUser(id!);
-    const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
-    const [isDirty, setIsDirty] = useState(false);
+  const { id } = useParams();
+  const { goBack } = useContextualNavigation(`/users/${id}`);
+  const { data: user, isLoading, error } = useGetUser(id!);
+  const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
+  const [isDirty, setIsDirty] = useState(false);
 
-    const { discardDialogProps } = useDiscardWarning(isDirty);
+  const { discardDialogProps } = useDiscardWarning(isDirty);
 
-    const handleSubmit = async (values: UserFormData) => {
-        if (!user) return;
-        try {
-            await updateUser({ id: user.id, data: { ...values } });
-            setIsDirty(false);
-            setTimeout(() => goBack(), 0);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+  const handleSubmit = async (values: UserFormData) => {
+    if (!user) return;
+    try {
+      await updateUser({ id: user.id, data: { ...values } });
+      setIsDirty(false);
+      setTimeout(() => goBack(), 0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-    if (isLoading) return <MainCard title="Loading...">Loading...</MainCard>;
-    if (!user) return <MainCard title="Error">User not found</MainCard>;
-    if (error) return <MainCard title="Error">Error loading user</MainCard>;
+  if (isLoading) return <MainCard title="Loading...">Loading...</MainCard>;
+  if (!user) return <MainCard title="Error">User not found</MainCard>;
+  if (error) return <MainCard title="Error">Error loading user</MainCard>;
 
-    return (
-        <MainCard title={`Edit User: ${user.firstName} ${user.lastName}`}>
-            <UserForm
-                mode="edit"
-                user={user}
-                onSubmit={handleSubmit}
-                isLoading={isUpdating}
-                onCancel={() => goBack()}
-                onDirtyChange={setIsDirty}
-            />
-            <ConfirmDialog {...discardDialogProps} />
-        </MainCard>
-    );
+  return (
+    <MainCard title={`Edit User: ${user.firstName} ${user.lastName}`}>
+      <UserForm
+        mode="edit"
+        user={user}
+        onSubmit={handleSubmit}
+        isLoading={isUpdating}
+        onCancel={() => goBack()}
+        onDirtyChange={setIsDirty}
+      />
+      <ConfirmDialog {...discardDialogProps} />
+    </MainCard>
+  );
 };
 
 export default UserEditPage;

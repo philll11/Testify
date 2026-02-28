@@ -41,7 +41,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
 
   const { isDashboardDrawerOpened, closeDashboardDrawer } = useMenu();
   const drawerOpen = isDashboardDrawerOpened;
-  const isSelected = !!matchPath({ path: item?.link ? item.link : (item.url || ''), end: false }, pathname);
+  const isSelected = !!matchPath({ path: item?.link ? item.link : item.url || '', end: false }, pathname);
 
   const [hoverStatus, setHover] = useState(false);
 
@@ -116,17 +116,17 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                 color: isSelected ? selectedIconColor : 'text.primary',
                 ...(!drawerOpen &&
                   level === 1 && {
-                  borderRadius: `${borderRadius}px`,
-                  width: 46,
-                  height: 46,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  '&:hover': { bgcolor: hoverBgColor },
-                  ...(isSelected && {
-                    bgcolor: selectedBgColor,
-                    '&:hover': { bgcolor: hoverBgColor }
+                    borderRadius: `${borderRadius}px`,
+                    width: 46,
+                    height: 46,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    '&:hover': { bgcolor: hoverBgColor },
+                    ...(isSelected && {
+                      bgcolor: selectedBgColor,
+                      '&:hover': { bgcolor: hoverBgColor }
+                    })
                   })
-                })
               }}
             >
               {itemIcon}

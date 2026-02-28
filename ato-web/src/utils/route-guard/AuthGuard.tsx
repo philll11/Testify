@@ -9,19 +9,19 @@ import { useAuth } from 'contexts/AuthContext';
  * @param {PropTypes.node} children children element/node
  */
 const AuthGuard = ({ children }: { children: any }) => {
-    const { isAuthenticated } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            navigate(`/pages/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
-        }
-    }, [isAuthenticated, navigate, location]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate(`/pages/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
 
-    if (!isAuthenticated) return null;
+  if (!isAuthenticated) return null;
 
-    return children;
+  return children;
 };
 
 export default AuthGuard;

@@ -46,7 +46,7 @@ export default function ProfileSection() {
   const [value, setValue] = useState('');
   const [notification, setNotification] = useState(false);
   const [open, setOpen] = useState(false);
-  
+
   const { logout, user } = useAuth();
 
   /**

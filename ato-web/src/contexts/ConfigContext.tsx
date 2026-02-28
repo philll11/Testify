@@ -28,4 +28,3 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
 
   return <ConfigContext.Provider value={memoizedValue}>{children}</ConfigContext.Provider>;
 }
-

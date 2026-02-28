@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { ReactNode, ReactElement, MouseEvent, Fragment, useRef, useState } from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -8,31 +8,30 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
-import { SvgIconProps } from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
 
 export interface ActionOption {
   label: string;
   onClick: () => void;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }
 
 interface SplitActionButtonProps {
   options: ActionOption[];
   primaryLabel?: string;
   primaryAction?: () => void;
-  primaryStartIcon?: React.ReactElement; // Icon for the main button
+  primaryStartIcon?: ReactElement; // Icon for the main button
 }
 
 /**
  * A Split Button component that shows a primary action and a dropdown for secondary actions.
  * If no primaryAction is provided, the first option becomes the primary action (standard Split Button behavior),
  * or you can treat `options[0]` as the primary.
- * 
+ *
  * In this implementation:
  * - The main button triggers `options[0].onClick`
  * - The dropdown shows `options[1...]`
- * 
+ *
  * Or if you want a distinct Primary Action separate from the list:
  * - Provide `primaryAction` prop.
  */
@@ -40,10 +39,7 @@ const SplitActionButton = ({ options, primaryLabel, primaryAction, primaryStartI
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  const handleMenuItemClick = (
-    event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    index: number,
-  ) => {
+  const handleMenuItemClick = (event: MouseEvent<HTMLLIElement>, index: number) => {
     options[index].onClick();
     setOpen(false);
   };
@@ -68,10 +64,10 @@ const SplitActionButton = ({ options, primaryLabel, primaryAction, primaryStartI
   const dropdownOptions = primaryAction ? options : options.slice(1);
 
   return (
-    <React.Fragment>
+    <Fragment>
       <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button" sx={{ boxShadow: 2 }}>
         <Button onClick={mainAction} startIcon={primaryStartIcon}>
-            {mainLabel}
+          {mainLabel}
         </Button>
         <Button
           size="small"
@@ -86,7 +82,7 @@ const SplitActionButton = ({ options, primaryLabel, primaryAction, primaryStartI
       </ButtonGroup>
       <Popper
         sx={{
-          zIndex: 1,
+          zIndex: 1
         }}
         open={open}
         anchorEl={anchorRef.current}
@@ -98,24 +94,20 @@ const SplitActionButton = ({ options, primaryLabel, primaryAction, primaryStartI
           <Grow
             {...TransitionProps}
             style={{
-              transformOrigin:
-                placement === 'bottom' ? 'center top' : 'center bottom',
+              transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'
             }}
           >
             <Paper>
               <ClickAwayListener onClickAway={handleClose}>
-                <MenuList id="split-button-menu" autoFocusItem={open} >
+                <MenuList id="split-button-menu" autoFocusItem={open}>
                   {dropdownOptions.map((option, index) => (
-                    <MenuItem
-                      key={option.label}
-                      onClick={(event) => handleMenuItemClick(event, primaryAction ? index : index + 1)}
-                    >
-                        {option.icon && (
-                            <Box component="span" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                                {option.icon}
-                            </Box>
-                        )}
-                        {option.label}
+                    <MenuItem key={option.label} onClick={(event) => handleMenuItemClick(event, primaryAction ? index : index + 1)}>
+                      {option.icon && (
+                        <Box component="span" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                          {option.icon}
+                        </Box>
+                      )}
+                      {option.label}
                     </MenuItem>
                   ))}
                 </MenuList>
@@ -124,7 +116,7 @@ const SplitActionButton = ({ options, primaryLabel, primaryAction, primaryStartI
           </Grow>
         )}
       </Popper>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

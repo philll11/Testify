@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 
 // project imports
@@ -6,7 +7,7 @@ import MainCard, { MainCardProps } from 'ui-component/cards/MainCard';
 // ==============================|| AUTHENTICATION CARD WRAPPER ||============================== //
 
 interface AuthCardWrapperProps extends MainCardProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function AuthCardWrapper({ children, ...other }: AuthCardWrapperProps) {

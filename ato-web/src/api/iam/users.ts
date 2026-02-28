@@ -20,7 +20,7 @@ export const createUser = async (data: CreateUserDto): Promise<User> => {
   return response.data;
 };
 
-export const updateUser = async ({ id, data, }: { id: string; data: UpdateUserDto;}) : Promise<User> => {
+export const updateUser = async ({ id, data }: { id: string; data: UpdateUserDto }): Promise<User> => {
   const response = await axiosServices.patch<User>(`${BASE_URL}/${id}`, data);
   return response.data;
 };

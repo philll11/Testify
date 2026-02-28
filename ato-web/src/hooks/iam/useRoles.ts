@@ -1,11 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getRoles,
-  getRole,
-  createRole,
-  updateRole,
-  deleteRole,
-} from 'api/iam/roles';
+import { getRoles, getRole, createRole, updateRole, deleteRole } from 'api/iam/roles';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';
 import { Role } from 'types/iam/role.types';
@@ -19,8 +13,8 @@ export const ROLES_KEYS = {
   mutations: {
     create: ['roles', 'create'] as const,
     update: ['roles', 'update'] as const,
-    delete: ['roles', 'delete'] as const,
-  },
+    delete: ['roles', 'delete'] as const
+  }
 };
 
 export function useGetRoles(options?: { enabled?: boolean }) {
@@ -30,7 +24,7 @@ export function useGetRoles(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ROLES_KEYS.lists(),
     queryFn: getRoles,
-    enabled: isEnabled,
+    enabled: isEnabled
   });
 }
 
@@ -44,7 +38,7 @@ export function useGetRole(id: string | undefined) {
       if (!id) return undefined;
       const allRoles = queryClient.getQueryData<Role[]>(ROLES_KEYS.lists());
       return allRoles?.find((r) => r.id === id);
-    },
+    }
   });
 }
 
@@ -55,7 +49,7 @@ export function useCreateRole() {
     mutationFn: createRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_KEYS.lists() });
-    },
+    }
   });
 }
 
@@ -67,7 +61,7 @@ export function useUpdateRole() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ROLES_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(data.id) });
-    },
+    }
   });
 }
 
@@ -78,6 +72,6 @@ export function useDeleteRole() {
     mutationFn: deleteRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_KEYS.lists() });
-    },
+    }
   });
 }

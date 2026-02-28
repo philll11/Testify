@@ -32,16 +32,16 @@ export default function MainLayout() {
   const drawerOpen = isDashboardDrawerOpened;
 
   useEffect(() => {
-    // Only handle opening based on miniDrawer change if necessary, 
+    // Only handle opening based on miniDrawer change if necessary,
     // logic might need adjustment based on behavior preference.
     if (!miniDrawer) {
-        openDashboardDrawer();
+      openDashboardDrawer();
     }
   }, [miniDrawer]);
 
   useEffect(() => {
     if (downMD) {
-        closeDashboardDrawer();
+      closeDashboardDrawer();
     }
   }, [downMD]);
 
