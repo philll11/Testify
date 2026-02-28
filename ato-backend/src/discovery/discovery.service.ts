@@ -7,6 +7,8 @@ import { SystemConfigService } from '../system/config/system-config.service';
 import { SystemConfigKeys } from '../common/constants/system-config.constants';
 import { UpdateDiscoveryConfigDto } from '../system/config/dto/update-discovery-config.dto';
 import { PlatformEnvironmentService } from '../integration/platform-environment/platform-environment.service';
+import { GetDiscoveryComponentsDto } from './dto/get-discovery-components.dto';
+import { ComponentTreeNode } from './interfaces/component-tree-node.interface';
 
 @Injectable()
 export class DiscoveryService {
@@ -128,5 +130,71 @@ export class DiscoveryService {
             this.logger.error('Error during State of the World synchronization', error instanceof Error ? error.stack : error);
             throw error;
         }
+    }
+
+    async getComponentsTree(queryDto: GetDiscoveryComponentsDto): Promise<ComponentTreeNode[]> {
+        const { profileId, isTest, search } = queryDto;
+
+        const query = this.discoveredComponentRepository.createQueryBuilder('comp')
+            .where('comp.profileId = :profileId', { profileId })
+            .orderBy('comp.folderPath', 'ASC')
+            .addOrderBy('comp.name', 'ASC');
+
+        if (isTest !== undefined) {
+            query.andWhere('comp.isTest = :isTest', { isTest });
+        }
+
+        if (search) {
+            query.andWhere('(comp.name ILIKE :search OR comp.folderPath ILIKE :search)', { search: `%${search}%` });
+        }
+
+        const components = await query.getMany();
+        return this.buildTree(components);
+    }
+
+    private buildTree(components: DiscoveredComponent[]): ComponentTreeNode[] {
+        const rootNodes: ComponentTreeNode[] = [];
+        const folderMap = new Map<string, ComponentTreeNode>();
+
+        for (const comp of components) {
+            // Determine folder path segments
+            // Remove leading/trailing slashes for clean split
+            const pathStr = comp.folderPath ? comp.folderPath.replace(/^\/+|\/+$/g, '') : '';
+            const pathSegments = pathStr ? pathStr.split('/') : [];
+
+            let currentLevelNodes = rootNodes;
+            let currentPath = '';
+
+            // Traverse and build folder structure
+            for (const segment of pathSegments) {
+                currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+
+                if (!folderMap.has(currentPath)) {
+                    const newFolderNode: ComponentTreeNode = {
+                        id: `folder_${currentPath}`,
+                        name: segment,
+                        nodeType: 'folder',
+                        children: []
+                    };
+                    folderMap.set(currentPath, newFolderNode);
+                    currentLevelNodes.push(newFolderNode);
+                }
+
+                const folderNode = folderMap.get(currentPath)!;
+                currentLevelNodes = folderNode.children!;
+            }
+
+            // Add component as leaf node
+            const componentNode: ComponentTreeNode = {
+                id: comp.componentId,
+                name: comp.name,
+                nodeType: 'component',
+                data: comp
+            };
+
+            currentLevelNodes.push(componentNode);
+        }
+
+        return rootNodes;
     }
 }

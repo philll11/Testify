@@ -62,7 +62,7 @@ describe('Discovery Module E2E', () => {
             roleRepository.create({
                 recordId: 'ROLE_SYNC_ADMIN',
                 name: 'Sync Admin',
-                permissions: [PERMISSIONS.SYSTEM_CONFIG_EDIT, PERMISSIONS.SYSTEM_CONFIG_VIEW],
+                permissions: [PERMISSIONS.DISCOVERY_SYNC, PERMISSIONS.DISCOVERY_VIEW, PERMISSIONS.SYSTEM_CONFIG_EDIT, PERMISSIONS.SYSTEM_CONFIG_VIEW],
             }),
         );
 

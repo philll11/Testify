@@ -42,7 +42,7 @@ interface ComponentReferenceQueryResponse {
 interface BoomiFolderResponse {
   id: string;
   name: string;
-  parentFolderId?: string;
+  fullPath?: string;
 }
 
 interface BoomiTestResultPayload {
@@ -177,9 +177,8 @@ export class BoomiService implements IIntegrationPlatformService {
         );
 
         let path = '';
-        if (response.data.parentFolderId) {
-          const parentPath = await this.resolveFolderPath(response.data.parentFolderId);
-          path = `${parentPath}/${response.data.name}`;
+        if (response.data.fullPath) {
+          path = response.data.fullPath.startsWith('/') ? response.data.fullPath : `/${response.data.fullPath}`;
         } else {
           path = `/${response.data.name}`;
         }

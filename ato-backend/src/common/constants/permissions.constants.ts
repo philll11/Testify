@@ -53,6 +53,10 @@ export const PERMISSIONS = {
   PLATFORM_ENVIRONMENT_EDIT: 'PlatformEnvironment:Edit',
   PLATFORM_ENVIRONMENT_DELETE: 'PlatformEnvironment:Delete',
 
+  // --- Discovery Tools ---
+  DISCOVERY_VIEW: 'Discovery:View',
+  DISCOVERY_SYNC: 'Discovery:Sync',
+
   // --- Audit Management ---
   AUDIT_VIEW: 'Audit:View',
 
@@ -78,4 +82,5 @@ export enum Resource {
   SYSTEM_CONFIG = 'SystemConfig',
   INTEGRATION_CREDENTIALS = 'IntegrationCredentials',
   INTEGRATION_CONFIG = 'IntegrationConfig',
+  DISCOVERY = 'Discovery',
 }

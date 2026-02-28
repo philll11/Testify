@@ -31,6 +31,10 @@ export const PERMISSIONS = {
   PLATFORM_ENVIRONMENT_CREATE: 'PlatformEnvironment:Create',
   PLATFORM_ENVIRONMENT_DELETE: 'PlatformEnvironment:Delete',
 
+  // --- Discovery Tools ---
+  DISCOVERY_VIEW: 'Discovery:View',
+  DISCOVERY_SYNC: 'Discovery:Sync',
+
   // --- Global ---
   VIEW_DELETED: 'Global:ViewDeleted',
 };
@@ -38,6 +42,7 @@ export const PERMISSIONS = {
 export const DOMAIN_MAPPING: Record<string, string[]> = {
   'Identity & Access': ['User', 'Role'],
   'System': ['SystemConfig', 'Counters', 'Audit', 'Global'],
+  'Integration Tools': ['PlatformProfile', 'PlatformEnvironment', 'Discovery'],
 };
 
 export enum Resource {
@@ -47,5 +52,6 @@ export enum Resource {
   SYSTEM_CONFIG = 'SystemConfig',
   PLATFORM_PROFILE = 'PlatformProfile',
   PLATFORM_ENVIRONMENT = 'PlatformEnvironment',
+  DISCOVERY = 'Discovery',
   GLOBAL = 'Global',
 }
