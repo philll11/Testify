@@ -107,7 +107,16 @@ export const ManifestPane = () => {
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>{getNodeIcon(item)}</ListItemIcon>
                 <ListItemText
-                  primary={item.name}
+                  primary={
+                    <Box display="flex" alignItems="center">
+                      {item.name}
+                      {item.nodeType === 'component' && item.data?.type && (
+                        <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                          [{item.data.type}]
+                        </Typography>
+                      )}
+                    </Box>
+                  }
                   secondary={item.id}
                   primaryTypographyProps={{ variant: 'body2' }}
                   secondaryTypographyProps={{ variant: 'caption', noWrap: true }}

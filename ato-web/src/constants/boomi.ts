@@ -1,11 +1,10 @@
 import SettingsIcon from '@mui/icons-material/Settings';
-import SyncAltIcon from '@mui/icons-material/SyncAlt';
+import MapIcon from '@mui/icons-material/Map';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
 import StorageIcon from '@mui/icons-material/Storage';
 import DataObjectIcon from '@mui/icons-material/DataObject';
 import ApiIcon from '@mui/icons-material/Api';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import CodeIcon from '@mui/icons-material/Code';
@@ -13,7 +12,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import TableChartIcon from '@mui/icons-material/TableChart';
 
 export const BOOMI_COMPONENT_TYPES = [
   'certificate',
@@ -83,9 +82,9 @@ export const BOOMI_COMPONENT_ICONS: Record<string, React.ElementType> = {
   'certificate.pgp': VpnKeyIcon,
   'connector-action': ApiIcon,
   'connector-settings': SettingsIcon,
-  crossref: SwapHorizIcon,
+  crossref: TableChartIcon,
   documentcache: StorageIcon,
-  'transform.map': SyncAltIcon,
+  'transform.map': MapIcon,
   'transform.function': FunctionsIcon,
   process: SettingsIcon, // Process usually uses Settings or AccountTree
   processproperty: ListAltIcon,

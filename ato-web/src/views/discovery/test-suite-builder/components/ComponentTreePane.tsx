@@ -26,7 +26,7 @@ import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
 import { usePlatformProfiles } from 'hooks/platform/usePlatform';
 import { useDiscoveryComponents, useTriggerSync, useSyncStatus } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
-import { BOOMI_COMPONENT_ICONS } from 'constants/boomi';
+import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
 export const getNodeIcon = (node: ComponentTreeNode) => {
   if (node.nodeType === 'folder') {
@@ -74,7 +74,14 @@ const RecursiveTreeItem = ({
             onClick={(e) => e.stopPropagation()}
           />
           {getNodeIcon(node)}
-          <Typography variant="body2">{node.name}</Typography>
+          <Box display="flex" alignItems="center">
+            <Typography variant="body2">{node.name}</Typography>
+            {node.nodeType === 'component' && node.data?.type && (
+              <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                ({BOOMI_COMPONENT_LABELS[node.data.type] || node.data.type})
+              </Typography>
+            )}
+          </Box>
         </Stack>
       }
     >
