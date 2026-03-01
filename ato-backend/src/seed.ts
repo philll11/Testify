@@ -15,6 +15,7 @@ import { PlatformProfile } from './integration/platform-profile/entities/platfor
 import { PlatformEnvironment } from './integration/platform-environment/entities/platform-environment.entity';
 import { IntegrationPlatform } from './integration/constants/integration-platform.enum';
 import { EncryptionService } from './common/encryption/encryption.service';
+import { BoomiComponentType } from './integration/boomi/constants/boomi-component-type.enum';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -48,7 +49,7 @@ async function bootstrap() {
       {
         key: SystemConfigKeys.DISCOVERY.CONFIG,
         value: {
-          componentTypes: ['process', 'webservice', 'processroute'],
+          componentTypes: Object.values(BoomiComponentType),
           testDirectoryFolderName: null,
           defaultSyncEnvironmentId: null,
           syncScheduleCron: '0 */4 * * *',

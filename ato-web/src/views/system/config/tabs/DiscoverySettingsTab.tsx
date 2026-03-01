@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Stack, Typography, Divider, TextField, Button, Chip, Autocomplete, FormControlLabel, Switch } from '@mui/material';
+import { Box, Stack, Typography, Divider, TextField, Button, Chip, Autocomplete, FormControlLabel, Switch, Alert } from '@mui/material';
 import SubCard from 'ui-component/cards/SubCard';
 import { useGetSystemConfig, useUpdateSystemConfig } from 'hooks/system/useSystemConfig';
 import { DiscoveryConfig, SystemConfigKeys } from 'api/system/config';
@@ -103,7 +103,16 @@ const DiscoverySettingsTab = () => {
               <TextField
                 {...params}
                 label="Component Types to Sync"
-                helperText="Select which component types should be fetched from the integration platform."
+                helperText={
+                  <Stack spacing={1} mt={0.5}>
+                    <Box component="span">
+                      Select which component types should be fetched from the integration platform.
+                    </Box>
+                    <Alert severity="warning" sx={{ py: 0, px: 2, '& .MuiAlert-message': { py: 1 } }}>
+                      Removing a component type will prevent those components from being accessible during Discovery and Execution.
+                    </Alert>
+                  </Stack>
+                }
               />
             )}
             renderValue={(value, getTagProps) =>

@@ -21,6 +21,7 @@ import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
 import { IntegrationModule } from './integration/integration.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { TestRegistryModule } from './test-registry/test-registry.module';
 
 @Module({
   imports: [
@@ -41,10 +42,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
       useFactory: (configService: ConfigService) => ({
         pinoHttp: {
           // Use pino-pretty for local development for human-readable logs
-          transport:
-            configService.get<string>('NODE_ENV') !== 'production'
-              ? { target: 'pino-pretty', options: { singleLine: true } }
-              : undefined,
+          transport: configService.get<string>('NODE_ENV') !== 'production' ? { target: 'pino-pretty', options: { singleLine: true } } : undefined,
           level: configService.get<string>('LOG_LEVEL', 'info'), // Default to 'info'
           // Define custom log message format for requests
           customSuccessMessage: (req, res) => {
@@ -96,6 +94,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     CountersModule,
     SystemConfigModule,
     AuditsModule,
+    TestRegistryModule,
   ],
   controllers: [AppController],
   providers: [

@@ -60,6 +60,12 @@ export const PERMISSIONS = {
   // --- Audit Management ---
   AUDIT_VIEW: 'Audit:View',
 
+  // --- Test Registry Tools ---
+  TEST_REGISTRY_VIEW: 'TestRegistry:View',
+  TEST_REGISTRY_CREATE: 'TestRegistry:Create',
+  TEST_REGISTRY_DELETE: 'TestRegistry:Delete',
+  TEST_REGISTRY_IMPORT: 'TestRegistry:Import',
+
   // --- Global & System-Wide Permissions ---
   // Special permissions that are not tied to a single resource's CRUD operations.
   /**
@@ -83,4 +89,5 @@ export enum Resource {
   INTEGRATION_CREDENTIALS = 'IntegrationCredentials',
   INTEGRATION_CONFIG = 'IntegrationConfig',
   DISCOVERY = 'Discovery',
+  TEST_REGISTRY = 'TestRegistry',
 }
