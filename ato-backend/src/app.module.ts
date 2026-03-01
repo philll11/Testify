@@ -22,6 +22,7 @@ import appConfig from './config/app.config';
 import { IntegrationModule } from './integration/integration.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { TestRegistryModule } from './test-registry/test-registry.module';
+import { CollectionsModule } from './collections/collections.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { TestRegistryModule } from './test-registry/test-registry.module';
     SystemConfigModule,
     AuditsModule,
     TestRegistryModule,
+    CollectionsModule,
   ],
   controllers: [AppController],
   providers: [

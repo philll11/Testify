@@ -44,10 +44,12 @@
     "test:e2e:test-reg:auth": "jest --config ./test/jest-e2e.json test/test-registry/test-registry.auth.e2e-spec.ts --verbose",
     "test:e2e:test-reg:audit": "jest --config ./test/jest-e2e.json test/test-registry/test-registry.audit.e2e-spec.ts --verbose",
     "test:e2e:test-reg:advanced": "jest --config ./test/jest-e2e.json test/test-registry/test-registry.advanced.e2e-spec.ts --verbose",
-    "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit && npm run test:e2e:auth:recovery && npm run test:e2e:platform-env && npm run test:e2e:platform-prof && npm run test:e2e:discovery && npm run test:e2e:test-reg:all",
+    "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit && npm run test:e2e:auth:recovery && npm run test:e2e:platform-env && npm run test:e2e:platform-prof && npm run test:e2e:discovery && npm run test:e2e:test-reg:all && npm run test:e2e:collections:all",
     "test:e2e:boomi-live": "jest --config ./test/jest-e2e.json test/boomi/boomi-live.e2e-spec.ts --verbose",
     "seed": "ts-node src/seed.ts",
-    "seed:prod": "node dist/seed.js"
+    "seed:prod": "node dist/seed.js",
+    "test:e2e:collections:all": "npm run test:e2e:collections:crud",
+    "test:e2e:collections:crud": "jest --config ./test/jest-e2e.json test/collections/collections.e2e-spec.ts --verbose"
   },
   "dependencies": {
     "@nestjs/common": "11.0.1",

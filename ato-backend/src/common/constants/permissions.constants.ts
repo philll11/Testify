@@ -66,6 +66,12 @@ export const PERMISSIONS = {
   TEST_REGISTRY_DELETE: 'TestRegistry:Delete',
   TEST_REGISTRY_IMPORT: 'TestRegistry:Import',
 
+  // --- Collection Management ---
+  COLLECTION_VIEW: 'Collection:View',
+  COLLECTION_CREATE: 'Collection:Create',
+  COLLECTION_EDIT: 'Collection:Edit',
+  COLLECTION_DELETE: 'Collection:Delete',
+
   // --- Global & System-Wide Permissions ---
   // Special permissions that are not tied to a single resource's CRUD operations.
   /**
@@ -90,4 +96,5 @@ export enum Resource {
   INTEGRATION_CONFIG = 'IntegrationConfig',
   DISCOVERY = 'Discovery',
   TEST_REGISTRY = 'TestRegistry',
+  COLLECTION = 'Collection',
 }
