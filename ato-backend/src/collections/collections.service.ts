@@ -25,11 +25,7 @@ export class CollectionsService {
     ) { }
 
     async create(createDto: CreateCollectionDto, requestingUser: User): Promise<Collection> {
-        const { name, collectionType, environmentId, componentIds = [], folderId, crawlDependencies } = createDto;
-
-        if (componentIds.length === 0 && !folderId) {
-            throw new BadRequestException('Must provide componentIds or a folderId to crawl.');
-        }
+        const { name, collectionType, environmentId, componentIds, crawlDependencies } = createDto;
 
         let discovered: any[] = [];
         if (componentIds.length > 0) {
@@ -66,8 +62,8 @@ export class CollectionsService {
 
         const saved = await this.collectionRepository.save(collection);
 
-        if (crawlDependencies && folderId && environmentId && collectionType === CollectionType.TARGETS) {
-            await this.backgroundTasksService.enqueueCrawlerJob(saved.id, folderId, environmentId);
+        if (crawlDependencies && environmentId && collectionType === CollectionType.TARGETS) {
+            await this.backgroundTasksService.enqueueCrawlerJob(saved.id, environmentId);
         }
 
         await this.auditsService.log(

@@ -1,6 +1,5 @@
 // backend/src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -32,7 +31,6 @@ import { BackgroundTasksModule } from './background-tasks/background-tasks.modul
     IntegrationModule,
     DiscoveryModule,
     EventEmitterModule.forRoot(),
-    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile:

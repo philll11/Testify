@@ -13,13 +13,9 @@ export class CreateCollectionDto {
     environmentId?: string;
 
     @IsArray()
-    @IsOptional()
+    @ArrayNotEmpty()
     @IsString({ each: true })
-    componentIds?: string[];
-
-    @IsString()
-    @IsOptional()
-    folderId?: string;
+    componentIds: string[];
 
     @IsOptional()
     crawlDependencies?: boolean;

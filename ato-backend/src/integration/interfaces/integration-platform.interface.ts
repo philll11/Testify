@@ -39,9 +39,7 @@ export interface IIntegrationPlatformService {
    * Retrieves metadata for a component AND the IDs of its direct dependencies.
    * @param componentId The ID of the component to look up.
    */
-  getComponentInfoAndDependencies(
-    componentId: string,
-  ): Promise<ComponentInfo | null>;
+  getComponentInfoAndDependencies(componentId: string): Promise<ComponentInfo | null>;
 
   /**
    * Executes a test process and polls for the result.

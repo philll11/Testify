@@ -10,11 +10,10 @@ export class BackgroundTasksService {
         @InjectQueue('background-tasks') private readonly backgroundTasksQueue: Queue,
     ) { }
 
-    async enqueueCrawlerJob(collectionId: string, folderId: string, environmentId: string): Promise<string> {
-        this.logger.log(`Enqueuing crawl-dependencies job for collection ${collectionId} on folder ${folderId}`);
+    async enqueueCrawlerJob(collectionId: string, environmentId: string): Promise<string> {
+        this.logger.log(`Enqueuing crawl-dependencies job for collection ${collectionId}`);
         const job = await this.backgroundTasksQueue.add('crawl-dependencies', {
             collectionId,
-            folderId,
             environmentId,
         }, {
             // Options like retry, delay, etc.

@@ -6,8 +6,10 @@ import { Repository } from 'typeorm';
 import { CollectionItem } from '../collections/entities/collection-item.entity';
 import { CollectionItemSourceType } from '../collections/enums/collection.enums';
 import { IntegrationService } from '../integration/integration.service';
+import { ComponentInfo, IIntegrationPlatformService } from '../integration/interfaces/integration-platform.interface';
 import { IntegrationPlatform } from '../integration/constants/integration-platform.enum';
 import { PlatformEnvironment } from '../integration/platform-environment/entities/platform-environment.entity';
+import { DiscoveryService } from '../discovery/discovery.service';
 
 @Processor('background-tasks')
 @Injectable()
@@ -20,6 +22,7 @@ export class BackgroundTasksWorker extends WorkerHost {
         @InjectRepository(PlatformEnvironment)
         private readonly platformEnvironmentRepository: Repository<PlatformEnvironment>,
         private readonly integrationService: IntegrationService,
+        private readonly discoveryService: DiscoveryService,
     ) {
         super();
     }
@@ -30,16 +33,20 @@ export class BackgroundTasksWorker extends WorkerHost {
         switch (job.name) {
             case 'crawl-dependencies':
                 return this.handleCrawlDependencies(job);
+            case 'discovery_sync_job':
+                this.logger.log('Executing database sync from queue...');
+                await this.discoveryService.syncDatabase();
+                return { success: true };
             default:
                 this.logger.warn('Unknown job type: ' + job.name);
                 throw new Error('Unknown job type: ' + job.name);
         }
     }
 
-    private async handleCrawlDependencies(job: Job<{ collectionId: string, folderId: string, environmentId: string }>): Promise<void> {
-        const { collectionId, folderId, environmentId } = job.data;
+    private async handleCrawlDependencies(job: Job<{ collectionId: string, environmentId: string }>): Promise<void> {
+        const { collectionId, environmentId } = job.data;
 
-        this.logger.log('Starting recursive crawl for folder ' + folderId + ' in environment ' + environmentId);
+        this.logger.log('Starting recursive crawl for collection ' + collectionId + ' in environment ' + environmentId);
 
         try {
             // Find Environment to get Platform type
@@ -52,35 +59,65 @@ export class BackgroundTasksWorker extends WorkerHost {
                 throw new Error('Environment or Platform Profile not found');
             }
 
-            // Let's assume we fetch dependent components somehow:
-            // This is pseudo-logic, matching the request to simulate external API
-            // For real integration this would query Boomi or other platforms
             const platformService = await this.integrationService.getServiceById(
                 'SYSTEM',
                 environment.id
             );
 
-            // Fetch folder path to be able to search via folderNames
-            const folderPath = await platformService.resolveFolderPath(folderId);
-            const folderName = folderPath.split('/').pop() || folderId;
+            // Phase 1: Retrieve existing Collection components to act as entry points
+            const existingItems = await this.collectionItemRepository.find({
+                where: { collectionId: collectionId }
+            });
 
-            const generator = platformService.searchComponents({ folderNames: [folderName], types: ['Process', 'ProcessRoute'] });
-            const components: any[] = [];
-            for await (const batch of generator) {
-                for (const component of batch) {
-                    components.push(component);
-                }
+            if (existingItems.length === 0) {
+                this.logger.log('No root components found in collection. Ending crawl.');
+                return;
             }
 
-            this.logger.log('Crawl found ' + components.length + ' nested dependencies.');
+            const rootComponentIds = existingItems.map(item => item.componentId);
+            this.logger.log(`Found ${rootComponentIds.length} root components in collection. Starting recursive dependency resolution...`);
 
+            // Phase 2: Recursively fetch all dependencies and memoize to avoid circular loops
+            const finalComponentsMap = new Map<string, ComponentInfo>();
+
+            const _recursiveHelper = async (componentId: string): Promise<void> => {
+                if (finalComponentsMap.has(componentId)) return; // Memoization / Circular dependency protection
+
+                const componentInfo = await platformService.getComponentInfoAndDependencies(componentId);
+
+                if (!componentInfo) {
+                    // Cache missed/deleted components so we don't spam requests for them
+                    finalComponentsMap.set(componentId, { id: componentId, name: 'Component Not Found', type: 'N/A', dependencyIds: [] });
+                    return;
+                }
+
+                finalComponentsMap.set(componentId, componentInfo);
+
+                // Recursively fetch all listed direct dependencies concurrently
+                const discoveryPromises = componentInfo.dependencyIds.map(depId => _recursiveHelper(depId));
+                await Promise.all(discoveryPromises);
+            };
+
+            // Start recursion from all discovered root entries
+            for (const rootId of rootComponentIds) {
+                await _recursiveHelper(rootId);
+            }
+
+            const discoveredComponents = Array.from(finalComponentsMap.values()).filter(c => c.type !== 'N/A');
+
+            this.logger.log(`Recursive crawl finished. Discovered ${discoveredComponents.length} total unique components/dependencies.`);
+
+            const existingItemIds = new Set(rootComponentIds);
             const items: CollectionItem[] = [];
-            for (const comp of components) {
-                const item = new CollectionItem();
-                item.collectionId = collectionId;
-                item.componentId = comp.id;
-                item.sourceType = CollectionItemSourceType.DISCOVERED;
-                items.push(item);
+
+            for (const comp of discoveredComponents) {
+                if (!existingItemIds.has(comp.id)) {
+                    const item = new CollectionItem();
+                    item.collectionId = collectionId;
+                    item.componentId = comp.id;
+                    item.sourceType = CollectionItemSourceType.DISCOVERED;
+                    items.push(item);
+                }
             }
 
             // Save chunked to avoid large transaction issues
