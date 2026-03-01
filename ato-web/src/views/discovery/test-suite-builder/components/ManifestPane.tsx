@@ -24,10 +24,14 @@ import { getNodeIcon } from './ComponentTreePane';
 import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
 export const ManifestPane = () => {
-  const { manifestList, setManifestList, toggleNodeSelection, profileId } = useTestSuiteBuilderContext();
+  const { manifestList, setManifestList, toggleNodeSelection, setSelectedNodeIds, profileId } = useTestSuiteBuilderContext();
 
   const [environmentId, setEnvironmentId] = useState<string>('');
   const [dependencyDiscovery, setDependencyDiscovery] = useState<boolean>(true);
+
+  // Edit Mode state
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
 
   const { data: environments } = usePlatformEnvironments();
 
@@ -37,6 +41,35 @@ export const ManifestPane = () => {
   const handleRemoveItem = (id: string) => {
     toggleNodeSelection(id, false);
     setManifestList(manifestList.filter((item) => item.id !== id));
+  };
+
+  const handleClearAll = () => {
+    setManifestList([]);
+    setSelectedNodeIds([]);
+    setCheckedIds([]);
+    setIsEditMode(false);
+  };
+
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      setCheckedIds(manifestList.map((item) => item.id));
+    } else {
+      setCheckedIds([]);
+    }
+  };
+
+  const handleToggleCheck = (id: string) => {
+    setCheckedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleRemoveSelected = () => {
+    const idsToRemove = new Set(checkedIds);
+    checkedIds.forEach((id) => toggleNodeSelection(id, false));
+    setManifestList(manifestList.filter((item) => !idsToRemove.has(item.id)));
+    setCheckedIds([]);
+    setIsEditMode(false);
   };
 
   const handleConfirmSelection = () => {
@@ -79,7 +112,60 @@ export const ManifestPane = () => {
 
       <Divider />
 
-      <Typography variant="subtitle1">Selected Components ({manifestList.length})</Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ minHeight: 40 }}
+      >
+        {!isEditMode ? (
+          <>
+            <Typography variant="subtitle1">Selected Components ({manifestList.length})</Typography>
+            <Box>
+              {manifestList.length > 0 && (
+                <>
+                  <Button size="small" onClick={() => setIsEditMode(true)} sx={{ mr: 1 }}>
+                    Edit
+                  </Button>
+                  <Button size="small" color="error" onClick={handleClearAll} startIcon={<DeleteIcon />}>
+                    Clear All
+                  </Button>
+                </>
+              )}
+            </Box>
+          </>
+        ) : (
+          <>
+            <Box display="flex" alignItems="center">
+              <Checkbox
+                checked={checkedIds.length > 0 && checkedIds.length === manifestList.length}
+                indeterminate={checkedIds.length > 0 && checkedIds.length < manifestList.length}
+                onChange={handleSelectAll}
+                size="small"
+                sx={{ p: 0.5, mr: 1 }}
+              />
+              <Typography variant="subtitle2">
+                {checkedIds.length} Selected
+              </Typography>
+            </Box>
+            <Box>
+              <Button size="small" onClick={() => setIsEditMode(false)} sx={{ mr: 1 }}>
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                variant="contained"
+                onClick={handleRemoveSelected}
+                disabled={checkedIds.length === 0}
+                startIcon={<DeleteIcon />}
+              >
+                Remove
+              </Button>
+            </Box>
+          </>
+        )}
+      </Box>
 
       <Box
         sx={{
@@ -96,34 +182,65 @@ export const ManifestPane = () => {
             No components selected.
           </Typography>
         ) : (
-          <List dense>
+          <List dense disablePadding>
             {manifestList.map((item) => (
               <ListItem
                 key={item.id}
+                disablePadding={isEditMode}
                 secondaryAction={
-                  <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveItem(item.id)}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  !isEditMode && (
+                    <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveItem(item.id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  )
                 }
               >
-                <ListItemIcon sx={{ minWidth: 36 }}>{getNodeIcon(item)}</ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center">
-                      {item.name}
-                      {item.nodeType === 'component' && item.data?.type && (
-                        <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
-                          ({BOOMI_COMPONENT_LABELS[item.data.type] || item.data.type})
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                  secondary={item.id}
-                  slotProps={{
-                    primary: { variant: 'body2' },
-                    secondary: { variant: 'caption', noWrap: true }
+                <Box
+                  onClick={() => isEditMode && handleToggleCheck(item.id)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    ...(isEditMode && {
+                      cursor: 'pointer',
+                      px: 2,
+                      py: 0.5,
+                      '&:hover': { bgcolor: 'action.hover' }
+                    })
                   }}
-                />
+                >
+                  {isEditMode ? (
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <Checkbox
+                        edge="start"
+                        checked={checkedIds.includes(item.id)}
+                        tabIndex={-1}
+                        disableRipple
+                        size="small"
+                      />
+                    </ListItemIcon>
+                  ) : (
+                    <ListItemIcon sx={{ minWidth: 36 }}>{getNodeIcon(item)}</ListItemIcon>
+                  )}
+
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center">
+                        {item.name}
+                        {item.nodeType === 'component' && item.data?.type && (
+                          <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                            ({BOOMI_COMPONENT_LABELS[item.data.type] || item.data.type})
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    secondary={item.id}
+                    slotProps={{
+                      primary: { variant: 'body2' },
+                      secondary: { variant: 'caption', noWrap: true }
+                    }}
+                  />
+                </Box>
               </ListItem>
             ))}
           </List>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   Box,
   TextField,
@@ -13,14 +13,17 @@ import {
   Stack,
   Checkbox,
   Button,
-  FormHelperText
+  FormHelperText,
+  IconButton
 } from '@mui/material';
-import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import { Tree, NodeRendererProps } from 'react-arborist';
+import useMeasure from 'react-use-measure';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ScienceIcon from '@mui/icons-material/Science';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
 import { usePlatformProfiles } from 'hooks/platform/usePlatform';
@@ -50,49 +53,6 @@ export const getNodeIcon = (node: ComponentTreeNode) => {
   return <InsertDriveFileIcon color="action" fontSize="small" />;
 };
 
-const RecursiveTreeItem = ({
-  node,
-  selectedNodeIds,
-  onToggle
-}: {
-  node: ComponentTreeNode;
-  selectedNodeIds: string[];
-  onToggle: (id: string, isSelected: boolean, nodeDetail: ComponentTreeNode) => void;
-}) => {
-  // Determine if it's a folder or leaf
-  const isSelected = selectedNodeIds.includes(node.id);
-
-  return (
-    <TreeItem
-      itemId={node.id}
-      label={
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Checkbox
-            size="small"
-            checked={isSelected}
-            onChange={(e) => onToggle(node.id, e.target.checked, node)}
-            onClick={(e) => e.stopPropagation()}
-          />
-          {getNodeIcon(node)}
-          <Box display="flex" alignItems="center">
-            <Typography variant="body2">{node.name}</Typography>
-            {node.nodeType === 'component' && node.data?.type && (
-              <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
-                ({BOOMI_COMPONENT_LABELS[node.data.type] || node.data.type})
-              </Typography>
-            )}
-          </Box>
-        </Stack>
-      }
-    >
-      {node.children &&
-        node.children.map((child) => (
-          <RecursiveTreeItem key={child.id} node={child} selectedNodeIds={selectedNodeIds} onToggle={onToggle} />
-        ))}
-    </TreeItem>
-  );
-};
-
 const flattenNodes = (node: ComponentTreeNode): ComponentTreeNode[] => {
   let list = [node];
   if (node.children) {
@@ -103,29 +63,116 @@ const flattenNodes = (node: ComponentTreeNode): ComponentTreeNode[] => {
   return list;
 };
 
+const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<ComponentTreeNode>) => {
+  const { selectedNodeIds, manifestList, setSelectedNodeIds, setManifestList } = useTestSuiteBuilderContext();
+  const nodeData = node.data;
+
+  const isSelected = selectedNodeIds.includes(nodeData.id);
+
+  const handleCheckboxToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const isChecked = e.target.checked;
+
+    const affectedNodes = flattenNodes(nodeData);
+    const affectedIds = new Set(affectedNodes.map(n => n.id));
+
+    if (isChecked) {
+      const newIdsSet = new Set(selectedNodeIds);
+      const newManifest = [...manifestList];
+      affectedNodes.forEach((n) => {
+        if (!newIdsSet.has(n.id)) {
+          newIdsSet.add(n.id);
+          if (n.nodeType === 'component') newManifest.push(n);
+        }
+      });
+      setSelectedNodeIds(Array.from(newIdsSet));
+      setManifestList(newManifest);
+    } else {
+      setSelectedNodeIds(selectedNodeIds.filter(id => !affectedIds.has(id)));
+      setManifestList(manifestList.filter(item => !affectedIds.has(item.id)));
+    }
+  };
+
+  return (
+    <Box
+      style={style}
+      onClick={() => node.toggle()}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        pl: node.level * 2,
+        cursor: 'pointer',
+        '&:hover': { bgcolor: 'action.hover' }
+      }}
+    >
+      {node.isInternal ? (
+        <IconButton size="small" disableRipple sx={{ p: 0.5 }}>
+          {node.isOpen ? <ExpandMoreIcon fontSize="inherit" /> : <ChevronRightIcon fontSize="inherit" />}
+        </IconButton>
+      ) : (
+        <Box width={24} />
+      )}
+
+      <Checkbox
+        size="small"
+        checked={isSelected}
+        onChange={handleCheckboxToggle}
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {getNodeIcon(nodeData)}
+
+      <Box display="flex" alignItems="center" ml={1} overflow="hidden">
+        <Typography variant="body2" noWrap>{nodeData.name}</Typography>
+        {nodeData.nodeType === 'component' && nodeData.data?.type && (
+          <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1, whiteSpace: 'nowrap' }}>
+            ({BOOMI_COMPONENT_LABELS[nodeData.data.type] || nodeData.data.type})
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+});
+
+const DebouncedSearchInput = ({
+  initialValue,
+  onSearch
+}: {
+  initialValue: string;
+  onSearch: (value: string) => void;
+}) => {
+  const [localSearch, setLocalSearch] = useState(initialValue);
+
+  useEffect(() => {
+    const handler = setTimeout(() => onSearch(localSearch), 500);
+    return () => clearTimeout(handler);
+  }, [localSearch, onSearch]);
+
+  return (
+    <TextField
+      fullWidth
+      size="small"
+      label="Search Components"
+      value={localSearch}
+      onChange={(e) => setLocalSearch(e.target.value)}
+    />
+  );
+};
+
 export const ComponentTreePane = () => {
+  const renderStart = performance.now();
+  useEffect(() => {
+    console.log(`[Perf] ComponentTreePane render committed in ${performance.now() - renderStart}ms`);
+  });
+
   const {
     profileId,
     setProfileId,
     isTestMode,
     setIsTestMode,
     searchQuery,
-    setSearchQuery,
-    selectedNodeIds,
-    setSelectedNodeIds,
-    setManifestList,
-    manifestList
+    setSearchQuery
   } = useTestSuiteBuilderContext();
-
-  // Local state for debounced search
-  const [localSearch, setLocalSearch] = useState(searchQuery);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setSearchQuery(localSearch);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [localSearch, setSearchQuery]);
 
   // Data fetching
   const { data: profiles, isLoading: profilesLoading } = usePlatformProfiles();
@@ -151,33 +198,7 @@ export const ComponentTreePane = () => {
   const { mutate: handleSync, isPending: isSyncing } = useTriggerSync();
   const { data: syncStatus } = useSyncStatus();
 
-  // When toggling a node, we apply cascading selection behavior
-  const handleToggle = (_id: string, isSelected: boolean, nodeDetail: ComponentTreeNode) => {
-    const affectedNodes = flattenNodes(nodeDetail);
-    const affectedIds = new Set(affectedNodes.map((n) => n.id));
-
-    if (isSelected) {
-      // Add all affected nodes that are not currently selected
-      const newIdsSet = new Set(selectedNodeIds);
-      const newManifest = [...manifestList];
-
-      affectedNodes.forEach((node) => {
-        if (!newIdsSet.has(node.id)) {
-          newIdsSet.add(node.id);
-          if (node.nodeType === 'component') {
-            newManifest.push(node);
-          }
-        }
-      });
-
-      setSelectedNodeIds(Array.from(newIdsSet));
-      setManifestList(newManifest);
-    } else {
-      // Remove affected nodes
-      setSelectedNodeIds(selectedNodeIds.filter((existingId) => !affectedIds.has(existingId)));
-      setManifestList(manifestList.filter((item) => !affectedIds.has(item.id)));
-    }
-  };
+  const [ref, bounds] = useMeasure();
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%">
@@ -231,18 +252,18 @@ export const ComponentTreePane = () => {
           <FormControlLabel control={<Switch checked={isTestMode} onChange={(e) => setIsTestMode(e.target.checked)} />} label="Test Mode" />
         </Stack>
 
-        <TextField fullWidth size="small" label="Search Components" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} />
+        <DebouncedSearchInput initialValue={searchQuery} onSearch={setSearchQuery} />
       </Box>
 
       <Box
+        ref={ref}
         sx={{
           flexGrow: 1,
           minHeight: 0,
-          overflowY: 'auto',
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 1,
-          p: 1
+          overflow: 'hidden'
         }}
       >
         {treeLoading && (
@@ -258,12 +279,17 @@ export const ComponentTreePane = () => {
           </Typography>
         )}
 
-        {!treeLoading && !treeError && treeData && treeData.length > 0 && (
-          <SimpleTreeView>
-            {treeData.map((node) => (
-              <RecursiveTreeItem key={node.id} node={node} selectedNodeIds={selectedNodeIds} onToggle={handleToggle} />
-            ))}
-          </SimpleTreeView>
+        {!treeLoading && !treeError && treeData && treeData.length > 0 && bounds.height > 0 && (
+          <Tree
+            data={treeData}
+            width={bounds.width}
+            height={bounds.height}
+            rowHeight={32}
+            searchTerm={searchQuery}
+            openByDefault={false}
+          >
+            {ComponentTreeNodeItem}
+          </Tree>
         )}
       </Box>
     </Box>

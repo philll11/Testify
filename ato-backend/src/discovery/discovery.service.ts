@@ -177,6 +177,8 @@ export class DiscoveryService {
     }
 
     async getComponentsTree({ profileId, isTest, search }: QueryDiscoveryComponentParameters): Promise<ComponentTreeNode[]> {
+        const startTotal = performance.now();
+        this.logger.debug(`[getComponentsTree] Start - Profile: ${profileId}, search: "${search || ''}"`);
 
         const query = this.discoveredComponentRepository.createQueryBuilder('comp')
             .where('comp.profileId = :profileId', { profileId })
@@ -191,8 +193,16 @@ export class DiscoveryService {
             query.andWhere('(comp.name ILIKE :search OR comp.folderPath ILIKE :search)', { search: `%${search}%` });
         }
 
+        const startQuery = performance.now();
         const components = await query.getMany();
-        return this.buildTree(components);
+        this.logger.debug(`[getComponentsTree] Query execution retrieved ${components.length} components. Time: ${(performance.now() - startQuery).toFixed(2)}ms`);
+
+        const startBuild = performance.now();
+        const tree = this.buildTree(components);
+        this.logger.debug(`[getComponentsTree] Folder structuring and tree building. Time: ${(performance.now() - startBuild).toFixed(2)}ms`);
+        this.logger.debug(`[getComponentsTree] Total Backend Execution Time: ${(performance.now() - startTotal).toFixed(2)}ms`);
+
+        return tree;
     }
 
     private buildTree(components: DiscoveredComponent[]): ComponentTreeNode[] {

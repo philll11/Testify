@@ -4,9 +4,12 @@ import { ComponentTreeNode, GetDiscoveryComponentsDto } from 'types/discovery/di
 const DISCOVERY_URL = '/discovery';
 
 export const getDiscoveryComponents = async (params?: GetDiscoveryComponentsDto): Promise<ComponentTreeNode[]> => {
+  const perfKey = `[API Fetch] getDiscoveryComponents (search: ${params?.search || 'none'})`;
+  console.time(perfKey);
   const response = await axiosServices.get<{ data: ComponentTreeNode[] }>(`${DISCOVERY_URL}/components`, {
     params
   });
+  console.timeEnd(perfKey);
   return response.data.data;
 };
 
