@@ -8,6 +8,7 @@ import { TestRegistry } from '../test-registry/entities/test-registry.entity';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionStatus, CollectionType, CollectionItemSourceType } from './enums/collection.enums';
 import { AuditsService } from '../system/audits/audits.service';
+import { BackgroundTasksService } from '../background-tasks/background-tasks.service';
 import { AuditAction } from '../system/audits/entities/audit.entity';
 import { Resource } from '../common/constants/permissions.constants';
 import { User } from '../iam/users/entities/user.entity';
@@ -20,34 +21,35 @@ export class CollectionsService {
         @InjectRepository(DiscoveredComponent) private readonly discoveredComponentRepository: Repository<DiscoveredComponent>,
         @InjectRepository(TestRegistry) private readonly testRegistryRepository: Repository<TestRegistry>,
         @Inject(forwardRef(() => AuditsService)) private readonly auditsService: AuditsService,
+        @Inject(forwardRef(() => BackgroundTasksService)) private readonly backgroundTasksService: BackgroundTasksService,
     ) { }
 
     async create(createDto: CreateCollectionDto, requestingUser: User): Promise<Collection> {
-        const { name, collectionType, environmentId, componentIds } = createDto;
+        const { name, collectionType, environmentId, componentIds = [], folderId, crawlDependencies } = createDto;
 
-        // Local Resolution (No External APIs)
-        // Find all discovered components matching the requested component IDs
-        const discovered = await this.discoveredComponentRepository.find({
-            where: { componentId: In(componentIds) },
-        });
-
-        if (discovered.length === 0) {
-            throw new BadRequestException('None of the specified components were found in the local discovery cache.');
+        if (componentIds.length === 0 && !folderId) {
+            throw new BadRequestException('Must provide componentIds or a folderId to crawl.');
         }
 
-        if (collectionType === CollectionType.TESTS) {
-            // Validate that all resolved components for a TESTS collection are actually tests
-            const invalidTests = discovered.filter(comp => !comp.isTest);
-            if (invalidTests.length > 0) {
-                throw new BadRequestException(`Collection is of type TESTS, but some components are not tests: ${invalidTests.map(c => c.componentId).join(', ')}`);
+        let discovered: any[] = [];
+        if (componentIds.length > 0) {
+            discovered = await this.discoveredComponentRepository.find({
+                where: { componentId: In(componentIds) },
+            });
+
+            if (discovered.length === 0) {
+                throw new BadRequestException('None of the specified components were found in the local discovery cache.');
+            }
+
+            if (collectionType === CollectionType.TESTS) {
+                const invalidTests = discovered.filter(comp => !comp.isTest);
+                if (invalidTests.length > 0) {
+                    throw new BadRequestException(`Collection is of type TESTS, but some components are not tests: ${invalidTests.map(c => c.componentId).join(', ')}`);
+                }
             }
         }
 
-        // Map discovered items to unique items just in case duplicates were provided
         const itemsToCreate = Array.from(new Set(componentIds)).map(compId => {
-            // Is it discovered?
-            const isDiscovered = discovered.some(c => c.componentId === compId);
-
             const item = new CollectionItem();
             item.componentId = compId;
             item.sourceType = CollectionItemSourceType.ARG; // Direct request
@@ -63,6 +65,10 @@ export class CollectionsService {
         });
 
         const saved = await this.collectionRepository.save(collection);
+
+        if (crawlDependencies && folderId && environmentId && collectionType === CollectionType.TARGETS) {
+            await this.backgroundTasksService.enqueueCrawlerJob(saved.id, folderId, environmentId);
+        }
 
         await this.auditsService.log(
             Resource.COLLECTION,
@@ -87,9 +93,9 @@ export class CollectionsService {
             throw new NotFoundException(`Collection with ID ${id} not found`);
         }
 
-        const componentIds = collection.items.map(item => item.componentId);
+        const compIds = collection.items.map(item => item.componentId);
 
-        if (componentIds.length === 0) {
+        if (compIds.length === 0) {
             return {
                 ...collection,
                 manifest: [],
@@ -97,9 +103,8 @@ export class CollectionsService {
         }
 
         if (collection.collectionType === CollectionType.TESTS) {
-            // Flat response for TESTS mode
             const tests = await this.discoveredComponentRepository.find({
-                where: { componentId: In(componentIds) },
+                where: { componentId: In(compIds) },
             });
 
             return {
@@ -107,14 +112,12 @@ export class CollectionsService {
                 manifest: tests,
             };
         } else {
-            // TARGETS mode requires looking up tests mapped to these target components
             const targets = await this.discoveredComponentRepository.find({
-                where: { componentId: In(componentIds) },
+                where: { componentId: In(compIds) },
             });
 
-            // Find all mappings where targetComponentId is one of our targets
             const mappings = await this.testRegistryRepository.find({
-                where: { targetComponentId: In(componentIds) },
+                where: { targetComponentId: In(compIds) },
             });
 
             const testIds = mappings.map(m => m.testComponentId);
@@ -126,7 +129,6 @@ export class CollectionsService {
                 });
             }
 
-            // Build nested manifest
             const manifest = targets.map(target => {
                 const targetMappings = mappings.filter(m => m.targetComponentId === target.componentId);
                 const targetTestIds = targetMappings.map(m => m.testComponentId);

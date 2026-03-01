@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
@@ -23,6 +24,7 @@ import { IntegrationModule } from './integration/integration.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { TestRegistryModule } from './test-registry/test-registry.module';
 import { CollectionsModule } from './collections/collections.module';
+import { BackgroundTasksModule } from './background-tasks/background-tasks.module';
 
 @Module({
   imports: [
@@ -88,6 +90,16 @@ import { CollectionsModule } from './collections/collections.module';
       }),
       inject: [ConfigService],
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -97,6 +109,7 @@ import { CollectionsModule } from './collections/collections.module';
     AuditsModule,
     TestRegistryModule,
     CollectionsModule,
+    BackgroundTasksModule,
   ],
   controllers: [AppController],
   providers: [
