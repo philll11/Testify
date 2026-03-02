@@ -1,3 +1,4 @@
+import { ElementType } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MapIcon from '@mui/icons-material/Map';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -77,7 +78,7 @@ export const BOOMI_COMPONENT_LABELS: Record<string, string> = {
 };
 
 // Map each component type to an appropriate MUI icon
-export const BOOMI_COMPONENT_ICONS: Record<string, React.ElementType> = {
+export const BOOMI_COMPONENT_ICONS: Record<string, ElementType> = {
   certificate: VpnKeyIcon,
   'certificate.pgp': VpnKeyIcon,
   'connector-action': ApiIcon,

@@ -38,7 +38,7 @@ const EnvironmentEditPage = Loadable(lazy(() => import('views/platform/environme
 const AccountProfile = Loadable(lazy(() => import('views/iam/users/pages/account-profile/AccountProfile')));
 
 // discovery routing
-const TestSuiteBuilderPage = Loadable(lazy(() => import('views/discovery/test-suite-builder')));
+const CollectionBuilderPage = Loadable(lazy(() => import('views/discovery/collection-builder')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -169,8 +169,8 @@ const MainRoutes: RouteObject = {
       path: 'discovery',
       children: [
         {
-          path: 'test-suite-builder',
-          element: <TestSuiteBuilderPage />
+          path: 'collection-builder',
+          element: <CollectionBuilderPage />
         }
       ]
     }

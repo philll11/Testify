@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, ChangeEvent } from 'react';
 import {
   Box,
   TextField,
@@ -25,7 +25,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
+import { useCollectionBuilderContext } from '../context/CollectionBuilderContext';
 import { usePlatformProfiles } from 'hooks/platform/usePlatform';
 import { useDiscoveryComponents, useTriggerSync, useSyncStatus } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
@@ -64,12 +64,12 @@ const flattenNodes = (node: ComponentTreeNode): ComponentTreeNode[] => {
 };
 
 const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<ComponentTreeNode>) => {
-  const { selectedNodeIds, manifestList, setSelectedNodeIds, setManifestList } = useTestSuiteBuilderContext();
+  const { selectedNodeIds, selectedItems, setSelectedNodeIds, setselectedItems } = useCollectionBuilderContext();
   const nodeData = node.data;
 
   const isSelected = selectedNodeIds.includes(nodeData.id);
 
-  const handleCheckboxToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxToggle = (e: ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     const isChecked = e.target.checked;
 
@@ -78,7 +78,7 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
 
     if (isChecked) {
       const newIdsSet = new Set(selectedNodeIds);
-      const newManifest = [...manifestList];
+      const newManifest = [...selectedItems];
       affectedNodes.forEach((n) => {
         if (!newIdsSet.has(n.id)) {
           newIdsSet.add(n.id);
@@ -86,10 +86,10 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
         }
       });
       setSelectedNodeIds(Array.from(newIdsSet));
-      setManifestList(newManifest);
+      setselectedItems(newManifest);
     } else {
       setSelectedNodeIds(selectedNodeIds.filter(id => !affectedIds.has(id)));
-      setManifestList(manifestList.filter(item => !affectedIds.has(item.id)));
+      setselectedItems(selectedItems.filter(item => !affectedIds.has(item.id)));
     }
   };
 
@@ -168,11 +168,11 @@ export const ComponentTreePane = () => {
   const {
     profileId,
     setProfileId,
-    isTestMode,
-    setIsTestMode,
+    collectionType,
+    setCollectionType,
     searchQuery,
     setSearchQuery
-  } = useTestSuiteBuilderContext();
+  } = useCollectionBuilderContext();
 
   // Data fetching
   const { data: profiles, isLoading: profilesLoading } = usePlatformProfiles();
@@ -191,7 +191,7 @@ export const ComponentTreePane = () => {
     error: treeError
   } = useDiscoveryComponents({
     profileId,
-    isTest: isTestMode,
+    isTest: collectionType === 'TESTS',
     search: searchQuery || undefined
   });
 
@@ -249,7 +249,15 @@ export const ComponentTreePane = () => {
         </FormControl>
 
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <FormControlLabel control={<Switch checked={isTestMode} onChange={(e) => setIsTestMode(e.target.checked)} />} label="Test Mode" />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={collectionType === 'TESTS'}
+                onChange={(e) => setCollectionType(e.target.checked ? 'TESTS' : 'TARGETS')}
+              />
+            }
+            label={collectionType === 'TESTS' ? "Test Mode" : "Targets Mode"}
+          />
         </Stack>
 
         <DebouncedSearchInput initialValue={searchQuery} onSearch={setSearchQuery} />

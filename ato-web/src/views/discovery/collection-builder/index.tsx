@@ -1,14 +1,14 @@
 import { Grid, Divider } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { TestSuiteBuilderProvider } from './context/TestSuiteBuilderContext';
+import { CollectionBuilderProvider } from './context/CollectionBuilderContext';
 import { ComponentTreePane } from './components/ComponentTreePane';
-import { ManifestPane } from './components/ManifestPane';
+import { CollectionDraftPane } from './components/CollectionDraftPane';
 
-const TestSuiteBuilderPage = () => {
+const CollectionBuilderPage = () => {
   return (
-    <TestSuiteBuilderProvider>
+    <CollectionBuilderProvider>
       <MainCard
-        title="Test Suite Builder"
+        title="Collection Builder"
         sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, height: 'calc(100vh - 130px)' }}
         contentSX={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}
       >
@@ -23,14 +23,14 @@ const TestSuiteBuilderPage = () => {
             <Divider orientation="vertical" />
           </Grid>
 
-          {/* Right Pane: Manifest Selection List */}
+          {/* Right Pane: Collection Draft Pre-execution List */}
           <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <ManifestPane />
+            <CollectionDraftPane />
           </Grid>
         </Grid>
       </MainCard>
-    </TestSuiteBuilderProvider>
+    </CollectionBuilderProvider>
   );
 };
 
-export default TestSuiteBuilderPage;
+export default CollectionBuilderPage;

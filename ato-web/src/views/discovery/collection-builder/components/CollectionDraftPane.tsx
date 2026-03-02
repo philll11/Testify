@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import {
   Box,
   Typography,
@@ -18,13 +18,13 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import { useTestSuiteBuilderContext } from '../context/TestSuiteBuilderContext';
+import { useCollectionBuilderContext } from '../context/CollectionBuilderContext';
 import { usePlatformEnvironments } from 'hooks/platform/usePlatform';
 import { getNodeIcon } from './ComponentTreePane';
 import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
-export const ManifestPane = () => {
-  const { manifestList, setManifestList, toggleNodeSelection, setSelectedNodeIds, profileId } = useTestSuiteBuilderContext();
+export const CollectionDraftPane = () => {
+  const { selectedItems, setSelectedItems, toggleNodeSelection, setSelectedNodeIds, profileId } = useCollectionBuilderContext();
 
   const [environmentId, setEnvironmentId] = useState<string>('');
   const [dependencyDiscovery, setDependencyDiscovery] = useState<boolean>(true);
@@ -40,19 +40,19 @@ export const ManifestPane = () => {
 
   const handleRemoveItem = (id: string) => {
     toggleNodeSelection(id, false);
-    setManifestList(manifestList.filter((item) => item.id !== id));
+    setSelectedItems(selectedItems.filter((item) => item.id !== id));
   };
 
   const handleClearAll = () => {
-    setManifestList([]);
+    setSelectedItems([]);
     setSelectedNodeIds([]);
     setCheckedIds([]);
     setIsEditMode(false);
   };
 
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectAll = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      setCheckedIds(manifestList.map((item) => item.id));
+      setCheckedIds(selectedItems.map((item) => item.id));
     } else {
       setCheckedIds([]);
     }
@@ -67,7 +67,7 @@ export const ManifestPane = () => {
   const handleRemoveSelected = () => {
     const idsToRemove = new Set(checkedIds);
     checkedIds.forEach((id) => toggleNodeSelection(id, false));
-    setManifestList(manifestList.filter((item) => !idsToRemove.has(item.id)));
+    setSelectedItems(selectedItems.filter((item) => !idsToRemove.has(item.id)));
     setCheckedIds([]);
     setIsEditMode(false);
   };
@@ -78,14 +78,14 @@ export const ManifestPane = () => {
       profileId,
       environmentId,
       dependencyDiscovery,
-      components: manifestList
+      components: selectedItems
     });
     alert('Component selection payload built successfully! Check console for details.');
   };
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%">
-      <Typography variant="h4">Suite Manifest</Typography>
+      <Typography variant="h4">Component Selection</Typography>
 
       <Box display="flex" flexDirection="column" gap={2}>
         <FormControl fullWidth size="small" disabled={!profileId}>
@@ -120,9 +120,9 @@ export const ManifestPane = () => {
       >
         {!isEditMode ? (
           <>
-            <Typography variant="subtitle1">Selected Components ({manifestList.length})</Typography>
+            <Typography variant="subtitle1">Selected Components ({selectedItems.length})</Typography>
             <Box>
-              {manifestList.length > 0 && (
+              {selectedItems.length > 0 && (
                 <>
                   <Button size="small" onClick={() => setIsEditMode(true)} sx={{ mr: 1 }}>
                     Edit
@@ -138,8 +138,8 @@ export const ManifestPane = () => {
           <>
             <Box display="flex" alignItems="center">
               <Checkbox
-                checked={checkedIds.length > 0 && checkedIds.length === manifestList.length}
-                indeterminate={checkedIds.length > 0 && checkedIds.length < manifestList.length}
+                checked={checkedIds.length > 0 && checkedIds.length === selectedItems.length}
+                indeterminate={checkedIds.length > 0 && checkedIds.length < selectedItems.length}
                 onChange={handleSelectAll}
                 size="small"
                 sx={{ p: 0.5, mr: 1 }}
@@ -177,13 +177,13 @@ export const ManifestPane = () => {
           minHeight: 0
         }}
       >
-        {manifestList.length === 0 ? (
+        {selectedItems.length === 0 ? (
           <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
             No components selected.
           </Typography>
         ) : (
           <List dense disablePadding>
-            {manifestList.map((item) => (
+            {selectedItems.map((item) => (
               <ListItem
                 key={item.id}
                 disablePadding={isEditMode}
@@ -252,10 +252,10 @@ export const ManifestPane = () => {
         color="primary"
         size="large"
         startIcon={<RocketLaunchIcon />}
-        disabled={manifestList.length === 0 || !environmentId}
+        disabled={selectedItems.length === 0 || !environmentId}
         onClick={handleConfirmSelection}
       >
-        Create Test Suite
+        Create Collection
       </Button>
     </Box>
   );

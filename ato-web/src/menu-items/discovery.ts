@@ -16,10 +16,10 @@ const discovery: NavItem = {
   type: 'group',
   children: [
     {
-      id: 'test-suite-builder',
-      title: 'Test Suite Builder',
+      id: 'collection-builder',
+      title: 'Collection Builder',
       type: 'item',
-      url: '/discovery/test-suite-builder',
+      url: '/discovery/collection-builder',
       icon: icons.IconTelescope,
       breadcrumbs: true,
       permission: PERMISSIONS.DISCOVERY_VIEW

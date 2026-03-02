@@ -25,7 +25,7 @@ export default function MainLayout() {
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
 
-  const isTestSuiteBuilder = location.pathname.includes('/test-suite-builder');
+  const isCollectionBuilder = location.pathname.includes('/collection-builder');
 
   const {
     state: { borderRadius, miniDrawer }
@@ -67,9 +67,9 @@ export default function MainLayout() {
       <MainContentStyled {...{ borderRadius, open: drawerOpen }}>
         <Box sx={{ ...{ px: { xs: 0 } }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
           {/* breadcrumb */}
-          {!isTestSuiteBuilder && <Breadcrumbs />}
+          {!isCollectionBuilder && <Breadcrumbs />}
           <Outlet />
-          {!isTestSuiteBuilder && <Footer />}
+          {!isCollectionBuilder && <Footer />}
         </Box>
       </MainContentStyled>
     </Box>
