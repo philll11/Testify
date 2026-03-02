@@ -27,6 +27,7 @@ export interface DiscoveryConfig {
   defaultSyncEnvironmentId: string | null;
   syncScheduleCron: string;
   isSyncActive?: boolean;
+  lastSyncError?: string | null;
 }
 
 export const SystemConfigKeys = {

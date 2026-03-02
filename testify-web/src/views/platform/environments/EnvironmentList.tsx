@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Chip, Avatar, Drawer, Tooltip, IconButton, Divider, Stack, Button } from '@mui/material';
+import { Box, Typography, Chip, Avatar, Drawer, Tooltip, IconButton, Divider, Stack, Button, CircularProgress } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconPencil } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconPencil, IconPlugConnected } from '@tabler/icons-react';
 import { format } from 'date-fns';
 
 // Project Imports
@@ -10,7 +10,8 @@ import {
   usePlatformEnvironments,
   useDeletePlatformEnvironment,
   useCreatePlatformEnvironment,
-  useUpdatePlatformEnvironment
+  useUpdatePlatformEnvironment,
+  useTestPlatformEnvironmentConnection
 } from 'hooks/platform/useEnvironments';
 import { usePlatformProfiles } from 'hooks/platform/useProfiles';
 import { PlatformEnvironment } from 'types/platform/environments';
@@ -23,6 +24,7 @@ import DataGridWrapper from 'ui-component/extended/DataGridWrapper';
 import SplitActionButton from 'ui-component/extended/SplitActionButton';
 import { PERMISSIONS } from 'constants/permissions';
 import { usePermission } from 'contexts/AuthContext';
+import { useSnackbar } from 'contexts/SnackbarContext';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import MainCard from 'ui-component/cards/MainCard';
 
@@ -30,6 +32,7 @@ const EnvironmentList = () => {
   const navigate = useNavigate();
   const { getLinkTo } = useContextualNavigation('/platform/environments');
   const { can } = usePermission();
+  const { showMessage } = useSnackbar();
 
   // Queries & Mutations
   const { data: environments = [], isLoading } = usePlatformEnvironments();
@@ -37,6 +40,7 @@ const EnvironmentList = () => {
   const { mutateAsync: deleteEnvironment } = useDeletePlatformEnvironment();
   const { mutateAsync: createEnvironment, isPending: isCreating } = useCreatePlatformEnvironment();
   const { mutateAsync: updateEnvironment, isPending: isUpdating } = useUpdatePlatformEnvironment();
+  const { mutateAsync: testConnection, isPending: isTesting } = useTestPlatformEnvironmentConnection();
 
   // Drawer State
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -102,6 +106,20 @@ const EnvironmentList = () => {
     }
 
     performCancel();
+  };
+
+  const handleTestConnection = async (envId: string) => {
+    try {
+      const response = await testConnection(envId);
+      if (response.success) {
+        showMessage('Connection successful!', 'success');
+      } else {
+        showMessage(response.message || 'Connection failed.', 'error');
+      }
+    } catch (err) {
+      showMessage('Failed to test connection. See console for details.', 'error');
+      console.error(err);
+    }
   };
 
   const handleFormValuesChange = useCallback(
@@ -301,14 +319,21 @@ const EnvironmentList = () => {
               {mode === 'create' ? 'New Environment' : mode === 'edit' ? 'Edit Environment' : selectedEnvironment?.name}
             </Typography>
             {mode === 'view' && selectedEnvironment && (
-              <Stack direction="row" spacing={1}>
-                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
-                  <Tooltip title="Edit">
-                    <IconButton size="small" onClick={() => setMode('edit')} color="primary">
-                      <IconEdit size={18} />
+              <Stack direction="row" spacing={1}>                  {can(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW) && (
+                <Tooltip title="Test Connection">
+                  <span>
+                    <IconButton size="small" onClick={() => handleTestConnection(selectedEnvironment.id)} color="info" disabled={isTesting}>
+                      {isTesting ? <CircularProgress size={18} /> : <IconPlugConnected size={18} />}
                     </IconButton>
-                  </Tooltip>
-                )}
+                  </span>
+                </Tooltip>
+              )}                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
+                <Tooltip title="Edit">
+                  <IconButton size="small" onClick={() => setMode('edit')} color="primary">
+                    <IconEdit size={18} />
+                  </IconButton>
+                </Tooltip>
+              )}
                 {can(PERMISSIONS.PLATFORM_ENVIRONMENT_DELETE) && (
                   <Tooltip title="Delete">
                     <IconButton size="small" onClick={(e) => handleDeleteClick(selectedEnvironment, e)} color="error">

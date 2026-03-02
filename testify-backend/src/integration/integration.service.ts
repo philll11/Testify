@@ -57,4 +57,15 @@ export class IntegrationService {
         throw new Error(`Unsupported integration platform: ${env.platformType}`);
     }
   }
+
+  async testConnection(environmentId: string): Promise<boolean> {
+    try {
+      const service = await this.getServiceById('system', environmentId);
+      return await service.testConnection();
+    } catch (error) {
+      this.logger.error(`Connection test failed for environment ${environmentId}:`, error);
+      return false;
+    }
+  }
 }
+

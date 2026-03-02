@@ -78,6 +78,11 @@ const DiscoverySettingsTab = () => {
 
       <SubCard title="Engine Configuration">
         <Stack spacing={3}>
+          {discoveryConfig?.value?.lastSyncError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <strong>Last Sync Failed:</strong> {discoveryConfig.value.lastSyncError}
+            </Alert>
+          )}
           <FormControlLabel
             control={
               <Switch

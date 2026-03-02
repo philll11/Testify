@@ -6,8 +6,11 @@ import {
   Patch,
   Param,
   Delete,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PlatformEnvironmentService } from './platform-environment.service';
+import { IntegrationService } from '../integration.service';
 import { CreatePlatformEnvironmentDto } from './dto/create-platform-environment.dto';
 import { UpdatePlatformEnvironmentDto } from './dto/update-platform-environment.dto';
 import { RequirePermission } from '../../common/decorators/permissions.decorator';
@@ -17,7 +20,19 @@ import { PERMISSIONS } from '../../common/constants/permissions.constants';
 export class PlatformEnvironmentController {
   constructor(
     private readonly platformEnvironmentService: PlatformEnvironmentService,
-  ) {}
+    @Inject(forwardRef(() => IntegrationService))
+    private readonly integrationService: IntegrationService,
+  ) { }
+
+  @Post(':id/test-connection')
+  @RequirePermission(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW)
+  async testConnection(@Param('id') id: string) {
+    const success = await this.integrationService.testConnection(id);
+    if (!success) {
+      return { success: false, message: 'Connection failed. Please check credentials and account ID.' };
+    }
+    return { success: true, message: 'Connection successful.' };
+  }
 
   @Post()
   @RequirePermission(PERMISSIONS.PLATFORM_ENVIRONMENT_CREATE)

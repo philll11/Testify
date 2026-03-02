@@ -20,4 +20,8 @@ export class UpdateDiscoveryConfigDto {
   @IsOptional()
   @IsBoolean()
   isSyncActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  lastSyncError?: string | null;
 }

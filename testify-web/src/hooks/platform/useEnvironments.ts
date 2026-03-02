@@ -4,7 +4,8 @@ import {
   createPlatformEnvironment,
   getPlatformEnvironment,
   updatePlatformEnvironment,
-  deletePlatformEnvironment
+  deletePlatformEnvironment,
+  testPlatformEnvironmentConnection
 } from 'api/platform/environments';
 import { CreatePlatformEnvironmentDto, UpdatePlatformEnvironmentDto } from 'types/platform/environments';
 
@@ -56,5 +57,11 @@ export function useDeletePlatformEnvironment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: platformEnvironmentKeys.all });
     }
+  });
+}
+
+export function useTestPlatformEnvironmentConnection() {
+  return useMutation({
+    mutationFn: (id: string) => testPlatformEnvironmentConnection(id)
   });
 }

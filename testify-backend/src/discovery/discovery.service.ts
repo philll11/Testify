@@ -159,20 +159,35 @@ export class DiscoveryService {
 
             this.logger.log(`Synchronization complete. Upserted: ${upsertedCount}, Deleted: ${deletedCount}`);
 
+            // Clear any previous error on success
+            if (config.lastSyncError) {
+                config.lastSyncError = null;
+                await this.systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, config);
+            }
+
             return { upserted: upsertedCount, deleted: deletedCount };
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error('Error during State of the World synchronization', error instanceof Error ? error.stack : error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (config.lastSyncError !== errorMessage) {
+                config.lastSyncError = errorMessage;
+                await this.systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, config);
+            }
             throw error;
         }
     }
-    async getLastSyncStatus(): Promise<{ lastSyncDate: Date | null }> {
+    async getLastSyncStatus(): Promise<{ lastSyncDate: Date | null, lastSyncError: string | null }> {
         const result = await this.discoveredComponentRepository
             .createQueryBuilder('comp')
             .select('MAX(comp.updatedAt)', 'maxDate')
             .getRawOne();
 
+        const configEntity = await this.systemConfigService.get(SystemConfigKeys.DISCOVERY.CONFIG);
+        const config = configEntity?.value as UpdateDiscoveryConfigDto;
+
         return {
-            lastSyncDate: result.maxDate ? new Date(result.maxDate) : null
+            lastSyncDate: result.maxDate ? new Date(result.maxDate) : null,
+            lastSyncError: config?.lastSyncError || null,
         };
     }
 

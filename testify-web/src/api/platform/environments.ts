@@ -34,3 +34,8 @@ export const updatePlatformEnvironment = async ({
 export const deletePlatformEnvironment = async (id: string): Promise<void> => {
   await axiosServices.delete(`${ENVIRONMENTS_URL}/${id}`);
 };
+
+export const testPlatformEnvironmentConnection = async (id: string): Promise<{ success: boolean; message: string }> => {
+  const response = await axiosServices.post<{ success: boolean; message: string }>(`${ENVIRONMENTS_URL}/${id}/test-connection`);
+  return response.data;
+};
