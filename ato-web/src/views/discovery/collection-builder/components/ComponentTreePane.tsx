@@ -64,7 +64,7 @@ const flattenNodes = (node: ComponentTreeNode): ComponentTreeNode[] => {
 };
 
 const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<ComponentTreeNode>) => {
-  const { selectedNodeIds, selectedItems, setSelectedNodeIds, setselectedItems } = useCollectionBuilderContext();
+  const { selectedNodeIds, selectedItems, setSelectedNodeIds, setSelectedItems } = useCollectionBuilderContext();
   const nodeData = node.data;
 
   const isSelected = selectedNodeIds.includes(nodeData.id);
@@ -86,10 +86,10 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
         }
       });
       setSelectedNodeIds(Array.from(newIdsSet));
-      setselectedItems(newManifest);
+      setSelectedItems(newManifest);
     } else {
       setSelectedNodeIds(selectedNodeIds.filter(id => !affectedIds.has(id)));
-      setselectedItems(selectedItems.filter(item => !affectedIds.has(item.id)));
+      setSelectedItems(selectedItems.filter(item => !affectedIds.has(item.id)));
     }
   };
 
