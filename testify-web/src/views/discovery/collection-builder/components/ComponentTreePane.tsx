@@ -27,7 +27,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useCollectionBuilderContext } from '../context/CollectionBuilderContext';
 import { usePlatformProfiles } from 'hooks/platform/usePlatform';
-import { useDiscoveryComponents, useTriggerSync, useSyncStatus } from 'hooks/discovery/useDiscovery';
+import { useDiscoveryComponents, useTriggerSync, useSyncStatus, useGlobalSyncState } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
 import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 import { useSnackbar } from 'contexts/SnackbarContext';
@@ -198,8 +198,11 @@ export const ComponentTreePane = () => {
     search: searchQuery || undefined
   });
 
-  const { mutate: handleSync, isPending: isSyncing } = useTriggerSync();
+  const { mutate: handleSync, isPending: isTriggeringSync } = useTriggerSync();
   const { data: syncStatus } = useSyncStatus();
+  const { isRunning: isSyncing } = useGlobalSyncState();
+
+  const isSyncActive = isTriggeringSync || isSyncing;
 
   const [ref, bounds] = useMeasure();
 
@@ -214,19 +217,19 @@ export const ComponentTreePane = () => {
           <Button
             variant="outlined"
             size="small"
-            startIcon={isSyncing ? <CircularProgress size={16} /> : <RefreshIcon />}
+            startIcon={isSyncActive ? <CircularProgress size={16} /> : <RefreshIcon />}
             onClick={() => {
               handleSync(undefined, {
-                onSuccess: () => showMessage('Database synced successfully', 'success'),
+                onSuccess: () => showMessage('Sync job enqueued', 'info'),
                 onError: (err: any) => {
-                  const errorMsg = err.response?.data?.message || err.message || 'Failed to sync database';
-                  showMessage(`Sync Failed: ${errorMsg}`, 'error');
+                  const errorMsg = err.response?.data?.message || err.message || 'Failed to trigger sync';
+                  showMessage(`Sync Trigger Failed: ${errorMsg}`, 'error');
                 }
               });
             }}
-            disabled={isSyncing}
+            disabled={isSyncActive}
           >
-            {isSyncing ? 'Syncing...' : 'Sync Database'}
+            {isSyncActive ? 'Syncing...' : 'Sync Database'}
           </Button>
         </Stack>
       </Stack>

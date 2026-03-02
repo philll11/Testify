@@ -17,10 +17,13 @@ import Breadcrumbs from 'ui-component/extended/Breadcrumbs';
 
 import useConfig from 'hooks/useConfig';
 import { useMenu } from 'contexts/MenuContext';
+import { useGlobalSyncState } from 'hooks/discovery/useDiscovery';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
 export default function MainLayout() {
+  useGlobalSyncState(); // Mount global sync polling mechanism
+
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();

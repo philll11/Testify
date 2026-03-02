@@ -9,28 +9,34 @@ export class DiscoveryController {
 
     constructor(private readonly discoveryService: DiscoveryService) { }
 
+    @Get('active')
+    @RequirePermission(PERMISSIONS.DISCOVERY_VIEW)
+    async checkActiveSync() {
+        const isRunning = await this.discoveryService.isSyncActive();
+        return { isRunning };
+    }
+
     @Post()
-    @HttpCode(HttpStatus.OK)
+    @HttpCode(HttpStatus.ACCEPTED)
     @RequirePermission(PERMISSIONS.DISCOVERY_SYNC)
     async triggerSync() {
-        this.logger.log('Manual sync triggered via API.');
+        this.logger.log('Manual sync triggered via API, enqueueing job.');
         try {
-            const result = await this.discoveryService.syncDatabase();
+            const isRunning = await this.discoveryService.isSyncActive();
+            if (isRunning) {
+                return {
+                    message: 'Synchronization is already active',
+                };
+            }
+
+            const result = await this.discoveryService.enqueueSyncJob();
             return {
-                message: 'Synchronization successful',
+                message: 'Synchronization job enqueued successfully',
                 data: result,
             };
         } catch (error: any) {
             const statusCode = error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
             let message = error?.message || 'Internal server error';
-
-            if (statusCode === 401) {
-                message = 'Authentication failed. Please verify the environment credentials in Settings.';
-            } else if (statusCode === 403) {
-                message = 'Access denied (403). The provided credentials do not have permission to perform this action.';
-            } else if (statusCode === 404) {
-                message = 'Integration endpoint not found (404). Please verify Account/Atom configuration.';
-            }
 
             throw new HttpException(message, statusCode);
         }

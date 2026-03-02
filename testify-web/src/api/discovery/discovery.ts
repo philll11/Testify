@@ -18,6 +18,11 @@ export const getSyncStatus = async (): Promise<{ lastSyncDate: string | null }> 
   return response.data;
 };
 
+export const getSyncActive = async (): Promise<{ isRunning: boolean }> => {
+  const response = await axiosServices.get<{ isRunning: boolean }>('/system/sync/active');
+  return response.data;
+};
+
 export const triggerSync = async (): Promise<any> => {
   const response = await axiosServices.post('/system/sync');
   return response.data;

@@ -9,6 +9,8 @@ import { UpdateDiscoveryConfigDto } from '../system/config/dto/update-discovery-
 import { PlatformEnvironmentService } from '../integration/platform-environment/platform-environment.service';
 import { QueryDiscoveryComponentParameters } from './interfaces/query-discovery-component-parameters.interface';
 import { ComponentTreeNode } from './interfaces/component-tree-node.interface';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class DiscoveryService {
@@ -20,7 +22,29 @@ export class DiscoveryService {
         private readonly integrationService: IntegrationService,
         private readonly systemConfigService: SystemConfigService,
         private readonly platformEnvironmentService: PlatformEnvironmentService,
+        @InjectQueue('background-tasks') private readonly queue: Queue,
     ) { }
+
+    async isSyncActive(): Promise<boolean> {
+        const jobs = await this.queue.getJobs(['active', 'waiting', 'delayed']);
+        return jobs.some(job => job.name === 'discovery_sync_job');
+    }
+
+    async enqueueSyncJob(): Promise<{ jobId: string }> {
+        const isActive = await this.isSyncActive();
+        if (isActive) {
+            // Already running/queued, return some kind of indication
+            // The simplest is just finding the existing one or generating a fake duplicate response 
+            // Wait, we can return the active job OR simply throw an HttpException like Conflict
+            return { jobId: 'active-sync-job' };
+        }
+
+        const job = await this.queue.add('discovery_sync_job', {}, {
+            jobId: `manual-sync-${Date.now()}` // optional but helpful
+        });
+
+        return { jobId: job.id! };
+    }
 
     async syncDatabase(): Promise<{ upserted: number; deleted: number }> {
         this.logger.log('Starting State of the World synchronization...');
