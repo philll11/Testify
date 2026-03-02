@@ -1,6 +1,6 @@
-# **Automated Test Orchestrator (ATO)**
+# **Testify**
 
-The Automated Test Orchestrator is an application designed to improve the reliability and efficiency of integration development by automating the discovery and execution of tests for any given component and its entire dependency tree.
+Testify is an application designed to improve the reliability and efficiency of integration development by automating the discovery and execution of tests for any given component and its entire dependency tree.
 
 ## **Table of Contents**
 
@@ -27,9 +27,9 @@ The Automated Test Orchestrator is an application designed to improve the reliab
 
 This repository contains two distinct, independent applications that work together:
 
-1.  **`automated-test-orchestrator-api`**: The backend service, a Node.js/Express application built using **Hexagonal Architecture (Ports & Adapters)**. This service contains all core business logic and exposes a REST API. It is designed to be run as a containerized application via Docker.
+1.  **`testify-api`**: The backend service, a Node.js/Express application built using **Hexagonal Architecture (Ports & Adapters)**. This service contains all core business logic and exposes a REST API. It is designed to be run as a containerized application via Docker.
 
-2.  **`automated-test-orchestrator-cli`**: The user-facing client, a command-line interface written in **Go (Golang)**. It is a standalone, cross-platform binary that interacts with the `api-service`. It is compiled locally and does not require Node.js to run.
+2.  **`testify-cli`**: The user-facing client, a command-line interface written in **Go (Golang)**. It is a standalone, cross-platform binary that interacts with the `api-service`. It is compiled locally and does not require Node.js to run.
 
 ## **Prerequisites**
 
@@ -55,7 +55,7 @@ The API runs inside Docker containers.
 
 ```sh
 # 1. Navigate into the API directory
-cd automated-test-orchestrator-api
+cd testify-api
 
 # 2. Set up environment variables by copying the example
 # For Windows (PowerShell)
@@ -78,19 +78,19 @@ The Go CLI is compiled into a native executable and "installed" by placing it in
 
 ```sh
 # 1. In a NEW terminal, navigate into the CLI directory
-cd automated-test-orchestrator-cli
+cd testify-cli
 
-# 2. Build the executable. This creates an 'ato.exe' (Windows) or 'ato' (macOS/Linux) file.
-go build -o ato .
+# 2. Build the executable. This creates an 'Testify.exe' (Windows) or 'Testify' (macOS/Linux) file.
+go build -o Testify .
 
 # 3. "Install" the CLI by moving the executable to a directory on your PATH.
 #    (See your OS documentation for how to add a directory to your PATH if needed)
 
 # For Windows (assuming C:\Users\YourUser\bin is in your PATH)
-move ato.exe C:\Users\YourUser\bin\
+move Testify.exe C:\Users\YourUser\bin\
 
 # For macOS/Linux (assuming /usr/local/bin is in your PATH)
-sudo mv ato /usr/local/bin/
+sudo mv Testify /usr/local/bin/
 ```
 
 ### **4. Configure and Verify the CLI**
@@ -99,10 +99,10 @@ With the API running and the CLI installed, you can now configure and test the c
 
 ```sh
 # 1. Tell the CLI where the API is running. This is saved for all future commands.
-ato config set api_url http://localhost:3000/api/v1
+Testify config set api_url http://localhost:3000/api/v1
 
 # 2. Verify the setup by listing credential profiles (this will be empty initially)
-ato creds list
+Testify creds list
 ```
 
 ### **API Service Tests**
@@ -110,7 +110,7 @@ ato creds list
 First, ensure your test database credentials are set up.
 
 ```sh
-# In the automated-test-orchestrator-api directory
+# In the testify-api directory
 # For Windows (PowerShell)
 copy .env.test.example .env.test
 
@@ -120,7 +120,7 @@ cp .env.test.example .env.test
 Open `.env.test` and ensure the `DB_PASSWORD` and other variables match your main `.env` file.
 
 ```sh
-# In the automated-test-orchestrator-api directory
+# In the testify-api directory
 
 # Run all unit tests
 npm run test:unit
@@ -136,13 +136,13 @@ npm run test:e2e
 ## **Project Structure**
 ```
 /
-├── automated-test-orchestrator-api/   # The deployable backend application
+├── testify-api/   # The deployable backend application
 │   ├── .env.example
 │   ├── docker-compose.yml
 │   ├── Dockerfile
 │   ├── package.json
 │   └── src/
-└── automated-test-orchestrator-cli/   # The standalone Go CLI tool
+└── testify-cli/   # The standalone Go CLI tool
     ├── go.mod
     ├── build.ps1        # Example build script for cross-compilation
     ├── main.go
@@ -159,7 +159,7 @@ The `api-service` is designed for containerized deployment. The multi-stage `Doc
 The CLI is distributed as a standalone binary. To create executables for multiple platforms (cross-compilation), use the provided `build.ps1` script or run the `go build` command with the appropriate `GOOS` and `GOARCH` environment variables.
 
 ```sh
-# In the automated-test-orchestrator-cli directory
+# In the testify-cli directory
 
 # Example: Build for Windows, macOS (ARM), and Linux
 .\build.ps1

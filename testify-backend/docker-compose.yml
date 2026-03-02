@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    container_name: testify-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-testuser}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-testpassword}
+      POSTGRES_DB: ${DATABASE_NAME:-testdb}
+      POSTGRES_PORT: 5432
+    ports:
+      - "3430:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - testify-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: testify-redis
+    restart: always
+    ports:
+      - "6380:6379"
+    networks:
+      - testify-network
+
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: testify-app
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3431:3431"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - testify-network
+
+networks:
+  testify-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
