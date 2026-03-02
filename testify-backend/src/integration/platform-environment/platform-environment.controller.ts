@@ -8,6 +8,8 @@ import {
   Delete,
   Inject,
   forwardRef,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PlatformEnvironmentService } from './platform-environment.service';
 import { IntegrationService } from '../integration.service';
@@ -27,11 +29,23 @@ export class PlatformEnvironmentController {
   @Post(':id/test-connection')
   @RequirePermission(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW)
   async testConnection(@Param('id') id: string) {
-    const success = await this.integrationService.testConnection(id);
-    if (!success) {
-      return { success: false, message: 'Connection failed. Please check credentials and account ID.' };
+    try {
+      const success = await this.integrationService.testConnection(id);
+      return { success: true, message: 'Connection successful.' };
+    } catch (error: any) {
+      const statusCode = error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      let message = error?.message || 'Connection failed. Please check credentials and account ID.';
+
+      if (statusCode === 401) {
+        message = 'Authentication failed. Please verify the environment credentials.';
+      } else if (statusCode === 403) {
+        message = 'Access denied (403). The provided credentials do not have permission.';
+      } else if (statusCode === 404) {
+        message = 'Integration endpoint not found (404). Please verify Account/Atom configuration.';
+      }
+
+      throw new HttpException(message, statusCode);
     }
-    return { success: true, message: 'Connection successful.' };
   }
 
   @Post()

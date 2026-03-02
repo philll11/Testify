@@ -167,12 +167,30 @@ export class DiscoveryService {
 
             return { upserted: upsertedCount, deleted: deletedCount };
         } catch (error: any) {
-            this.logger.error('Error during State of the World synchronization', error instanceof Error ? error.stack : error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (config.lastSyncError !== errorMessage) {
-                config.lastSyncError = errorMessage;
+            this.logger.error('Error during State of the World synchronization', error.stack || error);
+
+            let explicitMessage = 'Internal server error';
+            if (error.isAxiosError && error.response) {
+                switch (error.response.status) {
+                    case 401: explicitMessage = 'Authentication failed. Please check your credentials.'; break;
+                    case 403: explicitMessage = 'Access denied. Your Account ID may be incorrect or your credentials may lack necessary permissions.'; break;
+                    case 404: explicitMessage = 'Resource not found. Please verify the Endpoint URL and Account ID.'; break;
+                    case 400: explicitMessage = `Bad Request: ${error.response.data?.message || 'Invalid parameters.'}`; break;
+                    case 429: explicitMessage = 'Rate limit exceeded. Too many requests.'; break;
+                    default: explicitMessage = `Integration API Error: ${error.response.statusText} (${error.response.status})`;
+                }
+            } else if (error instanceof Error) {
+                explicitMessage = error.message;
+            } else {
+                explicitMessage = String(error);
+            }
+
+            if (config.lastSyncError !== explicitMessage) {
+                config.lastSyncError = explicitMessage;
                 await this.systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, config);
             }
+
+            // Still throw the error so the controller can wrap it in an HttpException for the immediate caller
             throw error;
         }
     }

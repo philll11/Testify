@@ -108,6 +108,7 @@ const DiscoverySettingsTab = () => {
               <TextField
                 {...params}
                 label="Component Types to Sync"
+                slotProps={{ formHelperText: { component: 'div' } as any }}
                 helperText={
                   <Stack spacing={1} mt={0.5}>
                     <Box component="span">

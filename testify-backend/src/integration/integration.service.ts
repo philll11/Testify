@@ -64,7 +64,7 @@ export class IntegrationService {
       return await service.testConnection();
     } catch (error) {
       this.logger.error(`Connection test failed for environment ${environmentId}:`, error);
-      return false;
+      throw error;
     }
   }
 }

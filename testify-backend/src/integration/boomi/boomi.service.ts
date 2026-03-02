@@ -148,11 +148,7 @@ export class BoomiService implements IIntegrationPlatformService {
       return true;
     } catch (error) {
       this.logger.error('Test Connection Failed', error);
-      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
-        return false;
-      }
-      // Other errors (network, etc) might still mean connection failure
-      return false;
+      throw error;
     }
   }
 

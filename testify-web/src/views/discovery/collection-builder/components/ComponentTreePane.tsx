@@ -30,6 +30,7 @@ import { usePlatformProfiles } from 'hooks/platform/usePlatform';
 import { useDiscoveryComponents, useTriggerSync, useSyncStatus } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
 import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
+import { useSnackbar } from 'contexts/SnackbarContext';
 
 export const getNodeIcon = (node: ComponentTreeNode) => {
   if (node.nodeType === 'folder') {
@@ -165,6 +166,8 @@ export const ComponentTreePane = () => {
     console.log(`[Perf] ComponentTreePane render committed in ${performance.now() - renderStart}ms`);
   });
 
+  const { showMessage } = useSnackbar();
+
   const {
     profileId,
     setProfileId,
@@ -212,7 +215,15 @@ export const ComponentTreePane = () => {
             variant="outlined"
             size="small"
             startIcon={isSyncing ? <CircularProgress size={16} /> : <RefreshIcon />}
-            onClick={() => handleSync()}
+            onClick={() => {
+              handleSync(undefined, {
+                onSuccess: () => showMessage('Database synced successfully', 'success'),
+                onError: (err: any) => {
+                  const errorMsg = err.response?.data?.message || err.message || 'Failed to sync database';
+                  showMessage(`Sync Failed: ${errorMsg}`, 'error');
+                }
+              });
+            }}
             disabled={isSyncing}
           >
             {isSyncing ? 'Syncing...' : 'Sync Database'}

@@ -116,8 +116,9 @@ const EnvironmentList = () => {
       } else {
         showMessage(response.message || 'Connection failed.', 'error');
       }
-    } catch (err) {
-      showMessage('Failed to test connection. See console for details.', 'error');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to test connection. See console for details.';
+      showMessage(`Connection Failed: ${errorMsg}`, 'error');
       console.error(err);
     }
   };
