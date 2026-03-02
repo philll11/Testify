@@ -138,7 +138,7 @@ export default function ProfileSection() {
                             {user?.firstName} {user?.lastName}
                           </Typography>
                         </Stack>
-                        <Typography variant="subtitle2">{user?.roleId?.name || 'User'}</Typography>
+                        <Typography variant="subtitle2">{user?.role?.name || 'User'}</Typography>
                       </Stack>
                       <OutlinedInput
                         sx={{ width: '100%', pr: 1, pl: 2, my: 2 }}
@@ -177,7 +177,7 @@ export default function ProfileSection() {
                             </Stack>
                             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                               <Typography variant="subtitle1">Allow Notifications</Typography>
-                              <Switch checked={notification} onChange={(e) => setNotification(e.target.checked)} name="sdm" size="small" />
+                              <Switch checked={notification} onChange={(e) => setNotification(e.target.checked)} name="notification" size="small" />
                             </Stack>
                           </Stack>
                         </CardContent>

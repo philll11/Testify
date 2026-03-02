@@ -75,7 +75,7 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
     const isChecked = e.target.checked;
 
     const affectedNodes = flattenNodes(nodeData);
-    const affectedIds = new Set(affectedNodes.map(n => n.id));
+    const affectedIds = new Set(affectedNodes.map((n) => n.id));
 
     if (isChecked) {
       const newIdsSet = new Set(selectedNodeIds);
@@ -89,8 +89,8 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
       setSelectedNodeIds(Array.from(newIdsSet));
       setSelectedItems(newManifest);
     } else {
-      setSelectedNodeIds(selectedNodeIds.filter(id => !affectedIds.has(id)));
-      setSelectedItems(selectedItems.filter(item => !affectedIds.has(item.id)));
+      setSelectedNodeIds(selectedNodeIds.filter((id) => !affectedIds.has(id)));
+      setSelectedItems(selectedItems.filter((item) => !affectedIds.has(item.id)));
     }
   };
 
@@ -114,17 +114,14 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
         <Box width={24} />
       )}
 
-      <Checkbox
-        size="small"
-        checked={isSelected}
-        onChange={handleCheckboxToggle}
-        onClick={(e) => e.stopPropagation()}
-      />
+      <Checkbox size="small" checked={isSelected} onChange={handleCheckboxToggle} onClick={(e) => e.stopPropagation()} />
 
       {getNodeIcon(nodeData)}
 
       <Box display="flex" alignItems="center" ml={1} overflow="hidden">
-        <Typography variant="body2" noWrap>{nodeData.name}</Typography>
+        <Typography variant="body2" noWrap>
+          {nodeData.name}
+        </Typography>
         {nodeData.nodeType === 'component' && nodeData.data?.type && (
           <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1, whiteSpace: 'nowrap' }}>
             ({BOOMI_COMPONENT_LABELS[nodeData.data.type] || nodeData.data.type})
@@ -135,13 +132,7 @@ const ComponentTreeNodeItem = memo(({ node, style }: NodeRendererProps<Component
   );
 });
 
-const DebouncedSearchInput = ({
-  initialValue,
-  onSearch
-}: {
-  initialValue: string;
-  onSearch: (value: string) => void;
-}) => {
+const DebouncedSearchInput = ({ initialValue, onSearch }: { initialValue: string; onSearch: (value: string) => void }) => {
   const [localSearch, setLocalSearch] = useState(initialValue);
 
   useEffect(() => {
@@ -150,13 +141,7 @@ const DebouncedSearchInput = ({
   }, [localSearch, onSearch]);
 
   return (
-    <TextField
-      fullWidth
-      size="small"
-      label="Search Components"
-      value={localSearch}
-      onChange={(e) => setLocalSearch(e.target.value)}
-    />
+    <TextField fullWidth size="small" label="Search Components" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} />
   );
 };
 
@@ -168,14 +153,7 @@ export const ComponentTreePane = () => {
 
   const { showMessage } = useSnackbar();
 
-  const {
-    profileId,
-    setProfileId,
-    collectionType,
-    setCollectionType,
-    searchQuery,
-    setSearchQuery
-  } = useCollectionBuilderContext();
+  const { profileId, setProfileId, collectionType, setCollectionType, searchQuery, setSearchQuery } = useCollectionBuilderContext();
 
   // Data fetching
   const { data: profiles, isLoading: profilesLoading } = usePlatformProfiles();
@@ -265,12 +243,9 @@ export const ComponentTreePane = () => {
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <FormControlLabel
             control={
-              <Switch
-                checked={collectionType === 'TESTS'}
-                onChange={(e) => setCollectionType(e.target.checked ? 'TESTS' : 'TARGETS')}
-              />
+              <Switch checked={collectionType === 'TESTS'} onChange={(e) => setCollectionType(e.target.checked ? 'TESTS' : 'TARGETS')} />
             }
-            label={collectionType === 'TESTS' ? "Test Mode" : "Targets Mode"}
+            label={collectionType === 'TESTS' ? 'Test Mode' : 'Targets Mode'}
           />
         </Stack>
 
@@ -302,14 +277,7 @@ export const ComponentTreePane = () => {
         )}
 
         {!treeLoading && !treeError && treeData && treeData.length > 0 && bounds.height > 0 && (
-          <Tree
-            data={treeData}
-            width={bounds.width}
-            height={bounds.height}
-            rowHeight={32}
-            searchTerm={searchQuery}
-            openByDefault={false}
-          >
+          <Tree data={treeData} width={bounds.width} height={bounds.height} rowHeight={32} searchTerm={searchQuery} openByDefault={false}>
             {ComponentTreeNodeItem}
           </Tree>
         )}

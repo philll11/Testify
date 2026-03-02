@@ -64,6 +64,8 @@ export const PERMISSIONS = {
   TEST_REGISTRY_VIEW: 'TestRegistry:View',
   TEST_REGISTRY_CREATE: 'TestRegistry:Create',
   TEST_REGISTRY_DELETE: 'TestRegistry:Delete',
+  TEST_REGISTRY_EDIT: 'TestRegistry:Edit',
+  TEST_REGISTRY_MANAGE_INACTIVE: 'TestRegistry:ManageInactive',
   TEST_REGISTRY_IMPORT: 'TestRegistry:Import',
 
   // --- Collection Management ---

@@ -320,21 +320,29 @@ const EnvironmentList = () => {
               {mode === 'create' ? 'New Environment' : mode === 'edit' ? 'Edit Environment' : selectedEnvironment?.name}
             </Typography>
             {mode === 'view' && selectedEnvironment && (
-              <Stack direction="row" spacing={1}>                  {can(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW) && (
-                <Tooltip title="Test Connection">
-                  <span>
-                    <IconButton size="small" onClick={() => handleTestConnection(selectedEnvironment.id)} color="info" disabled={isTesting}>
-                      {isTesting ? <CircularProgress size={18} /> : <IconPlugConnected size={18} />}
+              <Stack direction="row" spacing={1}>
+                {' '}
+                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW) && (
+                  <Tooltip title="Test Connection">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleTestConnection(selectedEnvironment.id)}
+                        color="info"
+                        disabled={isTesting}
+                      >
+                        {isTesting ? <CircularProgress size={18} /> : <IconPlugConnected size={18} />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                )}{' '}
+                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
+                  <Tooltip title="Edit">
+                    <IconButton size="small" onClick={() => setMode('edit')} color="primary">
+                      <IconEdit size={18} />
                     </IconButton>
-                  </span>
-                </Tooltip>
-              )}                {can(PERMISSIONS.PLATFORM_ENVIRONMENT_EDIT) && (
-                <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => setMode('edit')} color="primary">
-                    <IconEdit size={18} />
-                  </IconButton>
-                </Tooltip>
-              )}
+                  </Tooltip>
+                )}
                 {can(PERMISSIONS.PLATFORM_ENVIRONMENT_DELETE) && (
                   <Tooltip title="Delete">
                     <IconButton size="small" onClick={(e) => handleDeleteClick(selectedEnvironment, e)} color="error">

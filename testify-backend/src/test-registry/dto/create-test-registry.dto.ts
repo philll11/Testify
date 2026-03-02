@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateTestRegistryDto {
     @IsString()
@@ -8,4 +8,8 @@ export class CreateTestRegistryDto {
     @IsString()
     @IsNotEmpty()
     readonly testComponentId: string;
+
+    @IsBoolean()
+    @IsOptional()
+    readonly isActive?: boolean;
 }

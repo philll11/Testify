@@ -111,9 +111,7 @@ const DiscoverySettingsTab = () => {
                 slotProps={{ formHelperText: { component: 'div' } as any }}
                 helperText={
                   <Stack spacing={1} mt={0.5}>
-                    <Box component="span">
-                      Select which component types should be fetched from the integration platform.
-                    </Box>
+                    <Box component="span">Select which component types should be fetched from the integration platform.</Box>
                     <Alert severity="warning" sx={{ py: 0, px: 2, '& .MuiAlert-message': { py: 1 } }}>
                       Removing a component type will prevent those components from being accessible during Discovery and Execution.
                     </Alert>

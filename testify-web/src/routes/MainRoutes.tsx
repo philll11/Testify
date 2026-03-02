@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+﻿import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 // project imports
@@ -39,6 +39,16 @@ const AccountProfile = Loadable(lazy(() => import('views/iam/users/pages/account
 
 // discovery routing
 const CollectionBuilderPage = Loadable(lazy(() => import('views/discovery/collection-builder')));
+
+// test registry routing
+const TestRegistryList = Loadable(lazy(() => import('views/test-registry/TestRegistryList')));
+const TestRegistryCreatePage = Loadable(lazy(() => import('views/test-registry/pages/TestRegistryCreatePage')));
+const TestRegistryEditPage = Loadable(lazy(() => import('views/test-registry/pages/TestRegistryEditPage')));
+const TestRegistryViewPage = Loadable(lazy(() => import('views/test-registry/pages/TestRegistryViewPage')));
+
+// collections routing
+const CollectionList = Loadable(lazy(() => import('views/collections/CollectionList')));
+const CollectionDetailsPage = Loadable(lazy(() => import('views/collections/pages/CollectionDetailsPage')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -173,8 +183,43 @@ const MainRoutes: RouteObject = {
           element: <CollectionBuilderPage />
         }
       ]
+    },
+    {
+      path: 'test-registry',
+      children: [
+        {
+          path: '',
+          element: <TestRegistryList />
+        },
+        {
+          path: 'create',
+          element: <TestRegistryCreatePage />
+        },
+        {
+          path: ':id',
+          element: <TestRegistryViewPage />
+        },
+        {
+          path: ':id/edit',
+          element: <TestRegistryEditPage />
+        }
+      ]
+    },
+    {
+      path: 'collections',
+      children: [
+        {
+          path: '',
+          element: <CollectionList />
+        },
+        {
+          path: ':id',
+          element: <CollectionDetailsPage />
+        }
+      ]
     }
   ]
 };
 
 export default MainRoutes;
+

@@ -1,11 +1,12 @@
 // assets
-import { IconTelescope } from '@tabler/icons-react';
+import { IconTelescope, IconStack2 } from '@tabler/icons-react';
 import { NavItem } from './types';
 import { PERMISSIONS } from 'constants/permissions';
 
 // constant
 const icons = {
-  IconTelescope
+  IconTelescope,
+  IconStack2
 };
 
 // ==============================|| DISCOVERY MENU ITEMS ||============================== //
@@ -23,6 +24,15 @@ const discovery: NavItem = {
       icon: icons.IconTelescope,
       breadcrumbs: true,
       permission: PERMISSIONS.DISCOVERY_VIEW
+    },
+    {
+      id: 'collections',
+      title: 'Collections',
+      type: 'item',
+      url: '/collections',
+      icon: icons.IconStack2,
+      breadcrumbs: true,
+      permission: PERMISSIONS.COLLECTION_VIEW
     }
   ]
 };

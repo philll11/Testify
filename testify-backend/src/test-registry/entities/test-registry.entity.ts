@@ -12,6 +12,9 @@ export class TestRegistry {
     @Column({ name: 'test_component_id' })
     testComponentId: string;
 
+    @Column({ default: true })
+    isActive: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

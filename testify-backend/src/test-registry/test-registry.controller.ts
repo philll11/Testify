@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param, Delete, ParseUUIDPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, ParseUUIDPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { TestRegistryService } from './test-registry.service';
 import { CreateTestRegistryDto } from './dto/create-test-registry.dto';
+import { UpdateTestRegistryDto } from './dto/update-test-registry.dto';
 import { ImportTestRegistryDto } from './dto/import-test-registry.dto';
 
 import { RequirePermission } from '../common/decorators/permissions.decorator';
@@ -40,6 +41,28 @@ export class TestRegistryController {
     @RequirePermission(PERMISSIONS.TEST_REGISTRY_VIEW)
     findByTarget(@Param('targetId') targetId: string) {
         return this.testRegistryService.findByTargetComponent(targetId);
+    }
+
+    /**
+     * Retrieves a specific test mapping by its ID.
+     */
+    @Get(':registryId')
+    @RequirePermission(PERMISSIONS.TEST_REGISTRY_VIEW)
+    findOne(@Param('registryId', ParseUUIDPipe) registryId: string) {
+        return this.testRegistryService.findOne(registryId);
+    }
+
+    /**
+     * Updates an existing mapping between a target component and a test component.
+     */
+    @Patch(':registryId')
+    @RequirePermission(PERMISSIONS.TEST_REGISTRY_EDIT)
+    update(
+        @Param('registryId', ParseUUIDPipe) registryId: string,
+        @Body() updateTestRegistryDto: UpdateTestRegistryDto,
+        @CurrentUser() requestingUser: User
+    ) {
+        return this.testRegistryService.update(registryId, updateTestRegistryDto, requestingUser);
     }
 
     /**

@@ -99,7 +99,7 @@ const EnvironmentViewPage = () => {
         mode="view"
         environment={environment}
         initialValues={environment as any} // Assuming form handles partial data mapping
-        onSubmit={() => { }} // No-op
+        onSubmit={() => {}} // No-op
         isLoading={isLoading}
         onCancel={() => goBack()}
       />

@@ -36,13 +36,28 @@ export const PERMISSIONS = {
   DISCOVERY_SYNC: 'Discovery:Sync',
 
   // --- Global ---
-  VIEW_DELETED: 'Global:ViewDeleted'
+  VIEW_DELETED: 'Global:ViewDeleted',
+
+  // --- Test Registry ---
+  TEST_REGISTRY_VIEW: 'TestRegistry:View',
+  TEST_REGISTRY_CREATE: 'TestRegistry:Create',
+  TEST_REGISTRY_EDIT: 'TestRegistry:Edit',
+  TEST_REGISTRY_DELETE: 'TestRegistry:Delete',
+  TEST_REGISTRY_MANAGE_INACTIVE: 'TestRegistry:ManageInactive',
+  TEST_REGISTRY_IMPORT: 'TestRegistry:Import',
+
+  // --- Collections ---
+  COLLECTION_VIEW: 'Collection:View',
+  COLLECTION_CREATE: 'Collection:Create',
+  COLLECTION_DELETE: 'Collection:Delete',
+  COLLECTION_EXECUTE: 'Collection:Execute'
 };
 
 export const DOMAIN_MAPPING: Record<string, string[]> = {
   'Identity & Access': ['User', 'Role'],
   System: ['SystemConfig', 'Counters', 'Audit', 'Global'],
-  'Integration Tools': ['PlatformProfile', 'PlatformEnvironment', 'Discovery']
+  'Integration Tools': ['PlatformProfile', 'PlatformEnvironment', 'Discovery', 'TestRegistry'],
+  'Execution Engine': ['Collection']
 };
 
 export enum Resource {
@@ -53,5 +68,7 @@ export enum Resource {
   PLATFORM_PROFILE = 'PlatformProfile',
   PLATFORM_ENVIRONMENT = 'PlatformEnvironment',
   DISCOVERY = 'Discovery',
-  GLOBAL = 'Global'
+  GLOBAL = 'Global',
+  TEST_REGISTRY = 'TestRegistry',
+  COLLECTION = 'Collection'
 }

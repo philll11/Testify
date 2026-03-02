@@ -1,12 +1,13 @@
 // assets
-import { IconApiApp, IconServer } from '@tabler/icons-react';
+import { IconApiApp, IconServer, IconChecklist } from '@tabler/icons-react';
 import { NavItem } from './types';
 import { PERMISSIONS } from 'constants/permissions';
 
 // constant
 const icons = {
   IconApiApp,
-  IconServer
+  IconServer,
+  IconChecklist
 };
 
 // ==============================|| INTEGRATION PLATFORM MENU ITEMS ||============================== //
@@ -33,6 +34,15 @@ const platform: NavItem = {
       icon: icons.IconServer,
       breadcrumbs: true,
       permission: PERMISSIONS.PLATFORM_ENVIRONMENT_VIEW
+    },
+    {
+      id: 'test-registry',
+      title: 'Test Registry',
+      type: 'item',
+      url: '/test-registry',
+      icon: icons.IconChecklist,
+      breadcrumbs: true,
+      permission: PERMISSIONS.TEST_REGISTRY_VIEW
     }
   ]
 };
