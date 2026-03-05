@@ -42,7 +42,20 @@ export interface IIntegrationPlatformService {
   getComponentInfoAndDependencies(componentId: string): Promise<ComponentInfo | null>;
 
   /**
-   * Executes a test process and polls for the result.
+   * Initiates a test process execution.
+   * @param componentId The ID of the test process component to execute.
+   * @returns an external execution ID string for polling
+   */
+  initiateTestExecution(componentId: string): Promise<string>;
+
+  /**
+   * Evaluates the status of a specific test execution.
+   * @param externalExecutionId The external ID returned by initiateTestExecution.
+   */
+  checkTestExecutionStatus(externalExecutionId: string): Promise<PlatformExecutionResult | null>;
+
+  /**
+   * Executes a test process and polls for the result (Blocking).
    * @param componentId The ID of the test process component to execute.
    */
   executeTestProcess(componentId: string): Promise<PlatformExecutionResult>;

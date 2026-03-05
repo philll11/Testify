@@ -11,6 +11,7 @@ import NavigationScroll from 'layout/NavigationScroll';
 import { MenuProvider } from 'contexts/MenuContext';
 import { AuthProvider } from 'contexts/AuthContext';
 import { SnackbarProvider } from 'contexts/SnackbarContext';
+import { EnvironmentProvider } from 'contexts/EnvironmentContext';
 
 import ThemeCustomization from 'themes';
 
@@ -33,13 +34,15 @@ export default function App() {
         <ThemeCustomization>
           <MenuProvider>
             <AuthProvider>
-              <SnackbarProvider>
-                <NavigationScroll>
-                  <>
-                    <RouterProvider router={router} />
-                  </>
-                </NavigationScroll>
-              </SnackbarProvider>
+              <EnvironmentProvider>
+                <SnackbarProvider>
+                  <NavigationScroll>
+                    <>
+                      <RouterProvider router={router} />
+                    </>
+                  </NavigationScroll>
+                </SnackbarProvider>
+              </EnvironmentProvider>
             </AuthProvider>
           </MenuProvider>
         </ThemeCustomization>

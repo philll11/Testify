@@ -19,8 +19,8 @@ export const createCollection = async (data: CreateCollectionDto): Promise<Colle
 };
 
 // Optionally execute collection
-export const executeCollection = async (collectionId: string, testIds?: string[]): Promise<void> => {
-  await axiosServices.post(`${BASE_URL}/${collectionId}/execute`, { testsToRun: testIds });
+export const executeCollection = async (collectionId: string, testIds?: string[], environmentId?: string): Promise<void> => {
+  await axiosServices.post(`${BASE_URL}/${collectionId}/execute`, { testsToRun: testIds, environmentId });
 };
 
 // Optionally delete collection

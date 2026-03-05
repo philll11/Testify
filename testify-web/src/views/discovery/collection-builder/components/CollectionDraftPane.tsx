@@ -21,8 +21,9 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import Tooltip from '@mui/material/Tooltip';
 import { useCollectionBuilderContext } from '../context/CollectionBuilderContext';
-import { usePlatformEnvironments } from 'hooks/platform/usePlatform';
+import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { useCreateCollection } from 'hooks/collections/useCollections';
 import { getNodeIcon } from './ComponentTreePane';
 import { BOOMI_COMPONENT_LABELS } from 'constants/boomi';
@@ -34,18 +35,14 @@ export const CollectionDraftPane = () => {
     useCollectionBuilderContext();
 
   const [name, setName] = useState<string>('');
-  const [environmentId, setEnvironmentId] = useState<string>('');
   const [dependencyDiscovery, setDependencyDiscovery] = useState<boolean>(true);
+  const { activeEnvironmentId } = useEnvironmentContext();
 
   // Edit Mode state
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
 
-  const { data: environments } = usePlatformEnvironments();
   const { mutate: createCollection, isPending: isCreating } = useCreateCollection();
-
-  // Only show environments linked to the selected Profile ID
-  const availableEnvironments = environments?.filter((env) => env.profileId === profileId) || [];
 
   const handleRemoveItem = (id: string) => {
     toggleNodeSelection(id, false);
@@ -84,7 +81,7 @@ export const CollectionDraftPane = () => {
       {
         name: name.trim() || 'Untitled Collection',
         collectionType: collectionType as CollectionType,
-        environmentId: environmentId || undefined,
+        environmentId: activeEnvironmentId || undefined,
         componentIds: selectedItems.map((item) => item.id),
         crawlDependencies: collectionType === 'TARGETS' ? dependencyDiscovery : undefined
       },
@@ -110,26 +107,12 @@ export const CollectionDraftPane = () => {
           placeholder="Enter a recognizable name..."
         />
 
-        <FormControl fullWidth size="small" disabled={!profileId}>
-          <InputLabel id="environment-select-label">Execution Environment</InputLabel>
-          <Select
-            labelId="environment-select-label"
-            value={environmentId}
-            label="Execution Environment"
-            onChange={(e) => setEnvironmentId(e.target.value)}
-          >
-            {availableEnvironments.map((env) => (
-              <MenuItem key={env.id} value={env.id}>
-                {env.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControlLabel
-          control={<Checkbox checked={dependencyDiscovery} onChange={(e) => setDependencyDiscovery(e.target.checked)} />}
-          label="Enable Intelligent Dependency Discovery"
-        />
+        {collectionType === 'TARGETS' && (
+          <FormControlLabel
+            control={<Checkbox checked={dependencyDiscovery} onChange={(e) => setDependencyDiscovery(e.target.checked)} />}
+            label="Enable Intelligent Dependency Discovery"
+          />
+        )}
       </Box>
 
       <Divider />
@@ -256,16 +239,33 @@ export const CollectionDraftPane = () => {
         )}
       </Box>
 
-      <Button
-        variant="contained"
-        color="primary"
-        size="large"
-        startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
-        disabled={selectedItems.length === 0 || !environmentId || !name.trim() || isCreating}
-        onClick={handleConfirmSelection}
+      <Tooltip
+        title={
+          !activeEnvironmentId && dependencyDiscovery && collectionType === 'TARGETS'
+            ? 'A global environment must be selected from the header to enable dependency discovery.'
+            : ''
+        }
+        placement="top"
       >
-        {isCreating ? 'Creating...' : 'Create Collection'}
-      </Button>
+        <span>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
+            disabled={
+              selectedItems.length === 0 ||
+              (!activeEnvironmentId && dependencyDiscovery && collectionType === 'TARGETS') ||
+              !name.trim() ||
+              isCreating
+            }
+            onClick={handleConfirmSelection}
+          >
+            {isCreating ? 'Creating...' : 'Create Collection'}
+          </Button>
+        </span>
+      </Tooltip>
     </Box>
   );
 };

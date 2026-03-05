@@ -16,6 +16,7 @@ export enum AuditAction {
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
   REOPEN = 'REOPEN',
+  EXECUTE = 'EXECUTE',
 }
 
 @Entity('audit_entries')

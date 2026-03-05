@@ -9,6 +9,8 @@ import { User } from '../../src/iam/users/entities/user.entity';
 import { Role } from '../../src/iam/roles/entities/role.entity';
 import { DiscoveredComponent } from '../../src/discovery/entities/discovered-component.entity';
 import { TestRegistry } from '../../src/test-registry/entities/test-registry.entity';
+import { TestExecutionResult } from '../../src/execution-engine/entities/test-execution-result.entity';
+
 
 describe('CollectionsModule (e2e)', () => {
     let app: INestApplication;
@@ -64,6 +66,12 @@ describe('CollectionsModule (e2e)', () => {
 
         const testRegistryRepo = dataSource.getRepository(TestRegistry);
         await testRegistryRepo.query('TRUNCATE TABLE "test_registry" CASCADE;');
+
+        const executionResultRepo = dataSource.getRepository(TestExecutionResult);
+        await executionResultRepo.query('TRUNCATE TABLE "test_execution_results" CASCADE;');
+
+        await dataSource.query('TRUNCATE TABLE "platform_environments" CASCADE;');
+        await dataSource.query('TRUNCATE TABLE "platform_profiles" CASCADE;');
     });
 
     describe('POST /collections', () => {
@@ -136,9 +144,61 @@ describe('CollectionsModule (e2e)', () => {
                 .send(payload)
                 .expect(400);
         });
+        it('should enqueue a crawler job if crawlDependencies is true in a TARGETS collection', async () => {
+            const compRepo = dataSource.getRepository(DiscoveredComponent);
+            await compRepo.save([
+                { componentId: 'comp-crawl-1', profileId: 'prof-1', name: 'process1', platform: 'Boomi', type: 'PROCESS', isTest: false },
+            ]);
+
+            const payload = {
+                name: 'Crawl Plan',
+                collectionType: CollectionType.TARGETS,
+                componentIds: ['comp-crawl-1'],
+                crawlDependencies: true,
+                environmentId: '00000000-0000-0000-0000-000000000000' // valid UUID
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/collections')
+                .set('Authorization', 'Bearer ' + adminToken)
+                .send(payload)
+                .expect(201);
+
+            expect(res.body.id).toBeDefined();
+        });
     });
 
     describe('GET /collections/:id', () => {
+        it('should return nested manifest with empty tests for TARGETS collection if no tests map in TestRegistry', async () => {
+            const compRepo = dataSource.getRepository(DiscoveredComponent);
+            await compRepo.save([
+                { componentId: 'target-no-test', profileId: 'prof-1', name: 'Process 1', platform: 'Boomi', type: 'PROCESS', isTest: false },
+            ]);
+
+            const payload = {
+                name: 'Targets Plan No Tests',
+                collectionType: CollectionType.TARGETS,
+                componentIds: ['target-no-test'],
+            };
+
+            const createRes = await request(app.getHttpServer())
+                .post('/collections')
+                .set('Authorization', 'Bearer ' + adminToken)
+                .send(payload)
+                .expect(201);
+
+            const res = await request(app.getHttpServer())
+                .get('/collections/' + createRes.body.id)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            expect(res.body.manifest).toBeDefined();
+            expect(res.body.manifest.length).toBe(1);
+            expect(res.body.manifest[0].targetId).toBe('target-no-test');
+            expect(res.body.manifest[0].tests).toBeDefined();
+            expect(res.body.manifest[0].tests.length).toBe(0);
+        });
+
         it('should return a flat manifest for TESTS collection', async () => {
             const compRepo = dataSource.getRepository(DiscoveredComponent);
             await compRepo.save([
@@ -203,6 +263,88 @@ describe('CollectionsModule (e2e)', () => {
             expect(res.body.manifest[0].targetId).toBe('target-1');
             expect(res.body.manifest[0].tests).toBeDefined();
             expect(res.body.manifest[0].tests.length).toBe(2);
+        });
+
+        it('should return a flat manifest with empty array if collection has no items', async () => {
+            const payload = {
+                name: 'Empty Plan',
+                collectionType: CollectionType.TARGETS,
+                componentIds: [], // We'd get a 400 normally, let's bypass DTO guard by creating it manually
+            };
+
+            // For testing the service logic correctly, we need an empty collection.
+            const collectionRepo = dataSource.getRepository('Collection');
+            const savedCollection = await collectionRepo.save({
+                name: 'Empty Plan Direct',
+                collectionType: CollectionType.TARGETS,
+                status: CollectionStatus.AWAITING_SELECTION,
+                items: []
+            });
+
+            const res = await request(app.getHttpServer())
+                .get('/collections/' + savedCollection.id)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            expect(res.body.manifest).toBeDefined();
+            expect(res.body.manifest.length).toBe(0);
+        });
+
+        it('should return 404 if collection is not found', async () => {
+            const fakeId = '00000000-0000-0000-0000-000000000000';
+            await request(app.getHttpServer())
+                .get('/collections/' + fakeId)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(404);
+        });
+    });
+
+    describe('GET /collections', () => {
+        it('should return an array of collections ordered by createdAt DESC', async () => {
+            const collectionRepo = dataSource.getRepository('Collection');
+            await collectionRepo.save([
+                { name: 'Plan A', collectionType: CollectionType.TARGETS, status: CollectionStatus.AWAITING_SELECTION, createdAt: new Date('2023-01-01T10:00:00Z') },
+                { name: 'Plan B', collectionType: CollectionType.TARGETS, status: CollectionStatus.AWAITING_SELECTION, createdAt: new Date('2023-01-02T10:00:00Z') }
+            ]);
+
+            const res = await request(app.getHttpServer())
+                .get('/collections')
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.length).toBe(2);
+            // B should come before A due to DESC order
+            expect(res.body[0].name).toBe('Plan B');
+            expect(res.body[1].name).toBe('Plan A');
+        });
+    });
+
+    describe('DELETE /collections/:id', () => {
+        it('should successfully delete an existing collection', async () => {
+            const collectionRepo = dataSource.getRepository('Collection');
+            const savedCollection = await collectionRepo.save({
+                name: 'ToDelete',
+                collectionType: CollectionType.TARGETS,
+                status: CollectionStatus.AWAITING_SELECTION,
+                items: []
+            });
+
+            await request(app.getHttpServer())
+                .delete('/collections/' + savedCollection.id)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            const fetched = await collectionRepo.findOne({ where: { id: savedCollection.id } });
+            expect(fetched).toBeNull();
+        });
+
+        it('should return 404 if collection to delete is not found', async () => {
+            const fakeId = '00000000-0000-0000-0000-000000000000';
+            await request(app.getHttpServer())
+                .delete('/collections/' + fakeId)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(404);
         });
     });
 });

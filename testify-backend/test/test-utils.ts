@@ -1,6 +1,10 @@
 // backend/test/test-utils.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+
+// Set test environment variables strictly before app module loads
+process.env.REDIS_DB = '1';
+
 import { AppModule } from '../src/app.module';
 import { useContainer } from 'class-validator';
 import { JwtService } from '@nestjs/jwt';

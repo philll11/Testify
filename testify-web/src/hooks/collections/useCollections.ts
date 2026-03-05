@@ -62,7 +62,8 @@ export const useExecuteCollection = () => {
 
   return useMutation({
     mutationKey: COLLECTIONS_KEYS.mutations.execute,
-    mutationFn: ({ id, testIds }: { id: string; testIds?: string[] }) => executeCollection(id, testIds),
+    mutationFn: ({ id, testIds, environmentId }: { id: string; testIds?: string[]; environmentId?: string }) =>
+      executeCollection(id, testIds, environmentId),
     onSuccess: (_, variables) => {
       showMessage('Collection execution started', 'success');
       queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEYS.detail(variables.id) });

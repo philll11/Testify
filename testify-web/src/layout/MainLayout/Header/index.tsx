@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 // project imports
 import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
+import EnvironmentSection from './EnvironmentSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
 import ThemeModeSection from './ThemeModeSection';
@@ -55,6 +56,10 @@ export default function Header() {
 
       {/* header search */}
       <SearchSection />
+
+      {/* global environment selector */}
+      <EnvironmentSection />
+
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ flexGrow: 1 }} />
 

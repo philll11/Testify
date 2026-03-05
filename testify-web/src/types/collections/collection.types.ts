@@ -31,6 +31,7 @@ export interface Collection {
   environmentId?: string;
   failureReason?: string;
   items: CollectionItem[];
+  manifest?: any[];
   createdAt: string;
   updatedAt: string;
 }

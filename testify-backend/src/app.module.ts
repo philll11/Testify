@@ -24,6 +24,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
 import { TestRegistryModule } from './test-registry/test-registry.module';
 import { CollectionsModule } from './collections/collections.module';
 import { BackgroundTasksModule } from './background-tasks/background-tasks.module';
+import { ExecutionEngineModule } from './execution-engine/execution-engine.module';
 
 @Module({
   imports: [
@@ -90,12 +91,23 @@ import { BackgroundTasksModule } from './background-tasks/background-tasks.modul
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST');
+        const port = configService.get<number>('REDIS_PORT');
+        const dbStr = configService.get<string>('REDIS_DB');
+
+        if (!host || !port || dbStr === undefined) {
+          throw new Error('Redis configuration is missing required environment variables (REDIS_HOST, REDIS_PORT, REDIS_DB).');
+        }
+
+        return {
+          connection: {
+            host,
+            port,
+            db: Number(dbStr),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     DatabaseModule,
@@ -108,6 +120,7 @@ import { BackgroundTasksModule } from './background-tasks/background-tasks.modul
     TestRegistryModule,
     CollectionsModule,
     BackgroundTasksModule,
+    ExecutionEngineModule,
   ],
   controllers: [AppController],
   providers: [

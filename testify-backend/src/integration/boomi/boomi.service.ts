@@ -433,6 +433,82 @@ export class BoomiService implements IIntegrationPlatformService {
     }
   }
 
+  public async initiateTestExecution(componentId: string): Promise<string> {
+    const initResponse = await this._requestWithRetry(async () => {
+      const executionRequest = {
+        '@type': 'ExecutionRequest',
+        atomId: this.executionInstanceId,
+        processId: componentId,
+      };
+      return await this.apiClient.post('/ExecutionRequest', executionRequest);
+    });
+
+    const requestId = initResponse.data.requestId;
+
+    if (!requestId)
+      throw new Error('Execution initiation failed to return a requestId.');
+
+    // We return a structured string that contains both ID and recordURL
+    const recordUrl = initResponse.data.recordUrl || '';
+    return JSON.stringify({ requestId, recordUrl });
+  }
+
+  public async checkTestExecutionStatus(externalExecutionId: string): Promise<PlatformExecutionResult | null> {
+    try {
+      const metadata = JSON.parse(externalExecutionId);
+      const requestId = metadata.requestId;
+      const recordUrl = metadata.recordUrl;
+
+      const pollResponse = await this.apiClient.get(`/ExecutionRecord/async/${requestId}`);
+
+      if (pollResponse.data.responseStatusCode === 200) {
+        const executionRecord = pollResponse.data.result?.[0];
+        if (!executionRecord) {
+          return {
+            status: 'FAILURE',
+            message: 'Execution completed but no result record was found.',
+          };
+        }
+
+        const currentStatus = executionRecord.status;
+
+        if (currentStatus === 'COMPLETE') {
+          return {
+            status: 'SUCCESS',
+            message: 'Execution completed successfully.',
+            executionLogUrl: recordUrl,
+          };
+        }
+
+        if (currentStatus === 'ERROR') {
+          const rawMessage = executionRecord.message || '';
+          const testCases = this.tryParseTestResult(rawMessage);
+
+          if (testCases) {
+            return {
+              status: 'FAILURE',
+              message: 'Test execution completed with assertion failures.',
+              executionLogUrl: recordUrl,
+              testCases: testCases,
+            };
+          }
+
+          return {
+            status: 'FAILURE',
+            message: `Execution failed with message: ${rawMessage}`,
+            executionLogUrl: recordUrl,
+          };
+        }
+
+        // Still pending
+        return null;
+      }
+      return null;
+    } catch (error) {
+      throw new IntegrationPlatformException('Failed to check execution status: ' + (error.message || 'Unknown'));
+    }
+  }
+
   public async executeTestProcess(componentId: string): Promise<PlatformExecutionResult> {
     try {
       const initResponse = await this._requestWithRetry(async () => {

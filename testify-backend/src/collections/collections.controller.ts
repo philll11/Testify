@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseUUIDPipe, Delete } from '@nestjs/common';
 import { CollectionsService } from './collections.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
+import { ExecuteCollectionDto } from './dto/execute-collection.dto';
 import { RequirePermission } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constants';
@@ -19,6 +20,12 @@ export class CollectionsController {
         return this.collectionsService.create(createCollectionDto, requestingUser);
     }
 
+    @Get()
+    @RequirePermission(PERMISSIONS.COLLECTION_VIEW)
+    findAll() {
+        return this.collectionsService.findAll();
+    }
+
     @Get(':id')
     @RequirePermission(PERMISSIONS.COLLECTION_VIEW)
     findOne(
@@ -26,6 +33,25 @@ export class CollectionsController {
         @CurrentUser() requestingUser: User,
     ) {
         return this.collectionsService.findOne(id, requestingUser);
+    }
+
+    @Post(':id/execute')
+    @RequirePermission(PERMISSIONS.COLLECTION_CREATE)
+    execute(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() executeDto: ExecuteCollectionDto,
+        @CurrentUser() requestingUser: User,
+    ) {
+        return this.collectionsService.execute(id, executeDto, requestingUser);
+    }
+
+    @Delete(':id')
+    @RequirePermission(PERMISSIONS.COLLECTION_DELETE)
+    remove(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() requestingUser: User,
+    ) {
+        return this.collectionsService.remove(id, requestingUser);
     }
 }
 
