@@ -1,6 +1,6 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Button, Chip, Grid, Divider, Tooltip } from '@mui/material';
+import { Box, Typography, CircularProgress, Button, Chip, Grid, Divider, Tooltip, Tabs, Tab } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -9,12 +9,19 @@ import { useGetCollection, useExecuteCollection } from 'hooks/collections/useCol
 import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { usePlatformEnvironments, usePlatformProfiles } from 'hooks/platform/usePlatform';
 import { CoverageManifestView } from '../components/CoverageManifestView';
+import { TestResultsReport } from '../components/TestResultsReport';
 
 const CollectionDetailsPage: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(0);
 
-  const { data: collection, isLoading, error } = useGetCollection(id || '');
+  const { data: collection, isLoading, error } = useGetCollection(id || '', {
+    refetchInterval: (query) => {
+      const data = query?.state?.data as any;
+      return data?.status === 'EXECUTING' ? 3000 : false;
+    }
+  });
   const { mutate: executeCollection, isPending: isExecuting } = useExecuteCollection();
   const { activeEnvironmentId } = useEnvironmentContext();
   const { data: environments } = usePlatformEnvironments();
@@ -79,7 +86,12 @@ const CollectionDetailsPage: FC = () => {
   const handleExecute = () => {
     if (id && activeEnvironmentId) {
       executeCollection({ id, environmentId: activeEnvironmentId });
+      setActiveTab(1); // switch to results tab
     }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
   return (
@@ -152,7 +164,22 @@ const CollectionDetailsPage: FC = () => {
         </Grid>
 
         <Grid size={{ xs: 12, md: 8 }}>
-          <CoverageManifestView collection={collection} />
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={activeTab} onChange={handleTabChange}>
+              <Tab label="Execution Manifest" />
+              <Tab
+                label="Test Results"
+                disabled={collection.status === 'DRAFT' || collection.status === 'AWAITING_SELECTION'}
+              />
+            </Tabs>
+          </Box>
+
+          <Box hidden={activeTab !== 0}>
+            <CoverageManifestView collection={collection} />
+          </Box>
+          <Box hidden={activeTab !== 1}>
+            {id && <TestResultsReport collectionId={id} isExecuting={collection.status === 'EXECUTING'} />}
+          </Box>
         </Grid>
       </Grid>
     </MainCard>

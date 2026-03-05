@@ -27,7 +27,7 @@ export const useGetCollections = () => {
   });
 };
 
-export const useGetCollection = (id: string, options?: { enabled?: boolean }) => {
+export const useGetCollection = (id: string, options?: { enabled?: boolean; refetchInterval?: number | ((data: any) => number | false) }) => {
   const { can } = usePermission();
   const isEnabled = (options?.enabled ?? true) && !!id && can(PERMISSIONS.COLLECTION_VIEW);
 
@@ -35,7 +35,8 @@ export const useGetCollection = (id: string, options?: { enabled?: boolean }) =>
     queryKey: COLLECTIONS_KEYS.detail(id),
     queryFn: () => getCollection(id),
     enabled: isEnabled,
-    staleTime: 0 // Fetch fresh data for collections details usually
+    staleTime: 0, // Fetch fresh data for collections details usually
+    refetchInterval: options?.refetchInterval
   });
 };
 

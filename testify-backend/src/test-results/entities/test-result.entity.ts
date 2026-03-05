@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Collection } from '../../collections/entities/collection.entity';
 
-export enum TestExecutionStatus {
+export enum TestResultStatus {
     PENDING = 'PENDING',
     RUNNING = 'RUNNING',
     PASSED = 'PASSED',
@@ -9,15 +9,15 @@ export enum TestExecutionStatus {
     ERROR = 'ERROR'
 }
 
-@Entity('test_execution_results')
-export class TestExecutionResult {
+@Entity('test_results')
+export class TestResult {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
     @Column({ type: 'uuid' })
     collectionId: string;
 
-    @ManyToOne(() => Collection)
+    @ManyToOne(() => Collection, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'collectionId' })
     collection: Collection;
 
@@ -29,10 +29,10 @@ export class TestExecutionResult {
 
     @Column({
         type: 'enum',
-        enum: TestExecutionStatus,
-        default: TestExecutionStatus.PENDING,
+        enum: TestResultStatus,
+        default: TestResultStatus.PENDING,
     })
-    status: TestExecutionStatus;
+    status: TestResultStatus;
 
     @Column({ type: 'jsonb', nullable: true })
     rawResult: any;

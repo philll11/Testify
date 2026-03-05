@@ -12,7 +12,7 @@ import { TestRegistry } from '../../src/test-registry/entities/test-registry.ent
 import { PlatformProfile } from '../../src/integration/platform-profile/entities/platform-profile.entity';
 import { PlatformEnvironment } from '../../src/integration/platform-environment/entities/platform-environment.entity';
 import { IntegrationPlatform } from '../../src/integration/constants/integration-platform.enum';
-import { TestExecutionResult, TestExecutionStatus } from '../../src/execution-engine/entities/test-execution-result.entity';
+import { TestResult, TestResultStatus } from '../../src/test-results/entities/test-result.entity';
 import { IntegrationService } from '../../src/integration/integration.service';
 
 describe('CollectionsModule (e2e)', () => {
@@ -70,7 +70,7 @@ describe('CollectionsModule (e2e)', () => {
         const testRegistryRepo = dataSource.getRepository(TestRegistry);
         await testRegistryRepo.query('TRUNCATE TABLE "test_registry" CASCADE;');
 
-        const executionResultRepo = dataSource.getRepository(TestExecutionResult);
+        const executionResultRepo = dataSource.getRepository(TestResult);
         await executionResultRepo.query('TRUNCATE TABLE "test_execution_results" CASCADE;');
 
         await dataSource.query('TRUNCATE TABLE "platform_environments" CASCADE;');
@@ -139,7 +139,7 @@ describe('CollectionsModule (e2e)', () => {
             jest.spyOn(integrationService, 'getServiceById').mockImplementation(async () => {
                 return {
                     initiateTestExecution: jest.fn().mockResolvedValue('fake-ext-id-123'),
-                    checkTestExecutionStatus: jest.fn().mockResolvedValue({ status: 'SUCCESS' }),
+                    checkTestResultStatus: jest.fn().mockResolvedValue({ status: 'SUCCESS' }),
                     searchComponents: jest.fn(),
                     testConnection: jest.fn().mockResolvedValue(true),
                     executeTestProcess: jest.fn(),
@@ -174,16 +174,16 @@ describe('CollectionsModule (e2e)', () => {
                 .expect(201);
 
             // 4. Validate DB records were created by the Execution Engine Queue Service
-            const executionResultRepo = dataSource.getRepository(TestExecutionResult);
+            const executionResultRepo = dataSource.getRepository(TestResult);
 
             // Wait for up to 3 seconds for the background worker to process the job and hit the running state
             const start = Date.now();
-            let results: TestExecutionResult[] = [];
+            let results: TestResult[] = [];
             while (Date.now() - start < 3000) {
                 results = await executionResultRepo.find({ where: { collectionId } });
                 // With our mocked service, the initial job processor flips the status from PENDING to RUNNING instantly
                 // It then queues a delayed poll-test job, but we don't wait 10 seconds for that.
-                if (results.length === 2 && results.every(r => r.status === TestExecutionStatus.RUNNING)) {
+                if (results.length === 2 && results.every(r => r.status === TestResultStatus.RUNNING)) {
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 100)); // sleep 100ms
@@ -192,7 +192,7 @@ describe('CollectionsModule (e2e)', () => {
             expect(results).toHaveLength(2); // Two items were in the array
             expect(results.some(r => r.testId === 'comp-ext-1234')).toBeTruthy();
             expect(results.some(r => r.testId === 'comp-ext-5678')).toBeTruthy();
-            expect(results[0].status).toBe(TestExecutionStatus.RUNNING); // Started status successfully hit our mock!
+            expect(results[0].status).toBe(TestResultStatus.RUNNING); // Started status successfully hit our mock!
         });
 
         it('should return 404 if the collection is not found', async () => {

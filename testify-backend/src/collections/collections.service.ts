@@ -144,11 +144,13 @@ export class CollectionsService {
                 return {
                     targetId: target.componentId,
                     targetName: target.name,
+                    targetPath: target.folderPath,
                     targetPlatform: target.type,
                     profileId: target.profileId,
                     tests: targetTests.map(t => ({
                         testId: t.componentId,
                         testName: t.name,
+                        testPath: t.folderPath,
                         testPlatform: t.type,
                         profileId: t.profileId
                     }))

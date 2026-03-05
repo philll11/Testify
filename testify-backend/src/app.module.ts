@@ -25,6 +25,7 @@ import { TestRegistryModule } from './test-registry/test-registry.module';
 import { CollectionsModule } from './collections/collections.module';
 import { BackgroundTasksModule } from './background-tasks/background-tasks.module';
 import { ExecutionEngineModule } from './execution-engine/execution-engine.module';
+import { TestResultsModule } from './test-results/test-results.module';
 
 @Module({
   imports: [
@@ -121,6 +122,7 @@ import { ExecutionEngineModule } from './execution-engine/execution-engine.modul
     CollectionsModule,
     BackgroundTasksModule,
     ExecutionEngineModule,
+    TestResultsModule,
   ],
   controllers: [AppController],
   providers: [

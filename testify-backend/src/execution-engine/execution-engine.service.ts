@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Collection } from '../collections/entities/collection.entity';
-import { TestExecutionResult, TestExecutionStatus } from './entities/test-execution-result.entity';
+import { TestResult, TestResultStatus } from '../test-results/entities/test-result.entity';
 import { TestExecutionJobData } from './processors/execution-engine.processor';
 
 @Injectable()
@@ -13,8 +13,8 @@ export class ExecutionEngineService {
 
     constructor(
         @InjectQueue('test-execution-queue') private testExecutionQueue: Queue,
-        @InjectRepository(TestExecutionResult)
-        private readonly testExecutionResultRepo: Repository<TestExecutionResult>,
+        @InjectRepository(TestResult)
+        private readonly testResultRepo: Repository<TestResult>,
         @InjectRepository(Collection)
         private readonly collectionRepo: Repository<Collection>,
     ) { }
@@ -39,12 +39,12 @@ export class ExecutionEngineService {
         // Queue up each individual test from the collection
         for (const item of testsToRun) {
             // 1. Create a pending execution result in the database
-            const initialRecord = this.testExecutionResultRepo.create({
+            const initialRecord = this.testResultRepo.create({
                 collectionId: collection.id,
                 testId: item.componentId, // Assumes componentId represents the Boomi/Platform test
-                status: TestExecutionStatus.PENDING,
+                status: TestResultStatus.PENDING,
             });
-            const savedRecord = await this.testExecutionResultRepo.save(initialRecord);
+            const savedRecord = await this.testResultRepo.save(initialRecord);
 
             // 2. Dispatch a job to the BullMQ queue
             const jobData: TestExecutionJobData = {

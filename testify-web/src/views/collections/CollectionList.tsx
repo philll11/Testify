@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Button, Typography, Tooltip } from '@mui/material';
+import { useMemo, useState, MouseEvent } from 'react';
+import { Button, Tooltip, IconButton } from '@mui/material';
 import { IconPlus, IconTrash, IconEye } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import MainCard from 'ui-component/cards/MainCard';
@@ -8,33 +8,46 @@ import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useGetCollections, useDeleteCollection } from 'hooks/collections/useCollections';
 import { format } from 'date-fns';
 import ConfirmDialog from 'ui-component/extended/ConfirmDialog';
-import IconButton from '@mui/material/IconButton';
 import { usePermission } from 'contexts/AuthContext';
 import { PERMISSIONS } from 'constants/permissions';
+import { useContextualNavigation } from 'hooks/useContextualNavigation';
 
 export const CollectionList = () => {
     const navigate = useNavigate();
+    const { getLinkTo } = useContextualNavigation('/collections');
     const { can } = usePermission();
+
+    // Queries & Mutations
     const { data: collections = [], isLoading } = useGetCollections();
-    const { mutate: deleteCollection } = useDeleteCollection();
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const { mutateAsync: deleteCollection } = useDeleteCollection();
+
+    // Delete State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [collectionToDelete, setCollectionToDelete] = useState<any | null>(null);
+
+    // --- Actions ---
+    const handleViewPage = (id: string, e?: MouseEvent) => {
+        e?.stopPropagation();
+        navigate(getLinkTo(`/collections/${id}`));
+    };
+
+    const handleDeleteClick = (collection: any, e: MouseEvent) => {
+        e.stopPropagation();
+        setCollectionToDelete(collection);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (collectionToDelete) {
+            await deleteCollection(collectionToDelete.id);
+            setDeleteDialogOpen(false);
+            setCollectionToDelete(null);
+        }
+    };
 
     const columns: GridColDef[] = useMemo(
         () => [
-            {
-                field: 'name',
-                headerName: 'Name',
-                flex: 1,
-                renderCell: (params: GridRenderCellParams) => (
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ cursor: 'pointer', color: 'primary.main', display: 'flex', alignItems: 'center', height: '100%' }}
-                        onClick={() => navigate(`/collections/${params.row.id}`)}
-                    >
-                        {params.value}
-                    </Typography>
-                )
-            },
+            { field: 'name', headerName: 'Name', flex: 1, minWidth: 200 },
             { field: 'description', headerName: 'Description', flex: 1.5 },
             { field: 'collectionType', headerName: 'Type', flex: 0.5, minWidth: 150 },
             {
@@ -53,27 +66,30 @@ export const CollectionList = () => {
                 filterable: false,
                 align: 'right',
                 headerAlign: 'right',
-                renderCell: (params: GridRenderCellParams) => (
-                    <>
-                        {can(PERMISSIONS.COLLECTION_VIEW) && (
-                            <Tooltip title="View Details">
-                                <IconButton size="small" color="primary" onClick={() => navigate(`/collections/${params.row.id}`)}>
-                                    <IconEye size={18} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        {can(PERMISSIONS.COLLECTION_DELETE) && (
-                            <Tooltip title="Delete">
-                                <IconButton size="small" color="error" onClick={() => setDeleteId(params.row.id)}>
-                                    <IconTrash size={18} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                    </>
-                )
+                renderCell: (params: GridRenderCellParams) => {
+                    const collection = params.row;
+                    return (
+                        <>
+                            {can(PERMISSIONS.COLLECTION_VIEW) && (
+                                <Tooltip title="View Details">
+                                    <IconButton color="primary" size="small" onClick={(e) => handleViewPage(collection.id, e)}>
+                                        <IconEye size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            {can(PERMISSIONS.COLLECTION_DELETE) && (
+                                <Tooltip title="Delete">
+                                    <IconButton size="small" color="error" onClick={(e) => handleDeleteClick(collection, e)}>
+                                        <IconTrash size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </>
+                    );
+                }
             }
         ],
-        [can, navigate]
+        [can, handleViewPage, handleDeleteClick]
     );
 
     return (
@@ -81,7 +97,7 @@ export const CollectionList = () => {
             title="Collections"
             secondary={
                 can(PERMISSIONS.COLLECTION_CREATE) && (
-                    <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => navigate('/discovery/collection-builder')}>
+                    <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => navigate(getLinkTo('/discovery/collection-builder'))}>
                         Build Collection
                     </Button>
                 )
@@ -91,21 +107,19 @@ export const CollectionList = () => {
                 rows={collections}
                 columns={columns}
                 loading={isLoading}
+                onRowClick={(params) => handleViewPage(params.row.id)}
                 getRowId={(row: any) => row.id}
-                onRowClick={(params) => navigate(`/collections/${params.row.id}`)}
             />
 
             <ConfirmDialog
-                open={!!deleteId}
+                open={deleteDialogOpen}
                 title="Delete Collection"
                 content="Are you sure you want to delete this collection? This action cannot be undone."
-                onConfirm={() => {
-                    if (deleteId) {
-                        deleteCollection(deleteId);
-                        setDeleteId(null);
-                    }
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                    setDeleteDialogOpen(false);
+                    setCollectionToDelete(null);
                 }}
-                onCancel={() => setDeleteId(null)}
                 confirmLabel="Delete"
                 cancelLabel="Cancel"
                 confirmColor="error"

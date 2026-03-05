@@ -11,17 +11,22 @@ interface CoverageManifestViewProps {
 }
 
 export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection }) => {
-  const renderTestsFlat = (items: CollectionItem[]) => {
+
+  const getSourceType = (componentId: string) => {
+    const item = collection.items?.find(i => i.componentId === componentId);
+    return item?.sourceType;
+  };
+
+  const renderTestsFlat = (manifest: any[]) => {
     return (
       <List>
-        {items.map((item) => {
-          const testComp = item.targetComponent;
+        {manifest.map((testComp) => {
           return (
-            <ListItem key={item.id}>
+            <ListItem key={testComp.id || testComp.componentId}>
               <ListItemIcon>
                 <ScienceIcon color="secondary" />
               </ListItemIcon>
-              <ListItemText primary={testComp?.name || item.componentId} secondary={testComp?.path || 'Direct Test Selection'} />
+              <ListItemText primary={testComp.name || testComp.componentId} secondary={testComp.path || 'Direct Test Selection'} />
             </ListItem>
           );
         })}
@@ -29,27 +34,28 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
     );
   };
 
-  const renderTargetsNested = (items: CollectionItem[]) => {
+  const renderTargetsNested = (manifest: any[]) => {
     return (
       <List>
-        {items.map((item) => {
-          const mainComp = item.targetComponent;
+        {manifest.map((item) => {
+          const mainName = item.targetName || item.targetId;
           const mappedTests = item.tests || [];
+          const sourceType = getSourceType(item.targetId);
 
           return (
-            <Box key={item.id} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
+            <Box key={item.targetId} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
               <Box display="flex" alignItems="center" mb={1}>
                 <InsertDriveFileIcon sx={{ mr: 1, color: 'text.secondary' }} />
                 <Typography variant="subtitle1" fontWeight="bold">
-                  {mainComp?.name || item.componentId}
+                  {mainName}
                 </Typography>
-                {mainComp?.type && <Chip size="small" label={BOOMI_COMPONENT_LABELS[mainComp.type] || mainComp.type} sx={{ ml: 1 }} />}
-                {item.sourceType === 'DISCOVERED' && (
+                {item.targetPlatform && <Chip size="small" label={BOOMI_COMPONENT_LABELS[item.targetPlatform] || item.targetPlatform} sx={{ ml: 1 }} />}
+                {sourceType === 'DISCOVERED' && (
                   <Chip size="small" label="Auto-Discovered" color="info" variant="outlined" sx={{ ml: 1 }} />
                 )}
               </Box>
               <Typography variant="body2" color="textSecondary" mb={2}>
-                {mainComp?.path || 'Path unavailable'}
+                {item.targetPath || 'Path unavailable'}
               </Typography>
 
               <Divider sx={{ mb: 1 }} />
@@ -61,11 +67,11 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
               {mappedTests.length > 0 ? (
                 <List dense>
                   {mappedTests.map((t: any) => (
-                    <ListItem key={t.id} disableGutters>
+                    <ListItem key={t.testId} disableGutters>
                       <ListItemIcon sx={{ minWidth: 36 }}>
                         <ScienceIcon color="secondary" fontSize="small" />
                       </ListItemIcon>
-                      <ListItemText primary={t.name} secondary={t.path} />
+                      <ListItemText primary={t.testName} secondary={t.testPath} />
                     </ListItem>
                   ))}
                 </List>
@@ -81,13 +87,23 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
     );
   };
 
+  const manifest = collection.manifest || [];
+
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
         Execution Manifest
       </Typography>
 
-      {collection.collectionType === CollectionType.TESTS ? renderTestsFlat(collection.items) : renderTargetsNested(collection.items)}
+      {manifest.length === 0 ? (
+        <Typography variant="body2" color="textSecondary">
+          No components found in manifest.
+        </Typography>
+      ) : collection.collectionType === CollectionType.TESTS ? (
+        renderTestsFlat(manifest)
+      ) : (
+        renderTargetsNested(manifest)
+      )}
     </Box>
   );
 };

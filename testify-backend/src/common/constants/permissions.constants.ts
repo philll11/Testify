@@ -73,6 +73,7 @@ export const PERMISSIONS = {
   COLLECTION_CREATE: 'Collection:Create',
   COLLECTION_EDIT: 'Collection:Edit',
   COLLECTION_DELETE: 'Collection:Delete',
+  COLLECTION_EXECUTE: 'Collection:Execute',
 
   // --- Global & System-Wide Permissions ---
   // Special permissions that are not tied to a single resource's CRUD operations.

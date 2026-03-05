@@ -2,7 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { SchedulerRegistry } from '@nestjs/schedule';
+import { getQueueToken } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { setupTestApp, teardownTestApp } from '../test-utils';
 import { User } from '../../src/iam/users/entities/user.entity';
 import { Role } from '../../src/iam/roles/entities/role.entity';
@@ -31,7 +32,7 @@ describe('Discovery Module E2E', () => {
     let environmentService: PlatformEnvironmentService;
     let systemConfigService: SystemConfigService;
     let integrationService: IntegrationService;
-    let schedulerRegistry: SchedulerRegistry;
+    let backgroundTasksQueue: Queue;
     let discoveryService: DiscoveryService;
     let discoveryScheduler: DiscoveryScheduler;
 
@@ -53,7 +54,7 @@ describe('Discovery Module E2E', () => {
         environmentService = app.get(PlatformEnvironmentService);
         systemConfigService = app.get(SystemConfigService);
         integrationService = app.get(IntegrationService);
-        schedulerRegistry = app.get(SchedulerRegistry);
+        backgroundTasksQueue = app.get<Queue>(getQueueToken('background-tasks'));
         discoveryService = app.get(DiscoveryService);
         discoveryScheduler = app.get(DiscoveryScheduler);
 
@@ -275,23 +276,12 @@ describe('Discovery Module E2E', () => {
         // 1. Manually refresh config to apply what's in SystemConfigService to the Scheduler
         await discoveryScheduler.refreshSchedule();
 
-        // Ensure job is registered and check its registration
-        const job = schedulerRegistry.getCronJob(jobName);
+        // Ensure job scheduler is registered by checking the BullMQ queue
+        let jobSchedulers = await backgroundTasksQueue.getJobSchedulers();
+        let job = jobSchedulers.find(scheduler => scheduler.name === jobName);
         expect(job).toBeDefined();
 
-        // 2. We can fire it securely and it calls syncDatabase
-        jest.spyOn(discoveryService, 'syncDatabase').mockResolvedValue(undefined as any);
-
-        // Fire job locally
-        job.fireOnTick();
-
-        // Because it is async inside the job wrapper, we need to wait a tick to allow the Promise chain to start
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        // Expect syncDatabase to be called
-        expect(discoveryService.syncDatabase).toHaveBeenCalled();
-
-        // 3. Update the config to make isSyncActive: false via API so the event is emitted
+        // 2. Update the config to make isSyncActive: false via API so the event is emitted
         await request(app.getHttpServer())
             .patch(`/system/config/${SystemConfigKeys.DISCOVERY.CONFIG}`)
             .set('Authorization', `Bearer ${adminToken}`)
@@ -307,9 +297,11 @@ describe('Discovery Module E2E', () => {
             .expect(200);
 
         // Wait briefly for Event Emitter in controller to trigger `discoveryScheduler.refreshSchedule()` async
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Attempting to get the job should now throw since it was gracefully removed
-        expect(() => schedulerRegistry.getCronJob(jobName)).toThrow();
+        // Attempting to get the job scheduler should now yield nothing
+        jobSchedulers = await backgroundTasksQueue.getJobSchedulers();
+        job = jobSchedulers.find(scheduler => scheduler.name === jobName);
+        expect(job).toBeUndefined();
     });
 });

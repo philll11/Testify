@@ -9,7 +9,7 @@ import { User } from '../../src/iam/users/entities/user.entity';
 import { Role } from '../../src/iam/roles/entities/role.entity';
 import { DiscoveredComponent } from '../../src/discovery/entities/discovered-component.entity';
 import { TestRegistry } from '../../src/test-registry/entities/test-registry.entity';
-import { TestExecutionResult } from '../../src/execution-engine/entities/test-execution-result.entity';
+import { TestResult } from '../../src/test-results/entities/test-result.entity';
 
 
 describe('CollectionsModule (e2e)', () => {
@@ -67,8 +67,8 @@ describe('CollectionsModule (e2e)', () => {
         const testRegistryRepo = dataSource.getRepository(TestRegistry);
         await testRegistryRepo.query('TRUNCATE TABLE "test_registry" CASCADE;');
 
-        const executionResultRepo = dataSource.getRepository(TestExecutionResult);
-        await executionResultRepo.query('TRUNCATE TABLE "test_execution_results" CASCADE;');
+        const executionResultRepo = dataSource.getRepository(TestResult);
+        await executionResultRepo.query('TRUNCATE TABLE "test_results" CASCADE;');
 
         await dataSource.query('TRUNCATE TABLE "platform_environments" CASCADE;');
         await dataSource.query('TRUNCATE TABLE "platform_profiles" CASCADE;');
@@ -345,6 +345,35 @@ describe('CollectionsModule (e2e)', () => {
                 .delete('/collections/' + fakeId)
                 .set('Authorization', 'Bearer ' + adminToken)
                 .expect(404);
+        });
+
+        it('should successfully delete an existing collection that has test results', async () => {
+            const collectionRepo = dataSource.getRepository('Collection');
+            const testResultRepo = dataSource.getRepository('TestResult');
+
+            const savedCollection = await collectionRepo.save({
+                name: 'ToDeleteWithResults',
+                collectionType: CollectionType.TARGETS,
+                status: CollectionStatus.AWAITING_SELECTION,
+                items: []
+            });
+
+            await testResultRepo.save({
+                collectionId: savedCollection.id,
+                testId: 'test-123',
+                status: 'PENDING',
+            });
+
+            await request(app.getHttpServer())
+                .delete('/collections/' + savedCollection.id)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            const fetched = await collectionRepo.findOne({ where: { id: savedCollection.id } });
+            expect(fetched).toBeNull();
+
+            const fetchedResult = await testResultRepo.findOne({ where: { collectionId: savedCollection.id } });
+            expect(fetchedResult).toBeNull();
         });
     });
 });

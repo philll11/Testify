@@ -36,7 +36,7 @@ export class CollectionsController {
     }
 
     @Post(':id/execute')
-    @RequirePermission(PERMISSIONS.COLLECTION_CREATE)
+    @RequirePermission(PERMISSIONS.COLLECTION_EXECUTE)
     execute(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() executeDto: ExecuteCollectionDto,

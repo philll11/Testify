@@ -35,7 +35,7 @@ export const CollectionDraftPane = () => {
     useCollectionBuilderContext();
 
   const [name, setName] = useState<string>('');
-  const [dependencyDiscovery, setDependencyDiscovery] = useState<boolean>(true);
+  const [dependencyDiscovery, setDependencyDiscovery] = useState<boolean>(false);
   const { activeEnvironmentId } = useEnvironmentContext();
 
   // Edit Mode state
