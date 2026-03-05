@@ -23,6 +23,13 @@ export interface CollectionItem {
   tests?: any[];
 }
 
+export interface CollectionCoverage {
+  totalTargets: number;
+  coveredTargets: number;
+  uncoveredTargets: number;
+  coveragePercentage: number;
+}
+
 export interface Collection {
   id: string;
   name: string;
@@ -32,6 +39,7 @@ export interface Collection {
   failureReason?: string;
   items: CollectionItem[];
   manifest?: any[];
+  coverage?: CollectionCoverage;
   createdAt: string;
   updatedAt: string;
 }

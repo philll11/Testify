@@ -10,6 +10,7 @@ import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { usePlatformEnvironments, usePlatformProfiles } from 'hooks/platform/usePlatform';
 import { CoverageManifestView } from '../components/CoverageManifestView';
 import { TestResultsReport } from '../components/TestResultsReport';
+import { CollectionType } from 'types/collections/collection.types';
 
 const CollectionDetailsPage: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +57,11 @@ const CollectionDetailsPage: FC = () => {
           reason: `Profile mismatch. This collection requires a ${requiredProfile?.name || 'different'} environment.`
         };
       }
+    }
+
+    // Check if there are actually any tests mapped in TARGETS mode
+    if (collection.collectionType === CollectionType.TARGETS && collection.coverage && collection.coverage.coveredTargets === 0) {
+      return { isValid: false, reason: 'Cannot execute collection: No executable tests mapped to the provided targets.' };
     }
 
     return { isValid: true, reason: '' };
@@ -126,6 +132,35 @@ const CollectionDetailsPage: FC = () => {
               </Typography>
               <Typography variant="body2">{collection.collectionType}</Typography>
             </Box>
+
+            {collection.collectionType === CollectionType.TARGETS && collection.coverage && (
+              <Box>
+                <Typography variant="caption" color="textSecondary">
+                  Coverage
+                </Typography>
+                <Box mt={0.5}>
+                  <Grid container spacing={1}>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2">Percentage:</Typography>
+                      <Typography variant="h6" color={collection.coverage.coveragePercentage < 50 ? 'error' : collection.coverage.coveragePercentage < 80 ? 'warning.main' : 'success.main'}>
+                        {collection.coverage.coveragePercentage}%
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2">Targets Covered:</Typography>
+                      <Typography variant="body2">
+                        {collection.coverage.coveredTargets} / {collection.coverage.totalTargets}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                  {collection.coverage.uncoveredTargets > 0 && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                      {collection.coverage.uncoveredTargets} target(s) have no mapped tests.
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            )}
 
             <Box>
               <Typography variant="caption" color="textSecondary">

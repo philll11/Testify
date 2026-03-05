@@ -157,9 +157,22 @@ export class CollectionsService {
                 };
             });
 
+            const totalTargets = targets.length;
+            const coveredTargets = manifest.filter(m => m.tests.length > 0).length;
+            const uncoveredTargets = totalTargets - coveredTargets;
+            const coveragePercentage = totalTargets > 0 ? Math.round((coveredTargets / totalTargets) * 10000) / 100 : 0;
+
+            const coverage = {
+                totalTargets,
+                coveredTargets,
+                uncoveredTargets,
+                coveragePercentage
+            };
+
             return {
                 ...collection,
                 manifest,
+                coverage,
             };
         }
     }
@@ -211,8 +224,29 @@ export class CollectionsService {
             'Collection execution started'
         );
 
-        // Use requested tests or fallback to all items
-        const finalTestIds = (testsToRun && testsToRun.length > 0) ? testsToRun : compIds;
+        // Resolve test IDs based on collection type
+        let resolvedTestIds: string[] = [];
+
+        if (collection.collectionType === CollectionType.TESTS) {
+            resolvedTestIds = compIds;
+        } else {
+            const mappings = await this.testRegistryRepository.find({
+                where: { targetComponentId: In(compIds) },
+            });
+            resolvedTestIds = [...new Set(mappings.map(m => m.testComponentId))];
+        }
+
+        if (resolvedTestIds.length === 0) {
+            throw new BadRequestException('Cannot execute collection: No executable tests mapped to the provided targets.');
+        }
+
+        let finalTestIds = resolvedTestIds;
+        if (testsToRun && testsToRun.length > 0) {
+            finalTestIds = resolvedTestIds.filter(id => testsToRun.includes(id));
+            if (finalTestIds.length === 0) {
+                throw new BadRequestException('Cannot execute collection: None of the requested tests are mapped to this collection.');
+            }
+        }
 
         // Dispatch to BullMQ execution queue via ExecutionEngineService
         await this.executionEngineService.queueCollectionExecution(collection.id, environmentId, finalTestIds);

@@ -4,7 +4,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ScienceIcon from '@mui/icons-material/Science';
 
 import { Collection, CollectionType, CollectionItem } from 'types/collections/collection.types';
-import { BOOMI_COMPONENT_LABELS } from 'constants/boomi';
+import { BOOMI_COMPONENT_LABELS, BOOMI_COMPONENT_ICONS } from 'constants/boomi';
 
 interface CoverageManifestViewProps {
   collection: Collection;
@@ -21,12 +21,28 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
     return (
       <List>
         {manifest.map((testComp) => {
+          const TestIcon = testComp.type && BOOMI_COMPONENT_ICONS[testComp.type]
+            ? BOOMI_COMPONENT_ICONS[testComp.type]
+            : ScienceIcon;
+
           return (
             <ListItem key={testComp.id || testComp.componentId}>
               <ListItemIcon>
-                <ScienceIcon color="secondary" />
+                <TestIcon color="secondary" />
               </ListItemIcon>
-              <ListItemText primary={testComp.name || testComp.componentId} secondary={testComp.path || 'Direct Test Selection'} />
+              <ListItemText
+                primary={
+                  <Box display="flex" alignItems="center">
+                    <Typography>{testComp.name || testComp.componentId}</Typography>
+                    {testComp.name && testComp.name !== testComp.componentId && (
+                      <Typography variant="body2" color="text.secondary" fontFamily="monospace" sx={{ ml: 1 }}>
+                        ({testComp.componentId})
+                      </Typography>
+                    )}
+                  </Box>
+                }
+                secondary={testComp.path || 'Direct Test Selection'}
+              />
             </ListItem>
           );
         })}
@@ -42,13 +58,22 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
           const mappedTests = item.tests || [];
           const sourceType = getSourceType(item.targetId);
 
+          const TargetIcon = item.targetPlatform && BOOMI_COMPONENT_ICONS[item.targetPlatform]
+            ? BOOMI_COMPONENT_ICONS[item.targetPlatform]
+            : InsertDriveFileIcon;
+
           return (
             <Box key={item.targetId} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
               <Box display="flex" alignItems="center" mb={1}>
-                <InsertDriveFileIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                <TargetIcon sx={{ mr: 1, color: 'text.secondary' }} />
                 <Typography variant="subtitle1" fontWeight="bold">
                   {mainName}
                 </Typography>
+                {mainName !== item.targetId && (
+                  <Typography variant="body2" color="text.secondary" fontFamily="monospace" sx={{ ml: 1 }}>
+                    ({item.targetId})
+                  </Typography>
+                )}
                 {item.targetPlatform && <Chip size="small" label={BOOMI_COMPONENT_LABELS[item.targetPlatform] || item.targetPlatform} sx={{ ml: 1 }} />}
                 {sourceType === 'DISCOVERED' && (
                   <Chip size="small" label="Auto-Discovered" color="info" variant="outlined" sx={{ ml: 1 }} />
@@ -66,14 +91,32 @@ export const CoverageManifestView: FC<CoverageManifestViewProps> = ({ collection
 
               {mappedTests.length > 0 ? (
                 <List dense>
-                  {mappedTests.map((t: any) => (
-                    <ListItem key={t.testId} disableGutters>
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <ScienceIcon color="secondary" fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t.testName} secondary={t.testPath} />
-                    </ListItem>
-                  ))}
+                  {mappedTests.map((t: any) => {
+                    const TestIcon = t.testPlatform && BOOMI_COMPONENT_ICONS[t.testPlatform]
+                      ? BOOMI_COMPONENT_ICONS[t.testPlatform]
+                      : ScienceIcon;
+
+                    return (
+                      <ListItem key={t.testId} disableGutters>
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <TestIcon color="secondary" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box display="flex" alignItems="center">
+                              <Typography variant="body2">{t.testName}</Typography>
+                              {t.testName !== t.testId && (
+                                <Typography variant="caption" color="text.secondary" fontFamily="monospace" sx={{ ml: 1 }}>
+                                  ({t.testId})
+                                </Typography>
+                              )}
+                            </Box>
+                          }
+                          secondary={t.testPath}
+                        />
+                      </ListItem>
+                    );
+                  })}
                 </List>
               ) : (
                 <Typography variant="body2" color="error" mt={1}>
