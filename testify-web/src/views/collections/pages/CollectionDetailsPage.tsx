@@ -23,7 +23,7 @@ const CollectionDetailsPage: FC = () => {
     }
   });
   const { mutate: executeCollection, isPending: isExecuting } = useExecuteCollection();
-  const { activeEnvironmentId } = useEnvironmentContext();
+  const { activeEnvironmentId, triggerEnvironmentWarning } = useEnvironmentContext();
   const { data: environments } = usePlatformEnvironments();
   const { data: profiles } = usePlatformProfiles();
 
@@ -61,12 +61,6 @@ const CollectionDetailsPage: FC = () => {
     return { isValid: true, reason: '' };
   }, [collection, activeEnvironmentId, environments, profiles]);
 
-  const activeEnvDisplay = useMemo(() => {
-    if (!activeEnvironmentId || !environments) return 'None Selected';
-    const env = environments.find(e => e.id === activeEnvironmentId);
-    return env ? env.name : 'Unknown';
-  }, [activeEnvironmentId, environments]);
-
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" p={5}>
@@ -84,6 +78,10 @@ const CollectionDetailsPage: FC = () => {
   }
 
   const handleExecute = () => {
+    if (!activeEnvironmentId) {
+      triggerEnvironmentWarning();
+      return;
+    }
     if (id && activeEnvironmentId) {
       executeCollection({ id, environmentId: activeEnvironmentId });
       setActiveTab(1); // switch to results tab
@@ -134,15 +132,6 @@ const CollectionDetailsPage: FC = () => {
                 Created
               </Typography>
               <Typography variant="body2">{new Date(collection.createdAt).toLocaleString()}</Typography>
-            </Box>
-
-            <Box>
-              <Typography variant="caption" color="textSecondary">
-                Target Environment
-              </Typography>
-              <Typography variant="body2" fontWeight={600} color={activeEnvironmentId ? 'textPrimary' : 'error'}>
-                {activeEnvDisplay}
-              </Typography>
             </Box>
 
             <Tooltip title={!validationState.isValid ? validationState.reason : ''} placement="top">

@@ -34,7 +34,7 @@ export function useSyncStatus() {
 export function useTriggerSync() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: triggerSync,
+    mutationFn: (data?: { environmentId?: string }) => triggerSync(data),
     onSuccess: () => {
       // Invalidate the discovery trees so it refetches and also checks active status
       queryClient.invalidateQueries({ queryKey: discoveryKeys.all });

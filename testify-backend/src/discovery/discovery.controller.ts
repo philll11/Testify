@@ -1,4 +1,4 @@
-import { Controller, Post, Get, HttpCode, HttpStatus, Logger, HttpException } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, HttpStatus, Logger, HttpException, Body } from '@nestjs/common';
 import { DiscoveryService } from './discovery.service';
 import { RequirePermission } from '../common/decorators/permissions.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constants';
@@ -19,7 +19,7 @@ export class DiscoveryController {
     @Post()
     @HttpCode(HttpStatus.ACCEPTED)
     @RequirePermission(PERMISSIONS.DISCOVERY_SYNC)
-    async triggerSync() {
+    async triggerSync(@Body() body: { environmentId?: string }) {
         this.logger.log('Manual sync triggered via API, enqueueing job.');
         try {
             const isRunning = await this.discoveryService.isSyncActive();
@@ -29,7 +29,7 @@ export class DiscoveryController {
                 };
             }
 
-            const result = await this.discoveryService.enqueueSyncJob();
+            const result = await this.discoveryService.enqueueSyncJob(body?.environmentId);
             return {
                 message: 'Synchronization job enqueued successfully',
                 data: result,

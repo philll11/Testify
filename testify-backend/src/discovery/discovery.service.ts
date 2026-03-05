@@ -30,7 +30,7 @@ export class DiscoveryService {
         return jobs.some(job => job.name === 'discovery_sync_job');
     }
 
-    async enqueueSyncJob(): Promise<{ jobId: string }> {
+    async enqueueSyncJob(environmentId?: string): Promise<{ jobId: string }> {
         const isActive = await this.isSyncActive();
         if (isActive) {
             // Already running/queued, return some kind of indication
@@ -39,14 +39,14 @@ export class DiscoveryService {
             return { jobId: 'active-sync-job' };
         }
 
-        const job = await this.queue.add('discovery_sync_job', {}, {
+        const job = await this.queue.add('discovery_sync_job', { environmentId }, {
             jobId: `manual-sync-${Date.now()}` // optional but helpful
         });
 
         return { jobId: job.id! };
     }
 
-    async syncDatabase(): Promise<{ upserted: number; deleted: number }> {
+    async syncDatabase(manualEnvId?: string): Promise<{ upserted: number; deleted: number }> {
         this.logger.log('Starting State of the World synchronization...');
 
         // 1. Get Configuration
@@ -57,8 +57,10 @@ export class DiscoveryService {
         }
 
         const config = configEntity.value as UpdateDiscoveryConfigDto;
-        if (!config.defaultSyncEnvironmentId) {
-            this.logger.warn('No default sync environment configured. Sync cancelled.');
+        const environmentIdToUse = manualEnvId || config.defaultSyncEnvironmentId;
+
+        if (!environmentIdToUse) {
+            this.logger.warn('No sync environment configured or provided. Sync cancelled.');
             return { upserted: 0, deleted: 0 };
         }
 
@@ -70,14 +72,14 @@ export class DiscoveryService {
         try {
             // 2. Initialize Adapter & Get Profile
             // Using 'system' as user ID for backgrounds tasks
-            const environment = await this.platformEnvironmentService.findEntityById(config.defaultSyncEnvironmentId);
+            const environment = await this.platformEnvironmentService.findEntityById(environmentIdToUse);
             if (!environment || !environment.profile) {
-                this.logger.error(`Failed to start sync: Environment or linked profile not found for config ID: ${config.defaultSyncEnvironmentId}`);
+                this.logger.error(`Failed to start sync: Environment or linked profile not found for config ID: ${environmentIdToUse}`);
                 throw new Error('Environment or linked profile not found');
             }
             const profileId = environment.profile.id;
 
-            const service = await this.integrationService.getServiceById('system', config.defaultSyncEnvironmentId);
+            const service = await this.integrationService.getServiceById('system', environmentIdToUse);
 
             // 3. Fetch Metadata and Resolve Paths concurrently per page
             this.logger.log(`Fetching components of types: ${config.componentTypes.join(', ')}`);

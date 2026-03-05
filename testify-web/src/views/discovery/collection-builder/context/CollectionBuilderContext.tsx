@@ -2,9 +2,6 @@ import { FC, createContext, useContext, useState, useMemo, useEffect, ReactNode 
 import { ComponentTreeNode } from 'types/discovery/discovery';
 
 export interface CollectionBuilderState {
-  profileId: string | undefined;
-  setProfileId: (id: string | undefined) => void;
-
   isTestMode: boolean;
   setIsTestMode: (isTest: boolean) => void;
 
@@ -28,29 +25,12 @@ export interface CollectionBuilderState {
 
 const CollectionBuilderContext = createContext<CollectionBuilderState | undefined>(undefined);
 
-const PROFILE_ID_CACHE_KEY = 'testify-collection-builder-profile-id';
-
 export const CollectionBuilderProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [profileId, setProfileId] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(PROFILE_ID_CACHE_KEY) || undefined;
-    }
-    return undefined;
-  });
   const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const [collectionType, setCollectionType] = useState<'TARGETS' | 'TESTS'>('TARGETS');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [selectedItems, setSelectedItems] = useState<ComponentTreeNode[]>([]);
-
-  // Persist selected profile ID across sessions
-  useEffect(() => {
-    if (profileId) {
-      localStorage.setItem(PROFILE_ID_CACHE_KEY, profileId);
-    } else {
-      localStorage.removeItem(PROFILE_ID_CACHE_KEY);
-    }
-  }, [profileId]);
 
   const toggleNodeSelection = (id: string, isSelected: boolean) => {
     setSelectedNodeIds((prev) => (isSelected ? [...prev, id] : prev.filter((existingId) => existingId !== id)));
@@ -58,8 +38,6 @@ export const CollectionBuilderProvider: FC<{ children: ReactNode }> = ({ childre
 
   const value = useMemo(
     () => ({
-      profileId,
-      setProfileId,
       isTestMode,
       setIsTestMode,
       searchQuery,
@@ -72,7 +50,7 @@ export const CollectionBuilderProvider: FC<{ children: ReactNode }> = ({ childre
       setCollectionType,
       toggleNodeSelection
     }),
-    [profileId, isTestMode, searchQuery, selectedNodeIds, selectedItems, collectionType]
+    [isTestMode, searchQuery, selectedNodeIds, selectedItems, collectionType]
   );
 
   return <CollectionBuilderContext.Provider value={value}>{children}</CollectionBuilderContext.Provider>;

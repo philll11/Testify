@@ -35,7 +35,7 @@ export class BackgroundTasksWorker extends WorkerHost {
                 return this.handleCrawlDependencies(job);
             case 'discovery_sync_job':
                 this.logger.log('Executing database sync from queue...');
-                await this.discoveryService.syncDatabase();
+                await this.discoveryService.syncDatabase(job.data?.environmentId);
                 return { success: true };
             default:
                 this.logger.warn('Unknown job type: ' + job.name);

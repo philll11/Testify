@@ -26,7 +26,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useCollectionBuilderContext } from '../context/CollectionBuilderContext';
-import { usePlatformProfiles } from 'hooks/platform/usePlatform';
+import { usePlatformEnvironments } from 'hooks/platform/usePlatform';
+import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { useDiscoveryComponents, useTriggerSync, useSyncStatus, useGlobalSyncState } from 'hooks/discovery/useDiscovery';
 import { ComponentTreeNode } from 'types/discovery/discovery';
 import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
@@ -153,17 +154,13 @@ export const ComponentTreePane = () => {
 
   const { showMessage } = useSnackbar();
 
-  const { profileId, setProfileId, collectionType, setCollectionType, searchQuery, setSearchQuery } = useCollectionBuilderContext();
+  const { collectionType, setCollectionType, searchQuery, setSearchQuery } = useCollectionBuilderContext();
+  const { activeEnvironmentId, triggerEnvironmentWarning } = useEnvironmentContext();
 
   // Data fetching
-  const { data: profiles, isLoading: profilesLoading } = usePlatformProfiles();
-
-  // Handle auto-defaulting the profile if none is properly cached or if exactly ONE profile exists universally
-  useEffect(() => {
-    if (profiles && profiles.length > 0 && !profileId) {
-      setProfileId(profiles[0].id);
-    }
-  }, [profiles, profileId, setProfileId]);
+  const { data: environments, isLoading: environmentsLoading } = usePlatformEnvironments();
+  const activeEnvironment = environments?.find((env) => env.id === activeEnvironmentId);
+  const profileId = activeEnvironment?.profileId;
 
   // Profiles are used to configure target environment variables, show loading if desired
   const {
@@ -171,7 +168,7 @@ export const ComponentTreePane = () => {
     isLoading: treeLoading,
     error: treeError
   } = useDiscoveryComponents({
-    profileId,
+    profileId: profileId || '',
     isTest: collectionType === 'TESTS',
     search: searchQuery || undefined
   });
@@ -197,7 +194,11 @@ export const ComponentTreePane = () => {
             size="small"
             startIcon={isSyncActive ? <CircularProgress size={16} /> : <RefreshIcon />}
             onClick={() => {
-              handleSync(undefined, {
+              if (!activeEnvironmentId) {
+                triggerEnvironmentWarning();
+                return;
+              }
+              handleSync({ environmentId: activeEnvironmentId }, {
                 onSuccess: () => showMessage('Sync job enqueued', 'info'),
                 onError: (err: any) => {
                   const errorMsg = err.response?.data?.message || err.message || 'Failed to trigger sync';
@@ -212,34 +213,6 @@ export const ComponentTreePane = () => {
         </Stack>
       </Stack>
       <Box display="flex" flexDirection="column" gap={2}>
-        <FormControl fullWidth size="small" error={!profileId}>
-          <InputLabel id="profile-select-label">Platform Profile</InputLabel>
-          <Select
-            labelId="profile-select-label"
-            value={profileId || ''}
-            label="Platform Profile"
-            onChange={(e) => setProfileId(e.target.value)}
-            disabled={profilesLoading}
-          >
-            {profilesLoading && (
-              <MenuItem value="">
-                <em>Loading profiles...</em>
-              </MenuItem>
-            )}
-            {!profilesLoading && (
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-            )}
-            {profiles?.map((p) => (
-              <MenuItem key={p.id} value={p.id}>
-                {p.name}
-              </MenuItem>
-            ))}
-          </Select>
-          {!profileId && <FormHelperText>Please select a platform profile to query.</FormHelperText>}
-        </FormControl>
-
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <FormControlLabel
             control={
@@ -263,23 +236,26 @@ export const ComponentTreePane = () => {
           overflow: 'hidden'
         }}
       >
-        {treeLoading && (
+        {!activeEnvironmentId ? (
+          <Typography color="error" align="center" sx={{ mt: 2 }}>
+            Please select a global environment to view and sync components.
+          </Typography>
+        ) : treeLoading ? (
           <Box display="flex" justifyContent="center" p={3}>
             <CircularProgress />
           </Box>
-        )}
-        {treeError && <Typography color="error">Error loading components</Typography>}
-
-        {!treeLoading && !treeError && (!treeData || treeData.length === 0) && (
+        ) : treeError ? (
+          <Typography color="error">Error loading components</Typography>
+        ) : (!treeData || treeData.length === 0) ? (
           <Typography color="textSecondary" align="center" sx={{ mt: 2 }}>
             No components found.
           </Typography>
-        )}
-
-        {!treeLoading && !treeError && treeData && treeData.length > 0 && bounds.height > 0 && (
-          <Tree data={treeData} width={bounds.width} height={bounds.height} rowHeight={32} searchTerm={searchQuery} openByDefault={false}>
-            {ComponentTreeNodeItem}
-          </Tree>
+        ) : (
+          bounds.height > 0 && (
+            <Tree data={treeData} width={bounds.width} height={bounds.height} rowHeight={32} searchTerm={searchQuery} openByDefault={false}>
+              {ComponentTreeNodeItem}
+            </Tree>
+          )
         )}
       </Box>
     </Box>

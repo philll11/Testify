@@ -8,7 +8,7 @@ export default function EnvironmentSection() {
     const theme = useTheme();
     const { data: environments, isLoading: isEnvironmentsLoading } = usePlatformEnvironments();
     const { data: profiles, isLoading: isProfilesLoading } = usePlatformProfiles();
-    const { activeEnvironmentId, setActiveEnvironmentId } = useEnvironmentContext();
+    const { activeEnvironmentId, setActiveEnvironmentId, isEnvironmentWarningActive } = useEnvironmentContext();
 
     const handleChange = (event: any) => {
         setActiveEnvironmentId(event.target.value);
@@ -20,7 +20,7 @@ export default function EnvironmentSection() {
 
     return (
         <Box sx={{ ml: 2, mr: 2, width: 300, display: { xs: 'none', sm: 'block' } }}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" error={isEnvironmentWarningActive}>
                 <Select
                     value={activeEnvironmentId || ''}
                     displayEmpty
@@ -28,6 +28,7 @@ export default function EnvironmentSection() {
                     sx={{
                         bgcolor: theme.palette.mode === 'dark' ? theme.palette.dark.main : theme.palette.primary.light,
                         borderRadius: '4px',
+                        transition: 'border-color 0.3s, box-shadow 0.3s',
                         '& .MuiSelect-select': {
                             py: 1,
                             px: 2,

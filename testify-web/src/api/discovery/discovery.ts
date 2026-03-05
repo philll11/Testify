@@ -23,7 +23,7 @@ export const getSyncActive = async (): Promise<{ isRunning: boolean }> => {
   return response.data;
 };
 
-export const triggerSync = async (): Promise<any> => {
-  const response = await axiosServices.post('/system/sync');
+export const triggerSync = async (data?: { environmentId?: string }): Promise<any> => {
+  const response = await axiosServices.post('/system/sync', data || {});
   return response.data;
 };

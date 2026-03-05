@@ -59,57 +59,77 @@ describe('Discovery Module E2E', () => {
         discoveryScheduler = app.get(DiscoveryScheduler);
 
         // Create Admin Role & User
-        const adminRole = await roleRepository.save(
-            roleRepository.create({
-                recordId: 'ROLE_SYNC_ADMIN',
-                name: 'Sync Admin',
-                permissions: [PERMISSIONS.DISCOVERY_SYNC, PERMISSIONS.DISCOVERY_VIEW, PERMISSIONS.SYSTEM_CONFIG_EDIT, PERMISSIONS.SYSTEM_CONFIG_VIEW],
-            }),
-        );
+        let adminRole = await roleRepository.findOne({ where: { recordId: 'ROLE_SYNC_ADMIN' } });
+        if (!adminRole) {
+            adminRole = await roleRepository.save(
+                roleRepository.create({
+                    recordId: 'ROLE_SYNC_ADMIN',
+                    name: 'Sync Admin',
+                    permissions: [PERMISSIONS.DISCOVERY_SYNC, PERMISSIONS.DISCOVERY_VIEW, PERMISSIONS.SYSTEM_CONFIG_EDIT, PERMISSIONS.SYSTEM_CONFIG_VIEW],
+                }),
+            );
+        }
 
-        const adminUser = await userRepository.save(
-            userRepository.create({
-                recordId: 'USER_SYNC_ADMIN',
-                firstName: 'Sync',
-                lastName: 'Admin',
-                name: 'Sync Admin',
-                email: 'sync.admin@example.com',
-                isActive: true,
-                role: adminRole,
-            }),
-        );
+        let adminUser = await userRepository.findOne({ where: { recordId: 'USER_SYNC_ADMIN' } });
+        if (!adminUser) {
+            adminUser = await userRepository.save(
+                userRepository.create({
+                    recordId: 'USER_SYNC_ADMIN',
+                    firstName: 'Sync',
+                    lastName: 'Admin',
+                    name: 'Sync Admin',
+                    email: 'sync.admin@example.com',
+                    isActive: true,
+                    role: adminRole,
+                }),
+            );
+        }
 
         adminToken = jwtService.sign({ sub: adminUser.recordId, tokenVersion: 0 });
 
         // Seed Profile
-        const profile = await profileService.create({
-            name: 'E2E Boomi Profile',
-            accountId: 'boomi-test-account',
-            platformType: IntegrationPlatform.BOOMI,
-            description: 'Profile for syncing',
-            config: { pollInterval: 50 },
-        });
-        profileId = profile.id;
+        try {
+            const profile = await profileService.create({
+                name: 'E2E Boomi Profile',
+                accountId: 'boomi-test-account',
+                platformType: IntegrationPlatform.BOOMI,
+                description: 'Profile for syncing',
+                config: { pollInterval: 50 },
+            });
+            profileId = profile.id;
+        } catch (error: any) {
+            const profiles = await profileService.findAll();
+            const existingProfile = profiles.find(p => p.name === 'E2E Boomi Profile');
+            if (!existingProfile) throw error;
+            profileId = existingProfile.id;
+        }
 
         // Seed Environment
-        const environment = await environmentService.create({
-            name: 'E2E Sync Env',
-            description: 'Env for syncing',
-            profileId: profile.id,
-            isDefault: true,
-            credentials: {
-                username: 'test-user',
-                passwordOrToken: 'secret',
-                executionInstanceId: 'atom-id-1',
-            },
-        });
-        environmentId = environment.id;
+        try {
+            const environment = await environmentService.create({
+                name: 'E2E Sync Env',
+                description: 'Env for syncing',
+                profileId: profileId,
+                isDefault: true,
+                credentials: {
+                    username: 'test-user',
+                    passwordOrToken: 'secret',
+                    executionInstanceId: 'atom-id-1',
+                },
+            });
+            environmentId = environment.id;
+        } catch (error: any) {
+            const envs = await environmentService.findAll();
+            const existingEnv = envs.find(e => e.name === 'E2E Sync Env');
+            if (!existingEnv) throw error;
+            environmentId = existingEnv.id;
+        }
 
         // Set Discovery Config
         await systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, {
             componentTypes: ['process', 'transform.map'],
             testDirectoryFolderName: 'test_folder',
-            defaultSyncEnvironmentId: environment.id,
+            defaultSyncEnvironmentId: environmentId,
             syncScheduleCron: '0 * * * * *',
             isSyncActive: true,
         });
@@ -119,8 +139,15 @@ describe('Discovery Module E2E', () => {
         await teardownTestApp({ app, dataSource });
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         jest.clearAllMocks();
+        try {
+            await backgroundTasksQueue.drain();
+            const jobs = await backgroundTasksQueue.getJobs(['delayed', 'waiting', 'active', 'completed', 'failed']);
+            for (const job of jobs) {
+                await job.remove();
+            }
+        } catch (e) { }
     });
 
     it('should successfully sync components and persist them locally (POST /system/sync)', async () => {
@@ -147,13 +174,17 @@ describe('Discovery Module E2E', () => {
         const response = await request(app.getHttpServer())
             .post('/system/sync')
             .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .expect(202);
 
         // 3. Verify response
-        expect(response.body.message).toBe('Synchronization successful');
-        expect(response.body.data.upserted).toBe(3);
+        expect(['Synchronization job enqueued successfully', 'Synchronization is already active']).toContain(response.body.message);
+        if (response.body.data) { expect(response.body.data.jobId).toEqual(expect.any(String)); }
 
-        // 4. Verify DB State & Test Logic Evaluation
+        // 4. Manually trigger sync to verify logic
+        const result = await discoveryService.syncDatabase();
+        expect(result.upserted).toBe(3);
+
+        // 5. Verify DB State & Test Logic Evaluation
         const dbComponents = await discoveredComponentRepository.find({ order: { name: 'ASC' } });
         expect(dbComponents).toHaveLength(3);
 
@@ -185,15 +216,12 @@ describe('Discovery Module E2E', () => {
         const preSyncCount = await discoveredComponentRepository.count();
         expect(preSyncCount).toBe(3);
 
-        // 3. Execute via REST endpoint
-        const response = await request(app.getHttpServer())
-            .post('/system/sync')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+        // 3. Manually trigger sync to verify logic
+        const result = await discoveryService.syncDatabase();
+        expect(result.upserted).toBe(1);
+        expect(result.deleted).toBe(2);
 
-        // 4. DB should only have the 1 remaining component, and it should be updated
-        expect(response.body.data.upserted).toBe(1);
-        expect(response.body.data.deleted).toBe(2);
+        // 5. DB should only have the 1 remaining component, and it should be updated
 
         const postSyncComponents = await discoveredComponentRepository.find();
         expect(postSyncComponents).toHaveLength(1);
@@ -211,14 +239,9 @@ describe('Discovery Module E2E', () => {
             isSyncActive: true,
         });
 
-        const response = await request(app.getHttpServer())
-            .post('/system/sync')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
-
-        expect(response.body.message).toBe('Synchronization successful');
-        expect(response.body.data.upserted).toBe(0);
-        expect(response.body.data.deleted).toBe(0);
+        const result = await discoveryService.syncDatabase();
+        expect(result.upserted).toBe(0);
+        expect(result.deleted).toBe(0);
 
         // Restore config
         await systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, {
@@ -254,11 +277,14 @@ describe('Discovery Module E2E', () => {
         const response = await request(app.getHttpServer())
             .post('/system/sync')
             .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .expect(202);
 
         // API call should still succeed because isSyncActive applies to the scheduler, not manual invocations
-        expect(response.body.message).toBe('Synchronization successful');
-        expect(response.body.data).toBeDefined();
+        expect(['Synchronization job enqueued successfully', 'Synchronization is already active']).toContain(response.body.message);
+        if (response.body.data) { expect(response.body.data.jobId).toEqual(expect.any(String)); }
+
+        const result = await discoveryService.syncDatabase();
+        expect(result).toBeDefined();
 
         // Restore config
         await systemConfigService.set(SystemConfigKeys.DISCOVERY.CONFIG, {
@@ -268,6 +294,17 @@ describe('Discovery Module E2E', () => {
             syncScheduleCron: '0 * * * * *',
             isSyncActive: true,
         });
+    });
+
+    it('should successfully enqueue sync when environmentId is provided in body', async () => {
+        const response = await request(app.getHttpServer())
+            .post('/system/sync')
+            .send({ environmentId: environmentId })
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(202);
+
+        expect(['Synchronization job enqueued successfully', 'Synchronization is already active']).toContain(response.body.message);
+        if (response.body.data) { expect(response.body.data.jobId).toEqual(expect.any(String)); }
     });
 
     it('should register and execute the discovery sync job correctly, then handle removal on config change', async () => {

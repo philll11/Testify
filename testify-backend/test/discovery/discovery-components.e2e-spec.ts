@@ -32,27 +32,45 @@ describe('Discovery Components API E2E', () => {
         discoveredComponentRepository = dataSource.getRepository(DiscoveredComponent);
 
         // Create Viewer Role & User (needs DISCOVERY_VIEW)
-        const viewerRole = await roleRepository.save(
-            roleRepository.create({
-                recordId: 'ROLE_DISCOVERY_VIEWER',
-                name: 'Discovery Viewer',
-                permissions: [PERMISSIONS.DISCOVERY_VIEW],
-            }),
-        );
+        let viewerRole = await roleRepository.findOne({ where: { recordId: 'ROLE_DISCOVERY_VIEWER' } });
+        if (!viewerRole) {
+            try {
+                viewerRole = await roleRepository.save(
+                    roleRepository.create({
+                        recordId: 'ROLE_DISCOVERY_VIEWER',
+                        name: 'Discovery Viewer',
+                        permissions: [PERMISSIONS.DISCOVERY_VIEW],
+                    }),
+                );
+            } catch (err) {
+                viewerRole = await roleRepository.findOneOrFail({ where: { recordId: 'ROLE_DISCOVERY_VIEWER' } });
+            }
+        }
 
-        const viewerUser = await userRepository.save(
-            userRepository.create({
-                recordId: 'USER_DISCOVERY_VIEWER',
-                firstName: 'Discovery',
-                lastName: 'Viewer',
-                name: 'Discovery Viewer',
-                email: 'discovery.viewer@example.com',
-                isActive: true,
-                role: viewerRole,
-            }),
-        );
+        let viewerUser = await userRepository.findOne({ where: { recordId: 'USER_DISCOVERY_VIEWER' } });
+        if (!viewerUser) {
+            try {
+                viewerUser = await userRepository.save(
+                    userRepository.create({
+                        recordId: 'USER_DISCOVERY_VIEWER',
+                        firstName: 'Discovery',
+                        lastName: 'Viewer',
+                        name: 'Discovery Viewer',
+                        email: 'discovery.viewer@example.com',
+                        isActive: true,
+                        role: viewerRole,
+                    }),
+                );
+            } catch (err) {
+                viewerUser = await userRepository.findOneOrFail({ where: { recordId: 'USER_DISCOVERY_VIEWER' } });
+            }
+        }
 
         viewerToken = jwtService.sign({ sub: viewerUser.recordId, tokenVersion: 0 });
+
+        // Clear existing components for the test profiles to avoid duplicate constraint violations
+        await discoveredComponentRepository.delete({ profileId: testProfileId });
+        await discoveredComponentRepository.delete({ profileId: 'different-profile-456' });
 
         // Seed Discovered Components to represent the cached state
         await discoveredComponentRepository.save([
@@ -101,25 +119,39 @@ describe('Discovery Components API E2E', () => {
 
     it('should return a 403 Forbidden without DISCOVERY_VIEW permission', async () => {
         // Create user without permission just for this test
-        const noPermRole = await roleRepository.save(
-            roleRepository.create({
-                recordId: 'ROLE_NO_PERM',
-                name: 'No Perms',
-                permissions: [],
-            }),
-        );
+        let noPermRole = await roleRepository.findOne({ where: { recordId: 'ROLE_NO_PERM' } });
+        if (!noPermRole) {
+            try {
+                noPermRole = await roleRepository.save(
+                    roleRepository.create({
+                        recordId: 'ROLE_NO_PERM',
+                        name: 'No Perms',
+                        permissions: [],
+                    }),
+                );
+            } catch (err) {
+                noPermRole = await roleRepository.findOneOrFail({ where: { recordId: 'ROLE_NO_PERM' } });
+            }
+        }
 
-        const noPermUser = await userRepository.save(
-            userRepository.create({
-                recordId: 'USER_NO_PERM',
-                firstName: 'No',
-                lastName: 'Perm',
-                name: 'No Perm',
-                email: 'noperm@example.com',
-                isActive: true,
-                role: noPermRole,
-            }),
-        );
+        let noPermUser = await userRepository.findOne({ where: { recordId: 'USER_NO_PERM' } });
+        if (!noPermUser) {
+            try {
+                noPermUser = await userRepository.save(
+                    userRepository.create({
+                        recordId: 'USER_NO_PERM',
+                        firstName: 'No',
+                        lastName: 'Perm',
+                        name: 'No Perm',
+                        email: 'noperm@example.com',
+                        isActive: true,
+                        role: noPermRole,
+                    }),
+                );
+            } catch (err) {
+                noPermUser = await userRepository.findOneOrFail({ where: { recordId: 'USER_NO_PERM' } });
+            }
+        }
         const badToken = jwtService.sign({ sub: noPermUser.recordId, tokenVersion: 0 });
 
         await request(app.getHttpServer())

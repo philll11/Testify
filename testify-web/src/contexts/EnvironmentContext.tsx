@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface EnvironmentContextType {
     activeEnvironmentId: string | null;
     setActiveEnvironmentId: (id: string | null) => void;
+    isEnvironmentWarningActive: boolean;
+    triggerEnvironmentWarning: () => void;
 }
 
 const EnvironmentContext = createContext<EnvironmentContextType | undefined>(undefined);
@@ -12,17 +14,30 @@ export const EnvironmentProvider: React.FC<{ children: ReactNode }> = ({ childre
         return localStorage.getItem('activeEnvironmentId');
     });
 
+    const [isEnvironmentWarningActive, setIsEnvironmentWarningActive] = useState(false);
+
     const setActiveEnvironmentId = (id: string | null) => {
         setActiveEnvironmentIdState(id);
         if (id) {
             localStorage.setItem('activeEnvironmentId', id);
+            setIsEnvironmentWarningActive(false);
         } else {
             localStorage.removeItem('activeEnvironmentId');
         }
     };
 
+    const triggerEnvironmentWarning = () => {
+        setIsEnvironmentWarningActive(true);
+        setTimeout(() => setIsEnvironmentWarningActive(false), 3000);
+    };
+
     return (
-        <EnvironmentContext.Provider value={{ activeEnvironmentId, setActiveEnvironmentId }}>
+        <EnvironmentContext.Provider value={{
+            activeEnvironmentId,
+            setActiveEnvironmentId,
+            isEnvironmentWarningActive,
+            triggerEnvironmentWarning
+        }}>
             {children}
         </EnvironmentContext.Provider>
     );
