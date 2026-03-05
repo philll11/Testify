@@ -18,8 +18,8 @@ export const getSyncStatus = async (): Promise<{ lastSyncDate: string | null }> 
   return response.data;
 };
 
-export const getSyncActive = async (): Promise<{ isRunning: boolean }> => {
-  const response = await axiosServices.get<{ isRunning: boolean }>('/system/sync/active');
+export const getSyncActive = async (): Promise<{ isRunning: boolean; progress?: number; totalCount?: number }> => {
+  const response = await axiosServices.get<{ isRunning: boolean; progress?: number; totalCount?: number }>('/system/sync/active');
   return response.data;
 };
 

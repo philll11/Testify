@@ -51,7 +51,7 @@ export function useGlobalSyncState() {
   const query = useQuery({
     queryKey: discoveryKeys.syncActive(),
     queryFn: getSyncActive,
-    refetchInterval: (query) => (query.state.data?.isRunning ? 10000 : false)
+    refetchInterval: (query) => (query.state.data?.isRunning ? 1500 : false)
   });
 
   const isRunning = !!query.data?.isRunning;
@@ -66,6 +66,8 @@ export function useGlobalSyncState() {
 
   return {
     isRunning,
+    progress: query.data?.progress,
+    totalCount: query.data?.totalCount,
     ...query
   };
 }

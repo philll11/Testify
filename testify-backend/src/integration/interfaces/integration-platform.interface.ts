@@ -62,9 +62,9 @@ export interface IIntegrationPlatformService {
 
   /**
    * Searches for components matching the criteria.
-   * Automatically handles pagination to return all matching results.
+   * Automatically handles pagination to return all matching results and the total count.
    */
-  searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<ComponentInfo[], void, unknown>;
+  searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<{ items: ComponentInfo[], totalCount: number }, void, unknown>;
 
   /**
    * Tests the connection to the platform using the stored credentials.

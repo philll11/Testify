@@ -49,12 +49,12 @@ describe('BackgroundTasksWorker', () => {
     });
 
     it('should process discovery_sync_job correctly', async () => {
-        const job = { name: 'discovery_sync_job', id: 'sync-1' } as any;
+        const job = { name: 'discovery_sync_job', id: 'sync-1', data: { environmentId: 'env-123' } } as any;
         mockDiscoveryService.syncDatabase.mockResolvedValueOnce(undefined);
 
         const result = await worker.process(job);
 
-        expect(mockDiscoveryService.syncDatabase).toHaveBeenCalled();
+        expect(mockDiscoveryService.syncDatabase).toHaveBeenCalledWith('env-123', job);
         expect(result).toEqual({ success: true });
     });
 

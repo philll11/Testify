@@ -10,7 +10,7 @@ import { PlatformEnvironmentService } from '../integration/platform-environment/
 import { QueryDiscoveryComponentParameters } from './interfaces/query-discovery-component-parameters.interface';
 import { ComponentTreeNode } from './interfaces/component-tree-node.interface';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 
 @Injectable()
 export class DiscoveryService {
@@ -25,14 +25,25 @@ export class DiscoveryService {
         @InjectQueue('background-tasks') private readonly queue: Queue,
     ) { }
 
-    async isSyncActive(): Promise<boolean> {
+    async isSyncActive(): Promise<{ active: boolean; progress?: number; totalCount?: number; }> {
         const jobs = await this.queue.getJobs(['active', 'waiting', 'delayed']);
-        return jobs.some(job => job.name === 'discovery_sync_job');
+        const syncJob = jobs.find(job => job.name === 'discovery_sync_job');
+
+        if (!syncJob) {
+            return { active: false };
+        }
+
+        const progressData = syncJob.progress as any;
+        return {
+            active: true,
+            progress: typeof progressData === 'object' && progressData !== null ? progressData.count || 0 : 0,
+            totalCount: typeof progressData === 'object' && progressData !== null ? progressData.totalCount || 0 : 0
+        };
     }
 
     async enqueueSyncJob(environmentId?: string): Promise<{ jobId: string }> {
-        const isActive = await this.isSyncActive();
-        if (isActive) {
+        const { active } = await this.isSyncActive();
+        if (active) {
             // Already running/queued, return some kind of indication
             // The simplest is just finding the existing one or generating a fake duplicate response 
             // Wait, we can return the active job OR simply throw an HttpException like Conflict
@@ -46,7 +57,7 @@ export class DiscoveryService {
         return { jobId: job.id! };
     }
 
-    async syncDatabase(manualEnvId?: string): Promise<{ upserted: number; deleted: number }> {
+    async syncDatabase(manualEnvId?: string, job?: Job): Promise<{ upserted: number; deleted: number }> {
         this.logger.log('Starting State of the World synchronization...');
 
         // 1. Get Configuration
@@ -94,7 +105,9 @@ export class DiscoveryService {
             this.logger.log(`Starting fetching and folder path resolution stream...`);
             let count = 0;
 
-            for await (const componentsPage of componentStream) {
+            for await (const page of componentStream) {
+                const componentsPage = page.items;
+                const totalCount = page.totalCount;
                 this.logger.debug(`Received page of ${componentsPage.length} components. Resolving folder paths...`);
 
                 // Concurrently resolve folder paths for the current page
@@ -132,6 +145,10 @@ export class DiscoveryService {
 
                 count += componentsPage.length;
                 this.logger.debug(`Processed ${count} components so far.`);
+
+                if (job) {
+                    await job.updateProgress({ count, totalCount });
+                }
             }
 
             this.logger.log(`Folder path resolution complete. Total components processed: ${count}`);

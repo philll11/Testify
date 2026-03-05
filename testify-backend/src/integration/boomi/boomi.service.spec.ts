@@ -1,8 +1,6 @@
 // src/integration/boomi/boomi.service.spec.ts
-import { AxiosInstance } from 'axios';
 import { BoomiService } from './boomi.service';
 import { IntegrationPlatformException } from '../exceptions/integration-platform.exception';
-import { UnauthorizedException } from '@nestjs/common';
 
 // Use jest.mock to hoist the mock creation before imports usage
 jest.mock('axios', () => {
@@ -230,12 +228,7 @@ describe('BoomiService', () => {
       mockAxiosInstance.get.mockImplementation((url: string) => {
         if (url === '/Folder/folder-child') {
           return Promise.resolve({
-            data: { id: 'folder-child', name: 'Child', parentFolderId: 'folder-parent' },
-          });
-        }
-        if (url === '/Folder/folder-parent') {
-          return Promise.resolve({
-            data: { id: 'folder-parent', name: 'Parent', parentFolderId: undefined },
+            data: { id: 'folder-child', name: 'Child', fullPath: '/Parent/Child' },
           });
         }
         return Promise.reject(new Error('not found'));
@@ -243,12 +236,12 @@ describe('BoomiService', () => {
 
       const path = await service.resolveFolderPath('folder-child');
       expect(path).toBe('/Parent/Child');
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
 
       // Should be cached now
       const pathAgain = await service.resolveFolderPath('folder-child');
       expect(pathAgain).toBe('/Parent/Child');
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -297,6 +290,53 @@ describe('BoomiService', () => {
       // 1 for first page, 1 for queryMore
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2);
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('searchComponents', () => {
+    it('should yield pages of components with total count', async () => {
+      // Mock first page
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          numberOfResults: 2,
+          queryToken: 'token-page-2',
+          result: [
+            { componentId: 'comp-1', name: 'Component 1', type: 'Process', folderId: 'f1', folderName: 'F1' }
+          ],
+        },
+      });
+
+      // Mock second page
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          numberOfResults: 2,
+          result: [
+            { componentId: 'comp-2', name: 'Component 2', type: 'Map', folderId: 'f2', folderName: 'F2' }
+          ],
+        },
+      });
+
+      const generator = service.searchComponents({ types: ['Process', 'Map'] });
+
+      const page1 = await generator.next();
+      expect(page1.value).toEqual({
+        items: [
+          { id: 'comp-1', name: 'Component 1', type: 'Process', folderId: 'f1', folderName: 'F1', dependencyIds: [] }
+        ],
+        totalCount: 2
+      });
+
+      const page2 = await generator.next();
+      expect(page2.value).toEqual({
+        items: [
+          { id: 'comp-2', name: 'Component 2', type: 'Map', folderId: 'f2', folderName: 'F2', dependencyIds: [] }
+        ],
+        totalCount: 2
+      });
+
+      const page3 = await generator.next();
+      expect(page3.done).toBe(true);
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2);
     });
   });
 });

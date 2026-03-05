@@ -19,29 +19,27 @@ export class ExecutionEngineService {
         private readonly collectionRepo: Repository<Collection>,
     ) { }
 
-    async queueCollectionExecution(collectionId: string, environmentId: string): Promise<void> {
+    async queueCollectionExecution(collectionId: string, environmentId: string, testIds: string[]): Promise<void> {
         this.logger.log(`Queueing execution for collection ${collectionId} in environment ${environmentId}`);
 
         const collection = await this.collectionRepo.findOne({
             where: { id: collectionId },
-            relations: ['items'], // Assuming collection items hold the tests
         });
 
         if (!collection) {
             throw new Error(`Collection ${collectionId} not found`);
         }
 
-        // Set the expected total tests
-        const testsToRun = collection.items || [];
-        collection.totalExpectedTests = testsToRun.length;
+        // Set the expected total tests based on actual resolved test ids
+        collection.totalExpectedTests = testIds.length;
         await this.collectionRepo.save(collection);
 
-        // Queue up each individual test from the collection
-        for (const item of testsToRun) {
+        // Queue up each individual test from the resolved list
+        for (const testId of testIds) {
             // 1. Create a pending execution result in the database
             const initialRecord = this.testResultRepo.create({
                 collectionId: collection.id,
-                testId: item.componentId, // Assumes componentId represents the Boomi/Platform test
+                testId: testId,
                 status: TestResultStatus.PENDING,
             });
             const savedRecord = await this.testResultRepo.save(initialRecord);
@@ -49,7 +47,7 @@ export class ExecutionEngineService {
             // 2. Dispatch a job to the BullMQ queue
             const jobData: TestExecutionJobData = {
                 executionResultId: savedRecord.id,
-                testId: item.componentId,
+                testId: testId,
                 environmentId: environmentId,
                 collectionId: collection.id
             };
@@ -58,13 +56,13 @@ export class ExecutionEngineService {
                 attempts: 3,
                 backoff: {
                     type: 'exponential',
-                    delay: 5000, // 5 seconds
+                    delay: 5000,
                 },
                 removeOnComplete: true,
                 removeOnFail: false
             });
 
-            this.logger.debug(`Enqueued test component ${item.componentId} with execution payload ID ${savedRecord.id}`);
+            this.logger.debug(`Enqueued test component ${testId} with execution payload ID ${savedRecord.id}`);
         }
     }
 }

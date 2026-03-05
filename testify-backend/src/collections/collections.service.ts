@@ -211,8 +211,11 @@ export class CollectionsService {
             'Collection execution started'
         );
 
+        // Use requested tests or fallback to all items
+        const finalTestIds = (testsToRun && testsToRun.length > 0) ? testsToRun : compIds;
+
         // Dispatch to BullMQ execution queue via ExecutionEngineService
-        await this.executionEngineService.queueCollectionExecution(collection.id, environmentId);
+        await this.executionEngineService.queueCollectionExecution(collection.id, environmentId, finalTestIds);
     }
 
     async remove(id: string, requestingUser: User): Promise<void> {

@@ -9,6 +9,7 @@ import {
   FormControlLabel,
   Switch,
   CircularProgress,
+  LinearProgress,
   Typography,
   Stack,
   Checkbox,
@@ -175,7 +176,7 @@ export const ComponentTreePane = () => {
 
   const { mutate: handleSync, isPending: isTriggeringSync } = useTriggerSync();
   const { data: syncStatus } = useSyncStatus();
-  const { isRunning: isSyncing } = useGlobalSyncState();
+  const { isRunning: isSyncing, progress = 0, totalCount = 0 } = useGlobalSyncState();
 
   const isSyncActive = isTriggeringSync || isSyncing;
 
@@ -185,31 +186,41 @@ export const ComponentTreePane = () => {
     <Box display="flex" flexDirection="column" gap={3} height="100%">
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="h4">Component Explorer</Typography>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography variant="caption" color="textSecondary">
-            Last Synced: {syncStatus?.lastSyncDate ? new Date(syncStatus.lastSyncDate).toLocaleString() : 'Unknown'}
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={isSyncActive ? <CircularProgress size={16} /> : <RefreshIcon />}
-            onClick={() => {
-              if (!activeEnvironmentId) {
-                triggerEnvironmentWarning();
-                return;
-              }
-              handleSync({ environmentId: activeEnvironmentId }, {
-                onSuccess: () => showMessage('Sync job enqueued', 'info'),
-                onError: (err: any) => {
-                  const errorMsg = err.response?.data?.message || err.message || 'Failed to trigger sync';
-                  showMessage(`Sync Trigger Failed: ${errorMsg}`, 'error');
+        <Stack direction="column" alignItems="flex-end" spacing={1} sx={{ minWidth: 250 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography variant="caption" color="textSecondary">
+              Last Synced: {syncStatus?.lastSyncDate ? new Date(syncStatus.lastSyncDate).toLocaleString() : 'Unknown'}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={isSyncActive ? <CircularProgress size={16} /> : <RefreshIcon />}
+              onClick={() => {
+                if (!activeEnvironmentId) {
+                  triggerEnvironmentWarning();
+                  return;
                 }
-              });
-            }}
-            disabled={isSyncActive}
-          >
-            {isSyncActive ? 'Syncing...' : 'Sync Database'}
-          </Button>
+                handleSync({ environmentId: activeEnvironmentId }, {
+                  onSuccess: () => showMessage('Sync job enqueued', 'info'),
+                  onError: (err: any) => {
+                    const errorMsg = err.response?.data?.message || err.message || 'Failed to trigger sync';
+                    showMessage(`Sync Trigger Failed: ${errorMsg}`, 'error');
+                  }
+                });
+              }}
+              disabled={isSyncActive}
+            >
+              {isSyncActive ? 'Syncing...' : 'Sync Database'}
+            </Button>
+          </Stack>
+          {isSyncActive && totalCount > 0 && (
+            <Box sx={{ width: '100%' }}>
+              <LinearProgress variant="determinate" value={Math.round((progress / totalCount) * 100) || 0} sx={{ mb: 0.5 }} />
+              <Typography variant="caption" color="textSecondary" align="right" display="block">
+                {progress} / {totalCount} components processed
+              </Typography>
+            </Box>
+          )}
         </Stack>
       </Stack>
       <Box display="flex" flexDirection="column" gap={2}>

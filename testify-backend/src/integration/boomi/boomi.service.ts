@@ -34,11 +34,6 @@ interface ComponentReferenceResult {
   references?: ComponentReference[];
 }
 
-interface ComponentReferenceQueryResponse {
-  numberOfResults: number;
-  result?: ComponentReferenceResult[];
-}
-
 interface BoomiFolderResponse {
   id: string;
   name: string;
@@ -148,7 +143,7 @@ export class BoomiService implements IIntegrationPlatformService {
       return true;
     } catch (error) {
       this.logger.error('Test Connection Failed', error);
-      throw error;
+      return false;
     }
   }
 
@@ -178,19 +173,22 @@ export class BoomiService implements IIntegrationPlatformService {
     }
   }
 
-  private async *_queryWithPagination<T>(endpoint: string, initialPayload: any): AsyncGenerator<T[], void, unknown> {
+  private async *_queryWithPagination<T>(endpoint: string, initialPayload: any): AsyncGenerator<{ items: T[], totalCount: number }, void, unknown> {
     let queryToken: string | undefined = undefined;
+    let totalCount = 0;
 
     // Initial Query
     const initialResponse = await this._requestWithRetry(async () => {
       return await this.apiClient.post<BoomiQueryResponse<T>>(`${endpoint}/query`, initialPayload);
     });
 
+    totalCount = initialResponse.data.numberOfResults || 0;
+
     if (initialResponse.data.result && initialResponse.data.result.length > 0) {
-      yield initialResponse.data.result;
+      yield { items: initialResponse.data.result, totalCount };
     }
     queryToken = initialResponse.data.queryToken;
-    this.logger.debug(`Initial query returned ${initialResponse.data.result?.length || 0} results. Pagination token ${queryToken ? 'received' : 'not required'}.`);
+    this.logger.debug(`Initial query returned ${initialResponse.data.result?.length || 0} results out of ${totalCount}. Pagination token ${queryToken ? 'received' : 'not required'}.`);
 
     // Paging Loop
     while (queryToken) {
@@ -201,14 +199,14 @@ export class BoomiService implements IIntegrationPlatformService {
       });
 
       if (moreResponse.data.result && moreResponse.data.result.length > 0) {
-        yield moreResponse.data.result;
+        yield { items: moreResponse.data.result, totalCount };
       }
       queryToken = moreResponse.data.queryToken;
       this.logger.debug(`Fetched next page with token. yielded ${moreResponse.data.result?.length || 0} records.`);
     }
   }
 
-  public async *searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<ComponentInfo[], void, unknown> {
+  public async *searchComponents(criteria: ComponentSearchCriteria): AsyncGenerator<{ items: ComponentInfo[], totalCount: number }, void, unknown> {
     const globalFilters: any[] = [];
 
     // 1. Global Filters (AND)
@@ -297,14 +295,17 @@ export class BoomiService implements IIntegrationPlatformService {
     const resultsGenerator = this._queryWithPagination<ComponentMetadataResponse>('/ComponentMetadata', payload);
 
     for await (const page of resultsGenerator) {
-      yield page.map((r) => ({
-        id: r.componentId!,
-        name: r.name,
-        type: r.type,
-        folderId: r.folderId,
-        folderName: r.folderName,
-        dependencyIds: [],
-      }));
+      yield {
+        items: page.items.map((r) => ({
+          id: r.componentId!,
+          name: r.name,
+          type: r.type,
+          folderId: r.folderId,
+          folderName: r.folderName,
+          dependencyIds: [],
+        })),
+        totalCount: page.totalCount
+      };
     }
   }
 
@@ -383,7 +384,7 @@ export class BoomiService implements IIntegrationPlatformService {
 
       const results: ComponentReferenceResult[] = [];
       for await (const page of resultsGenerator) {
-        results.push(...page);
+        results.push(...page.items);
       }
 
       const dependencyIds = results.length === 0 ? [] : results.flatMap(

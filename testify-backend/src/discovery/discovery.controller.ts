@@ -12,8 +12,12 @@ export class DiscoveryController {
     @Get('active')
     @RequirePermission(PERMISSIONS.DISCOVERY_VIEW)
     async checkActiveSync() {
-        const isRunning = await this.discoveryService.isSyncActive();
-        return { isRunning };
+        const syncStatus = await this.discoveryService.isSyncActive();
+        return {
+            isRunning: syncStatus.active,
+            progress: syncStatus.progress,
+            totalCount: syncStatus.totalCount
+        };
     }
 
     @Post()
@@ -22,8 +26,8 @@ export class DiscoveryController {
     async triggerSync(@Body() body: { environmentId?: string }) {
         this.logger.log('Manual sync triggered via API, enqueueing job.');
         try {
-            const isRunning = await this.discoveryService.isSyncActive();
-            if (isRunning) {
+            const syncStatus = await this.discoveryService.isSyncActive();
+            if (syncStatus.active) {
                 return {
                     message: 'Synchronization is already active',
                 };
