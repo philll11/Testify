@@ -60,8 +60,11 @@ const TestRegistryForm = ({
     } = useForm<TestRegistryFormData>({
         resolver: zodResolver(testRegistrySchema),
         defaultValues: {
+            profileId: '',
             targetComponentId: '',
+            targetComponentName: '',
             testComponentId: '',
+            testComponentName: '',
             isActive: true,
             ...initialValues
         }
@@ -107,14 +110,20 @@ const TestRegistryForm = ({
     useEffect(() => {
         if (testRegistry && (isEditing || isViewing)) {
             reset({
+                profileId: testRegistry.profileId || '',
                 targetComponentId: testRegistry.targetComponentId,
+                targetComponentName: testRegistry.targetComponentName || '',
                 testComponentId: testRegistry.testComponentId,
+                testComponentName: testRegistry.testComponentName || '',
                 isActive: (testRegistry as any).isActive ?? true
             });
         } else if (isCreating) {
             reset({
+                profileId: initialValues?.profileId || '',
                 targetComponentId: initialValues?.targetComponentId || '',
+                targetComponentName: initialValues?.targetComponentName || '',
                 testComponentId: initialValues?.testComponentId || '',
+                testComponentName: initialValues?.testComponentName || '',
                 isActive: initialValues?.isActive ?? true,
                 ...initialValues
             });
@@ -123,7 +132,7 @@ const TestRegistryForm = ({
 
     const handleFormSubmit = (values: TestRegistryFormData) => {
         if (mode === 'create') {
-            const { isActive, ...createData } = values;
+            const { isActive, targetComponentName, testComponentName, profileId, ...createData } = values;
             onSubmit(createData);
         } else if (mode === 'edit') {
             onSubmit({
@@ -134,8 +143,11 @@ const TestRegistryForm = ({
 
     const handleClear = () => {
         reset({
+            profileId: initialValues?.profileId || '',
             targetComponentId: '',
+            targetComponentName: '',
             testComponentId: '',
+            testComponentName: '',
             isActive: true
         });
     };
@@ -171,6 +183,23 @@ const TestRegistryForm = ({
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)} noValidate>
             <Grid container spacing={3} alignItems="center">
+                {(!isCreating || watch('profileId')) && (
+                    <Grid size={12}>
+                        <Controller
+                            name="profileId"
+                            control={control}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Profile ID"
+                                    fullWidth
+                                    disabled
+                                />
+                            )}
+                        />
+                    </Grid>
+                )}
+
                 <Grid size={5}>
                     <Controller
                         name="targetComponentId"
@@ -214,6 +243,54 @@ const TestRegistryForm = ({
                         )}
                     />
                 </Grid>
+
+                {(!isCreating || watch('targetComponentName') || watch('testComponentName')) && (
+                    <>
+                        <Grid size={5}>
+                            <Controller
+                                name="targetComponentName"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Target Component Name"
+                                        fullWidth
+                                        disabled
+                                        slotProps={{
+                                            input: {
+                                                readOnly: true,
+                                            },
+                                        }}
+                                        value={field.value || 'Pending...'}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid size={2}></Grid>
+
+                        <Grid size={5}>
+                            <Controller
+                                name="testComponentName"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Test Component Name"
+                                        fullWidth
+                                        disabled
+                                        slotProps={{
+                                            input: {
+                                                readOnly: true,
+                                            },
+                                        }}
+                                        value={field.value || 'Pending...'}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                    </>
+                )}
 
                 {!isCreating && can(PERMISSIONS.TEST_REGISTRY_MANAGE_INACTIVE) && (
                     <Grid size={12}>

@@ -24,6 +24,7 @@ describe('TestRegistry Audit (e2e)', () => {
 
   let adminToken: string;
   let adminUser: User;
+  let profileId: string;
 
   jest.setTimeout(60000);
 
@@ -77,6 +78,8 @@ describe('TestRegistry Audit (e2e)', () => {
       sub: adminUser.recordId,
       tokenVersion: 0,
     });
+
+    profileId = '123e4567-e89b-12d3-a456-426614174000';
   });
 
   afterAll(async () => {
@@ -90,6 +93,7 @@ describe('TestRegistry Audit (e2e)', () => {
 
   it('should log CREATE action when a mapping is created', async () => {
     const dto = {
+      profileId: profileId,
       targetComponentId: 'audit-target-1',
       testComponentId: 'audit-test-1',
     };
@@ -116,11 +120,13 @@ describe('TestRegistry Audit (e2e)', () => {
     // Test registry mappings log changes out on CREATE based on audits data logic
     const changeFields = log.changes.map((c: any) => c.field);
     expect(changeFields).toContain('targetComponentId');
+    expect(changeFields).toContain('profileId');
   });
 
   it('should log DELETE action when a mapping is removed', async () => {
     const mapping = await testRegistryRepository.save(
       testRegistryRepository.create({
+        profileId: profileId,
         targetComponentId: 'audit-target-del',
         testComponentId: 'audit-test-del',
       })

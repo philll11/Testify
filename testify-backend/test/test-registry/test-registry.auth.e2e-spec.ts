@@ -16,6 +16,9 @@ describe('TestRegistry Auth (e2e)', () => {
 
     jest.setTimeout(60000);
 
+    // Placeholder UUID
+    const profileId = '123e4567-e89b-12d3-a456-426614174000';
+
     beforeAll(async () => {
         const setup = await setupTestApp();
         app = setup.app;
@@ -43,7 +46,7 @@ describe('TestRegistry Auth (e2e)', () => {
         it('POST /test-registry - should deny access without token', async () => {
             await request(app.getHttpServer())
                 .post('/test-registry')
-                .send({ targetComponentId: '1', testComponentId: '2' })
+                .send({ profileId, targetComponentId: '1', testComponentId: '2' })
                 .expect(401);
         });
 
@@ -101,7 +104,7 @@ describe('TestRegistry Auth (e2e)', () => {
             await request(app.getHttpServer())
                 .post('/test-registry')
                 .set('Authorization', `Bearer ${unprivilegedToken}`)
-                .send({ targetComponentId: '1', testComponentId: '2' })
+                .send({ profileId, targetComponentId: '1', testComponentId: '2' })
                 .expect(403);
         });
 

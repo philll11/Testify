@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, FC } from 'react';
 
 interface EnvironmentContextType {
     activeEnvironmentId: string | null;
@@ -9,7 +9,7 @@ interface EnvironmentContextType {
 
 const EnvironmentContext = createContext<EnvironmentContextType | undefined>(undefined);
 
-export const EnvironmentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const EnvironmentProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [activeEnvironmentId, setActiveEnvironmentIdState] = useState<string | null>(() => {
         return localStorage.getItem('activeEnvironmentId');
     });

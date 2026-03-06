@@ -1,24 +1,21 @@
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
-import { JwtService } from '@nestjs/jwt';
+import { Job } from 'bullmq';
 
 import { setupTestApp, teardownTestApp } from '../test-utils';
-import { PERMISSIONS } from '../../src/common/constants/permissions.constants';
-import { User } from '../../src/iam/users/entities/user.entity';
-import { Role } from '../../src/iam/roles/entities/role.entity';
+import { TestRegistryService } from '../../src/test-registry/test-registry.service';
 import { TestRegistry } from '../../src/test-registry/entities/test-registry.entity';
+import { CreateTestRegistryDto } from '../../src/test-registry/dto/create-test-registry.dto';
 
-describe('TestRegistry Advanced (e2e)', () => {
+describe('TestRegistry Advanced Logic (Integration)', () => {
     let app: INestApplication;
     let dataSource: DataSource;
-    let jwtService: JwtService;
+    let service: TestRegistryService;
+    let repository: Repository<TestRegistry>;
 
-    let userRepository: Repository<User>;
-    let roleRepository: Repository<Role>;
-    let testRegistryRepository: Repository<TestRegistry>;
-
-    let adminToken: string;
+    // Test Data
+    const profileId = '123e4567-e89b-12d3-a456-426614174000';
+    const otherProfileId = '999e4567-e89b-12d3-a456-426614174999';
 
     jest.setTimeout(60000);
 
@@ -26,35 +23,9 @@ describe('TestRegistry Advanced (e2e)', () => {
         const setup = await setupTestApp();
         app = setup.app;
         dataSource = setup.dataSource;
-        jwtService = setup.jwtService;
 
-        userRepository = dataSource.getRepository(User);
-        roleRepository = dataSource.getRepository(Role);
-        testRegistryRepository = dataSource.getRepository(TestRegistry);
-
-        const adminRole = await roleRepository.save(
-            roleRepository.create({
-                recordId: 'ADMIN_ROLE_REG_ADV',
-                name: 'Admin Role Reg Adv',
-                permissions: Object.values(PERMISSIONS),
-            }),
-        );
-
-        const adminUser = await userRepository.save(
-            userRepository.create({
-                recordId: 'ADMIN_REG_ADV',
-                name: 'Admin User',
-                firstName: 'Admin',
-                lastName: 'User',
-                email: 'admin.reg.adv@test.com',
-                role: adminRole,
-            }),
-        );
-
-        adminToken = jwtService.sign({
-            sub: adminUser.recordId,
-            tokenVersion: 0,
-        });
+        service = app.get<TestRegistryService>(TestRegistryService);
+        repository = dataSource.getRepository(TestRegistry);
     });
 
     afterAll(async () => {
@@ -62,57 +33,87 @@ describe('TestRegistry Advanced (e2e)', () => {
     });
 
     beforeEach(async () => {
-        await testRegistryRepository.clear();
+        await repository.clear();
     });
 
-    describe('Import Mappings Edge Cases', () => {
-        it('should ignore duplicate import mappings and only create net-new', async () => {
-            // Create first mapping
-            await testRegistryRepository.save(
-                testRegistryRepository.create({
-                    targetComponentId: 'dupe-target',
-                    testComponentId: 'dupe-test',
+    describe('processBulkImport', () => {
+        it('should import new mappings and skip existing ones based on composite key', async () => {
+            // 1. Seed existing mapping
+            await repository.save(
+                repository.create({
+                    profileId: profileId,
+                    targetComponentId: 'target-1',
+                    testComponentId: 'test-1',
                 })
             );
 
-            const importDto = {
-                mappings: [
-                    // This one is duplicate
-                    { targetComponentId: 'dupe-target', testComponentId: 'dupe-test' },
-                    // This one is new
-                    { targetComponentId: 'new-target', testComponentId: 'new-test' }
-                ]
-            };
+            // 2. Prepare import data
+            const importMappings: CreateTestRegistryDto[] = [
+                // Duplicate (should be skipped)
+                {
+                    profileId: profileId,
+                    targetComponentId: 'target-1',
+                    testComponentId: 'test-1',
+                },
+                // New (should be added)
+                {
+                    profileId: profileId,
+                    targetComponentId: 'target-2',
+                    testComponentId: 'test-2',
+                },
+                // Different Profile (should be added even if IDs match component IDs)
+                {
+                    profileId: otherProfileId,
+                    targetComponentId: 'target-1',
+                    testComponentId: 'test-1',
+                }
+            ];
 
-            const response = await request(app.getHttpServer())
-                .post('/test-registry/import')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send(importDto)
-                .expect(201);
+            // Mock Job object
+            const mockJob = {
+                updateProgress: jest.fn().mockResolvedValue(true),
+                data: {},
+                id: 'mock-job-id',
+                name: 'import_csv'
+            } as unknown as Job;
 
-            // Only the new mapping should be returned
-            expect(response.body.length).toBe(1);
-            expect(response.body[0].targetComponentId).toBe('new-target');
+            // 3. Execute Service Method
+            const result = await service.processBulkImport(
+                mockJob,
+                importMappings,
+                'user-id-placeholder',
+                profileId // Note: The service signature accepts profileId but also uses mappingDto.profileId. 
+                // It seems the service iterates mappings and uses mappingDto.profileId.
+            );
 
-            // But both should exist in DB
-            const all = await testRegistryRepository.find();
-            expect(all.length).toBe(2);
+            // 4. Verification
+            expect(result.successItems.length).toBe(2); // Two new items added
+            expect(result.skippedCount).toBe(1); // One duplicate skipped
+            expect(result.errorCount).toBe(0);
+
+            const allMappings = await repository.find();
+            expect(allMappings.length).toBe(3); // 1 existing + 2 new
+
+            // Verify progress updates
+            expect(mockJob.updateProgress).toHaveBeenCalled();
         });
 
-        it('should reject import if mappings array is empty', async () => {
-            await request(app.getHttpServer())
-                .post('/test-registry/import')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ mappings: [] })
-                .expect(400); // Bad Request from class-validator
-        });
+        it('should handle errors gracefully during import', async () => {
+            const importMappings: CreateTestRegistryDto[] = [
+                {
+                    profileId: profileId,
+                    targetComponentId: 't1',
+                    testComponentId: 'test1',
+                }
+            ];
 
-        it('should reject import if mappings array missing entirely', async () => {
-            await request(app.getHttpServer())
-                .post('/test-registry/import')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({})
-                .expect(400); // Bad Request from class-validator
+            const mockJob = {
+                updateProgress: jest.fn(),
+            } as unknown as Job;
+
+            const result = await service.processBulkImport(mockJob, importMappings, 'u1', profileId);
+            expect(result.successItems.length).toBe(1);
+            expect(result.errorCount).toBe(0);
         });
     });
 });

@@ -200,6 +200,33 @@ export class DiscoveryService {
                 deletedCount += pruneDeletedResult.affected || 0;
             }
 
+            // 7. Drift-Proof Background Sync (Test Registry Allowlist)
+            this.logger.log(`Starting targeted background sync for Test Registry components...`);
+            const registryRows = await this.discoveredComponentRepository.manager.query(`
+                select target_component_id as id from test_registry where profile_id = $1
+                union
+                select test_component_id as id from test_registry where profile_id = $1
+            `, [profileId]);
+            const allowedIds = registryRows.map((row: any) => row.id).filter((id: any) => id);
+
+            if (allowedIds.length > 0) {
+                await this.syncTargetedComponents(environmentIdToUse, allowedIds);
+
+                // Heal denormalized TestRegistry names
+                await this.discoveredComponentRepository.manager.query(`
+                    UPDATE test_registry tr
+                    SET 
+                        target_component_name = dc1.name,
+                        target_component_path = dc1."folderPath",
+                        test_component_name = dc2.name,
+                        test_component_path = dc2."folderPath"
+                    FROM discovered_components dc1, discovered_components dc2
+                    WHERE tr.target_component_id = dc1."componentId"
+                      AND tr.test_component_id = dc2."componentId"
+                      AND tr.profile_id = $1
+                `, [profileId]);
+            }
+
             this.logger.log(`Synchronization complete. Upserted: ${upsertedCount}, Deleted: ${deletedCount}`);
 
             // Clear any previous error on success
@@ -260,6 +287,17 @@ export class DiscoveryService {
             .where('comp.profileId = :profileId', { profileId })
             .orderBy('comp.folderPath', 'ASC')
             .addOrderBy('comp.name', 'ASC');
+
+        // Apply API Runtime Filter to hide components force-synced by TestRegistry
+        const configEntity = await this.systemConfigService.get(SystemConfigKeys.DISCOVERY.CONFIG);
+        const configuredTypes = (configEntity?.value as UpdateDiscoveryConfigDto)?.componentTypes || [];
+
+        if (configuredTypes.length > 0) {
+            query.andWhere('comp.type IN (:...configuredTypes)', { configuredTypes });
+        } else {
+            // If no types configured, return empty tree to prevent returning force-synced items nakedly
+            return [];
+        }
 
         if (isTest !== undefined) {
             query.andWhere('comp.isTest = :isTest', { isTest });
@@ -325,5 +363,75 @@ export class DiscoveryService {
         }
 
         return rootNodes;
+    }
+
+    async syncTargetedComponents(environmentId: string, componentIds: string[]): Promise<void> {
+        if (!componentIds || componentIds.length === 0) return;
+
+        this.logger.log(`Starting targeted discovery sync for ${componentIds.length} components`);
+
+        try {
+            const environment = await this.platformEnvironmentService.findEntityById(environmentId);
+            if (!environment || !environment.profile) {
+                this.logger.error(`Targeted sync failed: Environment or linked profile not found for config ID: ${environmentId}`);
+                return;
+            }
+            const profileId = environment.profile.id;
+            const service = await this.integrationService.getServiceById('system', environmentId);
+            const configEntity = await this.systemConfigService.get(SystemConfigKeys.DISCOVERY.CONFIG);
+            const testDir = (configEntity?.value as UpdateDiscoveryConfigDto)?.testDirectoryFolderName?.toLowerCase() || null;
+
+            // Chunk component IDs into max 10 for search criteria
+            const chunkSize = 10;
+            const upsertCandidates: any[] = [];
+
+            for (let i = 0; i < componentIds.length; i += chunkSize) {
+                const chunk = componentIds.slice(i, i + chunkSize);
+                const componentStream = service.searchComponents({ ids: chunk });
+
+                for await (const page of componentStream) {
+                    const resolvedComponents = await Promise.all(page.items.map(async (comp) => {
+                        let folderPath = '';
+                        if (comp.folderId) {
+                            try { folderPath = await service.resolveFolderPath(comp.folderId); }
+                            catch (error) { this.logger.warn(`Failed to resolve path for ${comp.id}`); }
+                        }
+
+                        let isTest = false;
+                        if (comp.type === 'process' && testDir && folderPath.toLowerCase().includes(testDir)) {
+                            isTest = true;
+                        }
+
+                        return {
+                            profileId,
+                            componentId: comp.id,
+                            name: comp.name,
+                            type: comp.type,
+                            folderId: comp.folderId || null,
+                            folderPath: folderPath || null,
+                            isTest
+                        };
+                    }));
+
+                    for (const comp of resolvedComponents) {
+                        upsertCandidates.push(comp);
+                    }
+                }
+            }
+
+            if (upsertCandidates.length > 0) {
+                await this.discoveredComponentRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(DiscoveredComponent)
+                    .values(upsertCandidates)
+                    .orUpdate(['name', 'type', 'folderId', 'folderPath', 'isTest', 'updatedAt'], ['profileId', 'componentId'])
+                    .execute();
+            }
+
+            this.logger.log(`Targeted sync complete. Upserted ${upsertCandidates.length} components.`);
+        } catch (error) {
+            this.logger.error(`Error during targeted sync: ${error.message}`, error.stack);
+        }
     }
 }

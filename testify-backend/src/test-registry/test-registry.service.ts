@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TestRegistry } from './entities/test-registry.entity';
+import { Job } from 'bullmq';
 import { CreateTestRegistryDto } from './dto/create-test-registry.dto';
 import { AuditsService } from '../system/audits/audits.service';
 import { AuditAction } from '../system/audits/entities/audit.entity';
@@ -28,8 +29,13 @@ export class TestRegistryService {
     async create(createDto: CreateTestRegistryDto, requestingUser: User): Promise<TestRegistry> {
         try {
             const mapping = this.testRegistryRepository.create({
+                profileId: createDto.profileId,
                 targetComponentId: createDto.targetComponentId,
+                targetComponentName: createDto.targetComponentName,
+                targetComponentPath: createDto.targetComponentPath,
                 testComponentId: createDto.testComponentId,
+                testComponentName: createDto.testComponentName,
+                testComponentPath: createDto.testComponentPath,
                 isActive: createDto.isActive ?? true,
             });
 
@@ -54,8 +60,8 @@ export class TestRegistryService {
         }
     }
 
-    async findAll(): Promise<TestRegistry[]> {
-        return this.testRegistryRepository.find();
+    async findAll(profileId?: string): Promise<TestRegistry[]> {
+        return this.testRegistryRepository.find({ where: profileId ? { profileId } : {} });
     }
 
     async findByTargetComponent(targetComponentId: string): Promise<TestRegistry[]> {
@@ -123,19 +129,26 @@ export class TestRegistryService {
         );
     }
 
-    async bulkImport(mappings: CreateTestRegistryDto[], requestingUser: User): Promise<TestRegistry[]> {
+    async processBulkImport(job: Job, mappings: CreateTestRegistryDto[], requestingUserId: string, profileId: string): Promise<{ successItems: TestRegistry[], skippedCount: number, errorCount: number }> {
         const results: TestRegistry[] = [];
+        let skippedCount = 0;
+        let errorCount = 0;
+        let index = 0;
+
         for (const mappingDto of mappings) {
             try {
                 const existing = await this.testRegistryRepository.findOne({
                     where: {
+                        profileId: mappingDto.profileId,
                         targetComponentId: mappingDto.targetComponentId,
                         testComponentId: mappingDto.testComponentId,
                     },
                 });
 
                 if (!existing) {
-                    const mapping = this.testRegistryRepository.create(mappingDto);
+                    const mapping = this.testRegistryRepository.create({
+                        ...mappingDto,
+                    });
                     const saved = await this.testRegistryRepository.save(mapping);
 
                     await this.auditsService.log(
@@ -144,16 +157,38 @@ export class TestRegistryService {
                         AuditAction.CREATE,
                         null,
                         saved,
-                        requestingUser.id,
+                        requestingUserId,
                         'Test Registry mapping created via bulk import'
                     );
 
                     results.push(saved);
+                } else {
+                    skippedCount++;
                 }
             } catch (error) {
                 console.warn(`Failed to import mapping ${mappingDto.targetComponentId} -> ${mappingDto.testComponentId}: ${error.message}`);
+                errorCount++;
             }
+            index++;
+            await job.updateProgress(Math.floor((index / mappings.length) * 100));
         }
-        return results;
+        return { successItems: results, skippedCount, errorCount };
+    }
+
+    async healDenormalizedNames(mappingIds: string[]): Promise<void> {
+        if (!mappingIds || mappingIds.length === 0) return;
+
+        // Since typeorm's query doesn't handle array matching for IN clause cleanly inside UPDATE..FROM
+        // We will execute a simple update for matching IDs using ANY($1::uuid[])
+        await this.testRegistryRepository.manager.query(`
+            UPDATE test_registry tr
+            SET 
+                target_component_name = COALESCE((SELECT dc.name FROM discovered_components dc WHERE dc."componentId" = tr.target_component_id LIMIT 1), tr.target_component_name),
+                target_component_path = COALESCE((SELECT dc."folderPath" FROM discovered_components dc WHERE dc."componentId" = tr.target_component_id LIMIT 1), tr.target_component_path),
+                test_component_name = COALESCE((SELECT dc.name FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_name),
+                test_component_path = COALESCE((SELECT dc."folderPath" FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_path)
+            WHERE tr.id = ANY($1::uuid[])
+        `, [mappingIds]);
     }
 }
+

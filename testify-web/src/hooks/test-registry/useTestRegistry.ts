@@ -26,13 +26,13 @@ export const TEST_REGISTRY_KEYS = {
     }
 };
 
-export const useGetTestRegistries = (options?: { enabled?: boolean }) => {
+export const useGetTestRegistries = (profileId?: string, options?: { enabled?: boolean }) => {
     const { can } = usePermission();
     const isEnabled = (options?.enabled ?? true) && can(PERMISSIONS.TEST_REGISTRY_VIEW);
 
     return useQuery({
-        queryKey: TEST_REGISTRY_KEYS.lists(),
-        queryFn: getTestRegistries,
+        queryKey: [...TEST_REGISTRY_KEYS.lists(), profileId],
+        queryFn: () => getTestRegistries(profileId),
         enabled: isEnabled
     });
 };
@@ -127,3 +127,4 @@ export const useImportTestRegistry = () => {
         }
     });
 };
+

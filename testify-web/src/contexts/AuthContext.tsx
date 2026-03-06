@@ -1,4 +1,4 @@
-import React, { ReactNode, createContext, useContext, useCallback } from 'react';
+import { ReactNode, createContext, useContext, useCallback } from 'react';
 import { useAuthSession, useLogin, useLogout } from 'hooks/iam/useAuth';
 import { User } from 'types/iam/user.types';
 import Loader from 'ui-component/Loader';

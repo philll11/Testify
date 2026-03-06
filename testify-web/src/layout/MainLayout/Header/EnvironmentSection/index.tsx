@@ -29,6 +29,7 @@ export default function EnvironmentSection() {
                         bgcolor: theme.palette.mode === 'dark' ? theme.palette.dark.main : theme.palette.primary.light,
                         borderRadius: '4px',
                         transition: 'border-color 0.3s, box-shadow 0.3s',
+                        boxShadow: isEnvironmentWarningActive ? `0 0 8px 2px ${theme.palette.error.main}` : 'none',
                         '& .MuiSelect-select': {
                             py: 1,
                             px: 2,

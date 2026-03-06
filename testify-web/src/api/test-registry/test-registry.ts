@@ -3,8 +3,8 @@ import { TestRegistry, CreateTestRegistryDto, ImportTestRegistryDto } from '../.
 
 const BASE_URL = '/test-registry';
 
-export const getTestRegistries = async (): Promise<TestRegistry[]> => {
-    const response = await axiosServices.get<TestRegistry[]>(BASE_URL);
+export const getTestRegistries = async (profileId?: string): Promise<TestRegistry[]> => {
+    const response = await axiosServices.get<TestRegistry[]>(profileId ? `${BASE_URL}?profileId=${profileId}` : BASE_URL);
     return response.data;
 };
 
@@ -36,3 +36,4 @@ export const importTestRegistry = async (data: ImportTestRegistryDto): Promise<a
     const response = await axiosServices.post(`${BASE_URL}/import`, data);
     return response.data;
 };
+

@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, ParseUUIDPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, ParseUUIDPipe, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { TestRegistryService } from './test-registry.service';
 import { CreateTestRegistryDto } from './dto/create-test-registry.dto';
 import { UpdateTestRegistryDto } from './dto/update-test-registry.dto';
@@ -11,18 +13,32 @@ import { User } from '../iam/users/entities/user.entity';
 
 @Controller('test-registry')
 export class TestRegistryController {
-    constructor(private readonly testRegistryService: TestRegistryService) { }
+    constructor(
+        private readonly testRegistryService: TestRegistryService,
+        @InjectQueue('test-registry-tasks') private readonly tasksQueue: Queue
+    ) { }
 
     /**
      * Creates a new mapping between a target component and a test component.
      */
     @Post()
     @RequirePermission(PERMISSIONS.TEST_REGISTRY_CREATE)
-    create(
+    async create(
         @Body() createTestRegistryDto: CreateTestRegistryDto,
         @CurrentUser() requestingUser: User
     ) {
-        return this.testRegistryService.create(createTestRegistryDto, requestingUser);
+        const saved = await this.testRegistryService.create(createTestRegistryDto, requestingUser);
+
+        if (createTestRegistryDto.environmentId) {
+            await this.tasksQueue.add('fetch_metadata', {
+                id: saved.id,
+                targetComponentId: saved.targetComponentId,
+                testComponentId: saved.testComponentId,
+                environmentId: createTestRegistryDto.environmentId
+            });
+        }
+
+        return saved;
     }
 
     /**
@@ -30,8 +46,8 @@ export class TestRegistryController {
      */
     @Get()
     @RequirePermission(PERMISSIONS.TEST_REGISTRY_VIEW)
-    findAll() {
-        return this.testRegistryService.findAll();
+    findAll(@Query('profileId', new ParseUUIDPipe({ optional: true })) profileId?: string) {
+        return this.testRegistryService.findAll(profileId);
     }
 
     /**
@@ -83,11 +99,17 @@ export class TestRegistryController {
      */
     @Post('import')
     @RequirePermission(PERMISSIONS.TEST_REGISTRY_IMPORT)
-    bulkImport(
+    async bulkImport(
         @Body() importDto: ImportTestRegistryDto,
         @CurrentUser() requestingUser: User
     ) {
-        return this.testRegistryService.bulkImport(importDto.mappings, requestingUser);
+        const job = await this.tasksQueue.add('import_csv', {
+            mappings: importDto.mappings,
+            requestingUserId: requestingUser.id,
+            environmentId: importDto.environmentId,
+        });
+        return { message: 'Import job enqueued', jobId: job.id };
     }
 }
+
 

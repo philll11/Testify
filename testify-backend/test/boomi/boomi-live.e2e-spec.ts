@@ -55,7 +55,7 @@ describe('BoomiService - Live API Verification (e2e)', () => {
         const stream = boomiService.searchComponents({ types: ['crossref'] });
         const results: ComponentInfo[] = [];
         for await (const page of stream) {
-            results.push(...page);
+            results.push(...page.items);
         }
 
         expect(Array.isArray(results)).toBe(true);
@@ -77,7 +77,7 @@ describe('BoomiService - Live API Verification (e2e)', () => {
         const stream = boomiService.searchComponents({ types: ['process'] });
         const components: any[] = [];
         for await (const page of stream) {
-            components.push(...page);
+            components.push(...page.items);
         }
 
         if (components.length > 0) {
@@ -98,7 +98,7 @@ describe('BoomiService - Live API Verification (e2e)', () => {
         const stream = boomiService.searchComponents({});
         const components: any[] = [];
         for await (const page of stream) {
-            components.push(...page);
+            components.push(...page.items);
         }
         const componentWithFolder = components.find(c => Boolean(c.folderId));
 

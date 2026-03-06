@@ -23,14 +23,23 @@ import { usePermission } from 'contexts/AuthContext';
 import { useDiscardWarning } from 'hooks/useDiscardWarning';
 import MainCard from 'ui-component/cards/MainCard';
 import { CsvImportDialog } from './components/CsvImportDialog';
+import { useEnvironmentContext } from 'contexts/EnvironmentContext';
+import { usePlatformEnvironments } from 'hooks/platform/useEnvironments';
+import { useSnackbar } from 'contexts/SnackbarContext';
 
 const TestRegistryList = () => {
     const navigate = useNavigate();
     const { getLinkTo } = useContextualNavigation('/test-registry');
     const { can } = usePermission();
+    const { showMessage } = useSnackbar();
+
+    const { activeEnvironmentId, triggerEnvironmentWarning } = useEnvironmentContext();
+    const { data: environments } = usePlatformEnvironments();
+    const activeEnv = environments?.find(e => e.id === activeEnvironmentId);
+    const profileId = activeEnv?.profileId;
 
     // Queries & Mutations
-    const { data: testRegistries = [], isLoading } = useGetTestRegistries();
+    const { data: testRegistries = [], isLoading } = useGetTestRegistries(profileId);
     const { mutateAsync: deleteMapping } = useDeleteTestRegistry();
     const { mutateAsync: createMapping, isPending: isCreating } = useCreateTestRegistry();
     const { mutateAsync: updateMapping, isPending: isUpdating } = useUpdateTestRegistry();
@@ -117,18 +126,24 @@ const TestRegistryList = () => {
     const handleFormSubmit = async (values: any) => {
         try {
             if (mode === 'create') {
-                await createMapping(values);
+                if (!activeEnvironmentId || !profileId) {
+                    triggerEnvironmentWarning();
+                    showMessage('Please select an environment from the global dropdown before creating a mapping.', 'warning');
+                    return;
+                }
+                await createMapping({ ...values, profileId, environmentId: activeEnvironmentId });
             } else if (mode === 'edit' && selectedMapping) {
                 await updateMapping({ id: selectedMapping.id, data: values });
             }
             setDrawerOpen(false);
             setCreateDraft({});
             setIsFormDirty(false);
-        } catch (error) {
-            // Error handled by hook notifications
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error?.message || 'An error occurred';
+            showMessage(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage, 'error');
+            console.error(error);
         }
     };
-
     // --- Actions ---
     const handleCreatePage = () => navigate(getLinkTo('/test-registry/create'));
     const handleViewPage = (id: string, e?: MouseEvent) => {
@@ -161,8 +176,8 @@ const TestRegistryList = () => {
     // --- Column Configuration ---
     const columns: GridColDef[] = useMemo(
         () => [
-            { field: 'targetComponentId', headerName: 'Target Component ID', flex: 1, minWidth: 200 },
-            { field: 'testComponentId', headerName: 'Test Component ID', flex: 1, minWidth: 200 },
+            { field: 'targetComponentName', headerName: 'Target Name', flex: 1, minWidth: 200, valueGetter: (params, row) => row.targetComponentName || row.targetComponentId },
+            { field: 'testComponentName', headerName: 'Test Name', flex: 1, minWidth: 200, valueGetter: (params, row) => row.testComponentName || row.testComponentId },
             {
                 field: 'actions',
                 headerName: 'Actions',

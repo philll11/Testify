@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, createContext, useContext, useState, ReactNode } from 'react';
+import { SyntheticEvent, createContext, useContext, useState, ReactNode } from 'react';
 import { Snackbar, Alert, AlertColor } from '@mui/material';
 
 interface SnackbarContextType {
