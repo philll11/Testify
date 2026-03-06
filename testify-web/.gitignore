@@ -32,3 +32,4 @@ yarn-error.log*
 
 # Environment files
 .env
+.env.production

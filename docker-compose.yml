@@ -3,10 +3,12 @@ services:
     image: postgres:17.5-alpine
     container_name: testify-postgres
     restart: always
+    env_file:
+      - ./testify-backend/.env
     environment:
-      POSTGRES_USER: ${DATABASE_USER:-testuser}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-testpassword}
-      POSTGRES_DB: ${DATABASE_NAME:-testdb}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${DATABASE_NAME:-ato_db}
       POSTGRES_PORT: 5432
     ports:
       - "3430:5432"
@@ -26,7 +28,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ./testify-backend
       dockerfile: ./Dockerfile
     container_name: testify-app
     restart: always
@@ -36,13 +38,30 @@ services:
     ports:
       - "3431:3431"
     env_file:
-      - .env
+      - ./testify-backend/.env
     environment:
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
+    networks:
+      - testify-network
+
+  web:
+    build:
+      context: ./testify-web
+      dockerfile: ./Dockerfile
+    container_name: testify-web
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "3432:80"
+    environment:
+      # Inject the backend URL that the user's browser should call 
+      # Since we expose the backend on 3431 on the host, we use localhost here
+      - VITE_BACKEND_API_URL=http://localhost:3431/api/v1
     networks:
       - testify-network
 

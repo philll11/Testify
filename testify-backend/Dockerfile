@@ -41,4 +41,5 @@ COPY --from=builder /usr/src/app/dist ./dist
 EXPOSE 3001
 
 # The command to run your app
-CMD [ "node", "dist/main" ]
+# It runs the seeding script first to ensure basic roles/users exist on a fresh install.
+CMD [ "sh", "-c", "npm run seed:prod && node dist/main" ]
