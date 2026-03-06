@@ -5,7 +5,7 @@ import { useImportTestRegistry } from 'hooks/test-registry/useTestRegistry';
 import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { usePlatformEnvironments } from 'hooks/platform/useEnvironments';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getJobStatus } from 'api/system/jobs';
+import { getTestRegistryJobStatus } from 'api/test-registry/test-registry';
 
 interface CsvImportDialogProps {
   open: boolean;
@@ -28,7 +28,7 @@ export const CsvImportDialog: FC<CsvImportDialogProps> = ({ open, onClose }) => 
 
   const { data: jobStatus, isFetching: isJobPolling } = useQuery({
     queryKey: ['job', jobId],
-    queryFn: () => getJobStatus(jobId!),
+    queryFn: () => getTestRegistryJobStatus(jobId!),
     enabled: !!jobId,
     refetchInterval: (query) => {
       const state = query.state.data;

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Drawer, Tooltip, IconButton, Divider, Stack } from '@mui/material';
+import { Box, Typography, Drawer, Tooltip, IconButton, Divider, Stack, Button } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { IconEdit, IconTrash, IconEye, IconPlus, IconExternalLink, IconUpload, IconPencil } from '@tabler/icons-react';
 
@@ -26,6 +26,8 @@ import { CsvImportDialog } from './components/CsvImportDialog';
 import { useEnvironmentContext } from 'contexts/EnvironmentContext';
 import { usePlatformEnvironments } from 'hooks/platform/useEnvironments';
 import { useSnackbar } from 'contexts/SnackbarContext';
+import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
+import { IconPuzzle } from '@tabler/icons-react';
 
 const TestRegistryList = () => {
     const navigate = useNavigate();
@@ -176,8 +178,44 @@ const TestRegistryList = () => {
     // --- Column Configuration ---
     const columns: GridColDef[] = useMemo(
         () => [
-            { field: 'targetComponentName', headerName: 'Target Name', flex: 1, minWidth: 200, valueGetter: (params, row) => row.targetComponentName || row.targetComponentId },
-            { field: 'testComponentName', headerName: 'Test Name', flex: 1, minWidth: 200, valueGetter: (params, row) => row.testComponentName || row.testComponentId },
+            {
+                field: 'targetComponentName',
+                headerName: 'Target Name',
+                flex: 1,
+                minWidth: 250,
+                valueGetter: (params, row) => row.targetComponentName || row.targetComponentId,
+                renderCell: (params: GridRenderCellParams) => {
+                    const type = params.row.targetComponentType;
+                    const TypeIcon = (type && BOOMI_COMPONENT_ICONS[type]) || IconPuzzle;
+                    return (
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
+                            <Tooltip title={type ? (BOOMI_COMPONENT_LABELS[type] || type) : 'Unknown Type'}>
+                                <Box sx={{ display: 'flex' }}><TypeIcon size={18} color="action" /></Box>
+                            </Tooltip>
+                            <Typography variant="body2">{params.value}</Typography>
+                        </Stack>
+                    );
+                }
+            },
+            {
+                field: 'testComponentName',
+                headerName: 'Test Name',
+                flex: 1,
+                minWidth: 250,
+                valueGetter: (params, row) => row.testComponentName || row.testComponentId,
+                renderCell: (params: GridRenderCellParams) => {
+                    const type = params.row.testComponentType;
+                    const TypeIcon = (type && BOOMI_COMPONENT_ICONS[type]) || IconPuzzle;
+                    return (
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
+                            <Tooltip title={type ? (BOOMI_COMPONENT_LABELS[type] || type) : 'Unknown Type'}>
+                                <Box sx={{ display: 'flex' }}><TypeIcon size={18} color="action" /></Box>
+                            </Tooltip>
+                            <Typography variant="body2">{params.value}</Typography>
+                        </Stack>
+                    );
+                }
+            },
             {
                 field: 'actions',
                 headerName: 'Actions',
@@ -191,14 +229,14 @@ const TestRegistryList = () => {
                     const mapping = params.row as TestRegistry;
                     return (
                         <>
-                            {can(PERMISSIONS.USER_VIEW) && (
+                            {can(PERMISSIONS.TEST_REGISTRY_VIEW) && (
                                 <Tooltip title="View Details">
                                     <IconButton color="primary" size="small" onClick={(e) => handleViewPage(mapping.id, e)}>
                                         <IconEye size={18} />
                                     </IconButton>
                                 </Tooltip>
                             )}
-                            {can(PERMISSIONS.USER_EDIT) && (
+                            {can(PERMISSIONS.TEST_REGISTRY_EDIT) && (
                                 <>
                                     <Tooltip title="Edit">
                                         <IconButton color="secondary" size="small" onClick={(e) => handleEditPage(mapping.id, e)}>
@@ -219,7 +257,7 @@ const TestRegistryList = () => {
                                     </Tooltip>
                                 </>
                             )}
-                            {can(PERMISSIONS.USER_DELETE) && (
+                            {can(PERMISSIONS.TEST_REGISTRY_DELETE) && (
                                 <Tooltip title="Delete">
                                     <IconButton size="small" color="error" onClick={(e) => handleDeleteClick(mapping, e)}>
                                         <IconTrash size={18} />
@@ -238,20 +276,31 @@ const TestRegistryList = () => {
         <MainCard
             title="Test Registry"
             secondary={
-                can(PERMISSIONS.ROLE_CREATE) && (
-                    <SplitActionButton
-                        primaryLabel="Create Mapping"
-                        primaryStartIcon={<IconPlus size={18} />}
-                        primaryAction={() => handleOpenDrawer('create')}
-                        options={[
-                            {
-                                label: 'Create in New Page',
-                                icon: <IconExternalLink size={18} />,
-                                onClick: handleCreatePage
-                            }
-                        ]}
-                    />
-                )
+                <Stack direction="row" spacing={2} alignItems="center">
+                    {can(PERMISSIONS.TEST_REGISTRY_IMPORT) && (
+                        <Button
+                            variant="outlined"
+                            startIcon={<IconUpload size={18} />}
+                            onClick={() => setImportOpen(true)}
+                        >
+                            Import
+                        </Button>
+                    )}
+                    {can(PERMISSIONS.TEST_REGISTRY_CREATE) && (
+                        <SplitActionButton
+                            primaryLabel="Create Mapping"
+                            primaryStartIcon={<IconPlus size={18} />}
+                            primaryAction={() => handleOpenDrawer('create')}
+                            options={[
+                                {
+                                    label: 'Create in New Page',
+                                    icon: <IconExternalLink size={18} />,
+                                    onClick: handleCreatePage
+                                }
+                            ]}
+                        />
+                    )}
+                </Stack>
             }
         >
             <DataGridWrapper

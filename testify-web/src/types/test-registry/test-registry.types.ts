@@ -4,9 +4,11 @@ export interface TestRegistry {
   targetComponentId: string;
   targetComponentName?: string;
   targetComponentPath?: string;
+  targetComponentType?: string;
   testComponentId: string;
   testComponentName?: string;
   testComponentPath?: string;
+  testComponentType?: string;
   isActive?: boolean;
   createdBy?: string;
   updatedBy?: string;

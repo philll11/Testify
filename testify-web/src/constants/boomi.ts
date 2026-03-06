@@ -49,7 +49,7 @@ export const BOOMI_COMPONENT_TYPES = [
 export const BOOMI_COMPONENT_LABELS: Record<string, string> = {
   certificate: 'Certificate',
   'certificate.pgp': 'Certificate PGP',
-  'connector-action': 'Connector Action',
+  'connector-action': 'Connector Operation',
   'connector-settings': 'Connector Settings',
   crossref: 'Cross Reference Table',
   customlibrary: 'Custom Library',

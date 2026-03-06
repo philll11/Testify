@@ -9,13 +9,15 @@ import {
     Box,
     Typography,
     FormControlLabel,
-    Switch
+    Switch,
+    InputAdornment
 } from '@mui/material';
-import { IconHistory } from '@tabler/icons-react';
+import { IconHistory, IconPuzzle } from '@tabler/icons-react';
 
 // Project Imports
 import { TestRegistry } from 'types/test-registry/test-registry.types';
 import { testRegistrySchema, TestRegistryFormData } from 'types/test-registry/test-registry.schema';
+import { BOOMI_COMPONENT_ICONS, BOOMI_COMPONENT_LABELS } from 'constants/boomi';
 
 import { PERMISSIONS } from 'constants/permissions';
 import { usePermission } from 'contexts/AuthContext';
@@ -63,12 +65,19 @@ const TestRegistryForm = ({
             profileId: '',
             targetComponentId: '',
             targetComponentName: '',
+            targetComponentType: '',
             testComponentId: '',
             testComponentName: '',
+            testComponentType: '',
             isActive: true,
             ...initialValues
         }
     });
+
+    const targetType = watch('targetComponentType');
+    const testType = watch('testComponentType');
+    const TargetIcon = (targetType && BOOMI_COMPONENT_ICONS[targetType]) || IconPuzzle;
+    const TestIcon = (testType && BOOMI_COMPONENT_ICONS[testType]) || IconPuzzle;
 
     // Keep a stable ref to the callback to avoid breaking debounce if prop changes referentially
     const onValuesChangeRef = useRef(onValuesChange);
@@ -113,8 +122,10 @@ const TestRegistryForm = ({
                 profileId: testRegistry.profileId || '',
                 targetComponentId: testRegistry.targetComponentId,
                 targetComponentName: testRegistry.targetComponentName || '',
+                targetComponentType: testRegistry.targetComponentType || '',
                 testComponentId: testRegistry.testComponentId,
                 testComponentName: testRegistry.testComponentName || '',
+                testComponentType: testRegistry.testComponentType || '',
                 isActive: (testRegistry as any).isActive ?? true
             });
         } else if (isCreating) {
@@ -258,8 +269,8 @@ const TestRegistryForm = ({
                                         disabled
                                         slotProps={{
                                             input: {
-                                                readOnly: true,
-                                            },
+                                                readOnly: true
+                                            }
                                         }}
                                         value={field.value || 'Pending...'}
                                     />
@@ -281,10 +292,56 @@ const TestRegistryForm = ({
                                         disabled
                                         slotProps={{
                                             input: {
-                                                readOnly: true,
-                                            },
+                                                readOnly: true
+                                            }
                                         }}
                                         value={field.value || 'Pending...'}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid size={5}>
+                            <Controller
+                                name="targetComponentType"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Target Component Type"
+                                        fullWidth
+                                        disabled
+                                        slotProps={{
+                                            input: {
+                                                readOnly: true,
+                                                startAdornment: <InputAdornment position="start"><TargetIcon size={18} /></InputAdornment>
+                                            }
+                                        }}
+                                        value={field.value ? (BOOMI_COMPONENT_LABELS[field.value] || field.value) : 'Pending...'}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid size={2}></Grid>
+
+                        <Grid size={5}>
+                            <Controller
+                                name="testComponentType"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Test Component Type"
+                                        fullWidth
+                                        disabled
+                                        slotProps={{
+                                            input: {
+                                                readOnly: true,
+                                                startAdornment: <InputAdornment position="start"><TestIcon size={18} /></InputAdornment>
+                                            }
+                                        }}
+                                        value={field.value ? (BOOMI_COMPONENT_LABELS[field.value] || field.value) : 'Pending...'}
                                     />
                                 )}
                             />

@@ -18,6 +18,10 @@ export class CreateTestRegistryDto {
     readonly targetComponentPath?: string;
 
     @IsString()
+    @IsOptional()
+    readonly targetComponentType?: string;
+
+    @IsString()
     @IsNotEmpty()
     readonly testComponentId: string;
 
@@ -28,6 +32,10 @@ export class CreateTestRegistryDto {
     @IsString()
     @IsOptional()
     readonly testComponentPath?: string;
+
+    @IsString()
+    @IsOptional()
+    readonly testComponentType?: string;
 
     @IsUUID()
     @IsOptional()

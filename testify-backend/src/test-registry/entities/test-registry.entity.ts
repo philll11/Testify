@@ -18,6 +18,9 @@ export class TestRegistry {
     @Column({ name: 'target_component_path', nullable: true })
     targetComponentPath?: string;
 
+    @Column({ name: 'target_component_type', nullable: true })
+    targetComponentType?: string;
+
     @Column({ name: 'test_component_id' })
     testComponentId: string;
 
@@ -26,6 +29,9 @@ export class TestRegistry {
 
     @Column({ name: 'test_component_path', nullable: true })
     testComponentPath?: string;
+
+    @Column({ name: 'test_component_type', nullable: true })
+    testComponentType?: string;
 
     @Column({ default: true })
     isActive: boolean;

@@ -60,6 +60,25 @@ export class TestRegistryController {
     }
 
     /**
+     * Get job status for import and fetch_metadata tasks on test-registry queue
+     */
+    @Get('job/:id')
+    @RequirePermission(PERMISSIONS.TEST_REGISTRY_VIEW)
+    async getJobStatus(@Param('id') id: string) {
+        const job = await this.tasksQueue.getJob(id);
+        if (!job) return { status: 'not_found' };
+        return {
+            id: job.id,
+            name: job.name,
+            status: await job.getState(),
+            progress: job.progress,
+            failedReason: job.failedReason,
+            finishedOn: job.finishedOn,
+            processedOn: job.processedOn,
+        };
+    }
+
+    /**
      * Retrieves a specific test mapping by its ID.
      */
     @Get(':registryId')

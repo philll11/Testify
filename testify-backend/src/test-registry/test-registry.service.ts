@@ -33,9 +33,11 @@ export class TestRegistryService {
                 targetComponentId: createDto.targetComponentId,
                 targetComponentName: createDto.targetComponentName,
                 targetComponentPath: createDto.targetComponentPath,
+                targetComponentType: createDto.targetComponentType,
                 testComponentId: createDto.testComponentId,
                 testComponentName: createDto.testComponentName,
                 testComponentPath: createDto.testComponentPath,
+                testComponentType: createDto.testComponentType,
                 isActive: createDto.isActive ?? true,
             });
 
@@ -185,8 +187,10 @@ export class TestRegistryService {
             SET 
                 target_component_name = COALESCE((SELECT dc.name FROM discovered_components dc WHERE dc."componentId" = tr.target_component_id LIMIT 1), tr.target_component_name),
                 target_component_path = COALESCE((SELECT dc."folderPath" FROM discovered_components dc WHERE dc."componentId" = tr.target_component_id LIMIT 1), tr.target_component_path),
+                target_component_type = COALESCE((SELECT dc.type FROM discovered_components dc WHERE dc."componentId" = tr.target_component_id LIMIT 1), tr.target_component_type),
                 test_component_name = COALESCE((SELECT dc.name FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_name),
-                test_component_path = COALESCE((SELECT dc."folderPath" FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_path)
+                test_component_path = COALESCE((SELECT dc."folderPath" FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_path),
+                test_component_type = COALESCE((SELECT dc.type FROM discovered_components dc WHERE dc."componentId" = tr.test_component_id LIMIT 1), tr.test_component_type)
             WHERE tr.id = ANY($1::uuid[])
         `, [mappingIds]);
     }

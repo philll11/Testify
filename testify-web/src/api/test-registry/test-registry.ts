@@ -37,3 +37,8 @@ export const importTestRegistry = async (data: ImportTestRegistryDto): Promise<a
     return response.data;
 };
 
+export const getTestRegistryJobStatus = async (jobId: string): Promise<any> => {
+    const response = await axiosServices.get(`${BASE_URL}/job/${jobId}`);
+    return response.data;
+};
+
