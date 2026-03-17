@@ -4,7 +4,7 @@
 import axios from 'axios';
 
 const axiosServices = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3431/api/v1',
+  baseURL: '/api/v1',
   withCredentials: true,
   headers: {
     'x-client-platform': 'web'
