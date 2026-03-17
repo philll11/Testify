@@ -101,7 +101,7 @@ import { TestResultsModule } from './test-results/test-results.module';
           password: configService.get<string>('DATABASE_PASSWORD'),
           database: configService.get<string>('DATABASE_NAME'),
           autoLoadEntities: true,
-          synchronize: true, // Should be false in production
+          synchronize: configService.get<string>('DATABASE_SYNCHRONIZE') === 'true',
           ...(isSsl && { ssl: sslOptions }),
           extra: {
             connectionTimeoutMillis: 10000,

@@ -31,6 +31,7 @@ services:
     build:
       context: ./testify-backend
       dockerfile: ./Dockerfile
+      target: builder
     container_name: testify-app
     restart: always
     depends_on:
@@ -47,6 +48,8 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
+      - DATABASE_SYNCHRONIZE=true
+    command: sh -c "npm run seed:dev && npm run start:dev"
     networks:
       - testify-network
 

@@ -45,5 +45,5 @@ COPY certs/DigiCertGlobalRootG2.crt.pem ./certs/DigiCertGlobalRootG2.crt.pem
 EXPOSE 3001
 
 # The command to run your app
-# It runs the seeding script first to ensure basic roles/users exist on a fresh install.
-CMD [ "sh", "-c", "npm run seed:prod && node dist/main" ]
+# (Seeding is handled externally via CI/CD for prod, or overridden in docker-compose.yml for local dev)
+CMD [ "node", "dist/main" ]
