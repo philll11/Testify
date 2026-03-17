@@ -23,7 +23,6 @@ export default async (): Promise<Record<string, any>> => {
                 'REDIS-PORT',
                 'REDIS-DB',
                 // Application Secrets
-                'ADMIN-PASSWORD',
                 'JWT-SECRET',
                 'ENCRYPTION-KEY',
             ];

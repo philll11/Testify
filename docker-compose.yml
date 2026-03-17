@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_USER: ${DATABASE_USER:-postgres}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
-      POSTGRES_DB: ${DATABASE_NAME:-ato_db}
+      POSTGRES_DB: ${DATABASE_NAME:-testify_db}
       POSTGRES_PORT: 5432
     ports:
       - "3430:5432"

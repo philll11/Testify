@@ -20,6 +20,8 @@ import { AuditsModule } from './system/audits/audits.module';
 import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
 import keyVaultLoader from './config/keyvault.config';
+import * as fs from 'fs';
+import * as path from 'path';
 import { IntegrationModule } from './integration/integration.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { TestRegistryModule } from './test-registry/test-registry.module';
@@ -79,16 +81,33 @@ import { TestResultsModule } from './test-results/test-results.module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
-        username: configService.get<string>('DATABASE_USER'),
-        password: configService.get<string>('DATABASE_PASSWORD'),
-        database: configService.get<string>('DATABASE_NAME'),
-        autoLoadEntities: true,
-        synchronize: true, // Should be false in production
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const isSsl = configService.get<string>('DATABASE_SSL') === 'true';
+        let sslOptions: any = false;
+
+        if (isSsl) {
+          const certPath = path.join(process.cwd(), 'certs', 'DigiCertGlobalRootG2.crt.pem');
+          sslOptions = {
+            rejectUnauthorized: true, // We have the true root CA, we can safely enforce this
+            ca: fs.readFileSync(certPath).toString(),
+          };
+        }
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DATABASE_HOST'),
+          port: configService.get<number>('DATABASE_PORT'),
+          username: configService.get<string>('DATABASE_USER'),
+          password: configService.get<string>('DATABASE_PASSWORD'),
+          database: configService.get<string>('DATABASE_NAME'),
+          autoLoadEntities: true,
+          synchronize: true, // Should be false in production
+          ...(isSsl && { ssl: sslOptions }),
+          extra: {
+            connectionTimeoutMillis: 10000,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     BullModule.forRootAsync({
@@ -97,6 +116,8 @@ import { TestResultsModule } from './test-results/test-results.module';
         const host = configService.get<string>('REDIS_HOST');
         const port = configService.get<number>('REDIS_PORT');
         const dbStr = configService.get<string>('REDIS_DB');
+        const isTls = configService.get<string>('REDIS_TLS') === 'true';
+        const password = configService.get<string>('REDIS_PASSWORD');
 
         if (!host || !port || dbStr === undefined) {
           throw new Error('Redis configuration is missing required environment variables (REDIS_HOST, REDIS_PORT, REDIS_DB).');
@@ -107,6 +128,10 @@ import { TestResultsModule } from './test-results/test-results.module';
             host,
             port,
             db: Number(dbStr),
+            ...(password && { password }),
+            ...(isTls && { tls: {} }),
+            connectTimeout: 10000,
+            maxRetriesPerRequest: 50,
           },
         };
       },

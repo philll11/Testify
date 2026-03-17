@@ -48,6 +48,12 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Security / Certificates
+certs/
+*.pem
+*.crt
+*.key
+
 # Runtime data
 pids
 *.pid
