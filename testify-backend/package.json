@@ -50,10 +50,12 @@
     "test:e2e:collections:execution": "jest --config ./test/jest-e2e.json test/collections/collections.execution.e2e-spec.ts --verbose",
     "test:e2e": "npm run test:e2e:role:all && npm run test:e2e:user:all && npm run test:e2e:counter:all && npm run test:e2e:system-config:all && npm run test:e2e:audit && npm run test:e2e:auth:recovery && npm run test:e2e:platform-env && npm run test:e2e:platform-prof && npm run test:e2e:discovery && npm run test:e2e:discoveryComponents && npm run test:e2e:test-reg:all && npm run test:e2e:collections:all",
     "test:e2e:boomi-live": "jest --config ./test/jest-e2e.json test/boomi/boomi-live.e2e-spec.ts --verbose",
-    "seed": "ts-node src/seed.ts",
-    "seed:prod": "node dist/seed.js"
+    "seed:dev": "ts-node src/seed.core.ts && ts-node src/seed.dev.ts",
+    "seed:prod": "node dist/seed.core.js"
   },
   "dependencies": {
+    "@azure/identity": "4.13.0",
+    "@azure/keyvault-secrets": "4.10.0",
     "@nestjs/bullmq": "11.0.4",
     "@nestjs/common": "11.0.1",
     "@nestjs/config": "4.0.2",

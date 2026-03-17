@@ -19,6 +19,7 @@ import { SystemConfigModule } from './system/config/system-config.module';
 import { AuditsModule } from './system/audits/audits.module';
 import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
+import keyVaultLoader from './config/keyvault.config';
 import { IntegrationModule } from './integration/integration.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { TestRegistryModule } from './test-registry/test-registry.module';
@@ -35,9 +36,9 @@ import { TestResultsModule } from './test-results/test-results.module';
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile:
-        process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',
-      load: [appConfig],
+      envFilePath: ['.env.development.local', '.env'],
+      ignoreEnvFile: process.env.APP_ENV === 'local' || process.env.APP_ENV === 'cloud',
+      load: [appConfig, keyVaultLoader],
     }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],

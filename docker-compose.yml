@@ -5,6 +5,7 @@ services:
     restart: always
     env_file:
       - ./testify-backend/.env
+      - ./testify-backend/.env.development.local
     environment:
       POSTGRES_USER: ${DATABASE_USER:-postgres}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
@@ -39,6 +40,7 @@ services:
       - "3431:3431"
     env_file:
       - ./testify-backend/.env
+      - ./testify-backend/.env.development.local
     environment:
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
